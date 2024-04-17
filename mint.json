@@ -33,19 +33,14 @@
   ],
   "anchors": [
     {
-      "name": "Documentation",
+      "name": "Docs",
       "icon": "book-open-cover",
-      "url": "https://mintlify.com/docs"
+      "url": "https://docs.repromptai.com"
     },
     {
-      "name": "Community",
-      "icon": "slack",
-      "url": "https://mintlify.com/community"
-    },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://mintlify.com/blog"
+      "name": "Dashboard",
+      "icon": "wand-sparkles",
+      "url": "https://app.repromptai.com"
     }
   ],
   "navigation": [
