@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: Hallucination Check API
+  title: AI Response and People Extraction API
   version: 1.0.0
-  description: API to determine if a response from an AI model is hallucinated or not.
+  description: API endpoints to determine if an AI response is hallucinated and to extract people information from URLs.
 paths:
   /api/v1/isHallucinated:
     post:
@@ -77,9 +77,168 @@ paths:
                     example: API key is missing
       security:
         - ApiKeyAuth: []
+
+  /api/v1/extractions/people:
+    get:
+      summary: Retrieve all people extractions or a specific extraction by ID
+      operationId: getPeopleExtractions
+      tags:
+        - People Extraction
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          description: Unique ID of the extraction to retrieve a specific record.
+      responses:
+        '200':
+          description: Successfully retrieved the extraction(s).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: unique-extraction-id
+                  url:
+                    type: string
+                    example: http://example.com
+                  result:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: John Doe
+                      department:
+                        type: string
+                        example: Finance
+                      telephone:
+                        type: string
+                        example: 123-456-7890
+                      email:
+                        type: string
+                        example: john.doe@example.com
+        '404':
+          description: Extraction not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Extraction not found
+    post:
+      summary: Create a new people extraction from a URL
+      operationId: createPeopleExtraction
+      tags:
+        - People Extraction
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The URL from which to extract people information.
+                include_sources:
+                  type: boolean
+                  description: Flag to include source information in the extraction.
+            example:
+              url: "https://reveille.io/pages/founder"
+      responses:
+        '200':
+          description: Successfully created the people extraction.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "e1f131c57b14a90270f274f5827b6fa5c7ae3a0bc50d4273fb514342424e41c5"
+                  url:
+                    type: string
+                    example: "https://reveille.io/pages/founder"
+                  result:
+                    type: object
+                    properties:
+                      people:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: "Calvin Harris"
+                            department:
+                              type: string
+                              example: "Founder and Managing Director"
+                            telephone:
+                              type: string
+                              example: "8573488948"
+                            email:
+                              type: string
+                              example: "support@reveille.io"
+                            reasoning:
+                              type: object
+                              properties:
+                                relevant_text_fragments:
+                                  type: array
+                                  items:
+                                    type: string
+                                who_is_person:
+                                  type: string
+                                why_is_person:
+                                  type: string
+                                why_is_not_person:
+                                  type: string
+                            source:
+                              type: object
+                              properties:
+                                url:
+                                  type: string
+                                timestamp:
+                                  type: string
+                                  format: date-time
+                  hallucination_check:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "API key is valid"
+                      apiKey:
+                        type: string
+                        example: "bcf1ccbb-9ec2-4dec-ba46-a7a5473bb048"
+                      isHallucinated:
+                        type: boolean
+                        example: false
+                      isBadResponse:
+                        type: boolean
+                        example: false
+                      reasoning:
+                        type: string
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        text:
+                          type: string
+                        html:
+                          type: string
 components:
   securitySchemes:
-    ApiKeyAuth:
+    ApiKeyAuth:  # Name of the security scheme
       type: apiKey
-      in: header
-      name: apiKey
+      in: header  # Can be "header", "query" or "cookie"
+      name: apiKey  # Name of the header, query parameter or cookie
