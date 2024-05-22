@@ -3,6 +3,8 @@ info:
   title: AI Response and People Extraction API
   version: 1.0.0
   description: API endpoints to determine if an AI response is hallucinated and to extract people information from URLs.
+servers:
+  - url: https://api.repromptai.com
 paths:
   /api/v1/isHallucinated:
     post:
