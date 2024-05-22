@@ -47,13 +47,6 @@
       "pages": [
         "hallucination-check/check-if-the-ai-generated-response-is-hallucinated"
       ]
-    },
-    {
-      "group": "Extraction API",
-      "pages": [
-        "people-extraction/create-a-new-people-extraction-from-a-url",
-        "people-extraction/retrieve-all-people-extractions-or-a-specific-extraction-by-id"
-      ]
     }
   ],
   "footerSocials": {
