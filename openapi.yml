@@ -211,12 +211,6 @@ paths:
                   hallucination_check:
                     type: object
                     properties:
-                      message:
-                        type: string
-                        example: "API key is valid"
-                      apiKey:
-                        type: string
-                        example: "bcf1ccbb-9ec2-4dec-ba46-a7a5473bb048"
                       isHallucinated:
                         type: boolean
                         example: false
