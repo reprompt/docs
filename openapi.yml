@@ -42,12 +42,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: API key is valid
-                  apiKey:
-                    type: string
-                    example: your-api-key
                   isHallucinated:
                     type: boolean
                     example: false
@@ -56,7 +50,7 @@ paths:
                     example: false
                   reasoning:
                     type: string
-                    example: The response is accurate and relevant to the prompt.
+                    example: The response references information outside of the context, and also does not answer the user's request
         '400':
           description: Bad request, when required fields are missing or the API key is invalid.
           content:
