@@ -1,0 +1,85 @@
+openapi: 3.0.0
+info:
+  title: Hallucination Check API
+  version: 1.0.0
+  description: API to determine if a response from an AI model is hallucinated or not.
+paths:
+  /api/v1/isHallucinated:
+    post:
+      summary: Check if the AI-generated response is hallucinated
+      operationId: isHallucinatedCheck
+      tags:
+        - Hallucination Check
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                  description: The original prompt given to the AI.
+                response:
+                  type: string
+                  description: The AI-generated response to the prompt.
+                userInput:
+                  type: string
+                  description: Optional user input that might contextualize the response.
+                debug:
+                  type: boolean
+                  description: Flag to indicate if the operation should be run in debug mode.
+              required:
+                - prompt
+                - response
+      responses:
+        '200':
+          description: Successfully determined the hallucination status of the response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API key is valid
+                  apiKey:
+                    type: string
+                    example: your-api-key
+                  isHallucinated:
+                    type: boolean
+                    example: false
+                  isBadResponse:
+                    type: boolean
+                    example: false
+                  reasoning:
+                    type: string
+                    example: The response is accurate and relevant to the prompt.
+        '400':
+          description: Bad request, when required fields are missing or the API key is invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Prompt and response are required
+        '401':
+          description: Unauthorized, when the API key is missing or invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: API key is missing
+      security:
+        - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apiKey
