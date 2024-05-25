@@ -226,6 +226,113 @@ paths:
                           type: string
                         html:
                           type: string
+
+  /api/v1/assessments/matador-send-to-human:
+    post:
+      summary: assessments/matador-send-to-human
+      operationId: sendToHuman
+      tags:
+        - Matador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              properties:
+                last_user_message:
+                  type: string
+                chat_history:
+                  type: string
+                  format: json
+                  description: The entire chat history as a JSON string, including the system prompt.
+                gpt_message:
+                  type: string
+                organization_id:
+                  type: string
+                  description: Dealer organization ID
+                message_id:
+                  type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_version:
+                    type: number
+                    example: 2
+                    description: The version of the API
+                  needs_human_review:
+                    type: boolean
+                    description: Does the message need human review? If no, we don't need to send to Superhuman
+                  needs_reply:
+                    type: boolean
+                    description: Does the message need a reply? If False, we can discard it
+                  override_reason:
+                    type: string
+                    example: NOT_OVERRIDDEN
+                    description: Why we overrode the classification results. If overridden, we'll send True for both needs_human_review and needs_reply. If NOT_OVERRIDDEN, needs_human_review and needs_reply will respect the classification_results
+                  classification_results:
+                    type: object
+                    description: The actual classification results, regardless of whether they're overridden
+                    properties:
+                      needs_human_review:
+                        type: object
+                        properties:
+                          response:
+                            type: boolean
+                          reasoning:
+                            type: string
+                            example: Customer is asking to negotiate on $3500 trade-in. Needs dealer or SH review
+                      needs_reply:
+                        type: object
+                        properties:
+                          response:
+                            type: boolean
+                          reasoning:
+                            type: string
+                            example: N/A Needs Human Review
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: array
+                          items:
+                            type: string
+                        message:
+                          type: string
+        '401':
+          description: Unauthorized. Organization not found for the provided API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 components:
   securitySchemes:
     ApiKeyAuth:  # Name of the security scheme

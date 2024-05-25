@@ -47,8 +47,7 @@
       "pages": [
         "hallucination-check/check-if-the-ai-generated-response-is-hallucinated"
       ]
-    }
-    
+    }    
   ],
   "footerSocials": {
     "github": "https://github.com/reprompt",
