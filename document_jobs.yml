@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: Document Extraction API
+  version: 1.0.0
+  description: API for document extraction and retrieval of line items.
+servers:
+  - url: https://api.repromptai.com
+paths:
+  /api/v1/document-extractions/{workflowName}:
+    parameters:
+      - name: workflowName
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Submit a document for line item extraction
+      operationId: submitDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file_url:
+                  type: string
+                  format: uri
+                  description: The URL of the document to be processed
+              example:
+                file_url: "https://example-bucket.s3.amazonaws.com/uploads/document.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLEKEY%2F20240527%2Fus-west-1%2Fs3%2Faws4_request&X-Amz-Date=20240527T004338Z&X-Amz-Expires=900&X-Amz-Signature=example-signature&X-Amz-SignedHeaders=host"
+      responses:
+        '200':
+          description: Document submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  file_url:
+                    type: string
+                    format: uri
+              example:
+                file_url: "https://example-bucket.s3.amazonaws.com/uploads/processed-document.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLEKEY%2F20240527%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20240527T004338Z&X-Amz-Expires=900&X-Amz-Signature=example-signature&X-Amz-SignedHeaders=host"
+      security:
+        - bearerAuth: []
+    get:
+      summary: Retrieve all jobs
+      operationId: getAllJobs
+      responses:
+        '200':
+          description: A list of all jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    status:
+                      type: string
+                    created_at:
+                      type: string
+                      format: date-time
+                    file_url:
+                      type: string
+                      format: uri
+      security:
+        - bearerAuth: []
+  /api/v1/document-extractions/{workflowName}/{jobId}:
+    parameters:
+      - name: workflowName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Retrieve a job by ID
+      operationId: getJobById
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  table_headers:
+                    type: object
+                    properties:
+                      columns:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            column:
+                              type: string
+                            example_values:
+                              type: array
+                              items:
+                                type: string
+                  pages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        page_description:
+                          type: string
+                        rows:
+                          type: array
+                          items:
+                            type: object
+                        page_number:
+                          type: integer
+                          format: int32
+              example:
+                table_headers:
+                  columns:
+                    - column: "DC"
+                      example_values: ["ATL"]
+                    - column: "Item Num"
+                      example_values: ["18666"]
+                    - column: "Brand"
+                      example_values: ["VOSGES"]
+                    - column: "Description"
+                      example_values: ["BAR DULCE DE LECHE"]
+                    - column: "PackSize"
+                      example_values: ["12/3 OZ"]
+                    - column: "PO/Ref"
+                      example_values: ["6581921"]
+                    - column: "Receive Date"
+                      example_values: ["08/30/2022"]
+                    - column: "QTY Case"
+                      example_values: ["0"]
+                    - column: "QTY Each"
+                      example_values: ["8"]
+                    - column: "Case Cost"
+                      example_values: ["42.54"]
+                    - column: "Extended Cost"
+                      example_values: ["287.24"]
+                pages:
+                  - page_description: "This page contains a table with line items for a deduction invoice."
+                    rows:
+                      - {}
+                    page_number: 0
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
