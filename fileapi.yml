@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  title: File API
+  version: 1.0.0
+servers:
+  - url: https://api.repromptai.com/api/v1
+paths:
+  /files:
+    post:
+      summary: Upload a file
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                purpose:
+                  type: string
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileObject'
+        '400':
+          description: Organization ID is missing
+        '500':
+          description: Failed to upload file
+      security:
+        - bearerAuth: []
+    get:
+      summary: List files
+      operationId: listFiles
+      responses:
+        '200':
+          description: List of files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileObject'
+        '400':
+          description: Organization ID is missing
+        '500':
+          description: Failed to list files
+      security:
+        - bearerAuth: []
+  /files/{fileId}:
+    get:
+      summary: Retrieve file metadata
+      operationId: retrieveFile
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileObject'
+        '400':
+          description: Organization ID is missing
+        '500':
+          description: Failed to retrieve file metadata
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete a file
+      operationId: deleteFile
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File deleted successfully
+        '400':
+          description: Organization ID is missing
+        '500':
+          description: Failed to delete file
+      security:
+        - bearerAuth: []
+  /files/{fileId}/content:
+    get:
+      summary: Retrieve file content
+      operationId: retrieveFileContent
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File content retrieved successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Organization ID is missing
+        '500':
+          description: Failed to retrieve file content
+      security:
+        - bearerAuth: []
+components:
+  schemas:
+    FileObject:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        bytes:
+          type: integer
+        created_at:
+          type: integer
+        filename:
+          type: string
+        purpose:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
