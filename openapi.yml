@@ -333,6 +333,84 @@ paths:
                 properties:
                   error:
                     type: string
+  /api/v1/srq/uploadAndClassify:
+    post:
+      summary: Upload and classify SRQ document
+      operationId: uploadAndClassify
+      tags:
+        - SRQ
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: 
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The PDF file to be uploaded and classified.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary:
+                    type: string
+                    description: A short summary of the document.
+                  predicted_docket_code:
+                    type: string
+                    description: The predicted docket code for the document.
+                  generated_title:
+                    type: string
+                    description: The generated title of the document.
+                  generated_explanation:
+                    type: string
+                    description: Explanation of why the document deserves this code.
+                  top_3_possible_docket_codes:
+                    type: array
+                    items:
+                      type: string
+                    description: Top 3 possible docket codes.
+                  fileName:
+                    type: string
+                    description: The name of the uploaded file.
+                  fileType:
+                    type: string
+                    description: The type of the uploaded file.
+                  pages:
+                    type: integer
+                    description: The number of pages in the document.
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '401':
+          description: Unauthorized. Organization not found for the provided API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 components:
   securitySchemes:
     ApiKeyAuth:  # Name of the security scheme
