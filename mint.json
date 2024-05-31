@@ -61,6 +61,12 @@
         "api-reference/files/retrieve-metadata",
         "api-reference/files/retrieve-content"
       ]
+    },
+    {
+      "group": "Website Search API",
+      "pages": [
+        "api-reference/website-search/find-business-website-url"
+      ]
     }
   ],
   "footerSocials": {
