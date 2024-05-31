@@ -1,0 +1,51 @@
+openapi: 3.0.0
+info:
+  title: Website Search API
+  version: 1.0.0
+  description: API to search for business websites based on business name and address.
+servers:
+  - url: http://localhost:3001/api/v1
+paths:
+  /website-search:
+    get:
+      summary: Find business website URL
+      description: Returns the website URL of a business based on the provided business name and address.
+      parameters:
+        - in: query
+          name: business_name
+          required: true
+          schema:
+            type: string
+          description: The name of the business to search for.
+        - in: query
+          name: address
+          required: true
+          schema:
+            type: string
+          description: The address of the business to refine the search.
+      responses:
+        '200':
+          description: Successfully retrieved the website URL.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  website:
+                    type: string
+                    example: 'https://www.grubhub.com/restaurant/makli-restaurant-290-sanchez-st-san-francisco/300093'
+                    description: The URL of the business website.
+        '400':
+          description: Bad request, possibly due to missing parameters.
+        '401':
+          description: Unauthorized, API key is missing or invalid.
+        '500':
+          description: Internal server error.
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
