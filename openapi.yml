@@ -74,8 +74,9 @@ paths:
       security:
         - ApiKeyAuth: []
 
-  /api/v1/extractions/people:
-    get:
+
+  /test:
+    post:
       summary: Retrieve all people extractions or a specific extraction by ID
       operationId: getPeopleExtractions
       tags:

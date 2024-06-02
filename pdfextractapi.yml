@@ -1,0 +1,91 @@
+openapi: 3.0.0
+info:
+  title: PDF Parser API
+  version: 1.0.0
+servers:
+  - url: https://syncup-ai--rob-fastapi-app.modal.run/
+paths:
+  /extract-pdf-by-file:
+    post:
+      summary: Upload a file and returns the extracted PDF text
+      operationId: extractPdfByFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  description: The file to extract as multi-part form data
+                strategy:
+                  type: string
+                  description: The strategy to use to extract the PDF text (ocr_only, auto, fast)
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  elements:
+                    type: array
+                    items:
+                      type: string
+                    description: The elements in the PDF
+      security:
+        - ApiKeyAuth: []
+  /extract-pdf-by-url:
+    post:
+      summary: Upload a file URL and returns the extracted PDF text
+      operationId: extractPdfByUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file_url:
+                  type: string
+                  description: The URL of the file to extract
+      responses:
+        '200':
+          description: File URL processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  elements:
+                    type: array
+                    items:
+                      type: string
+                    description: The elements in the PDF
+      security:
+        - ApiKeyAuth: []
+        
+components:
+  schemas:
+    FileObject:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        bytes:
+          type: integer
+        created_at:
+          type: integer
+        filename:
+          type: string
+        purpose:
+          type: string
+  securitySchemes:
+    ApiKeyAuth:  # Name of the security scheme
+      type: apiKey
+      in: header  # Can be "header", "query" or "cookie"
+      name: apiKey  # Name of the header, query parameter or cookie
