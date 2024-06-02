@@ -51,6 +51,9 @@ paths:
                 file_url:
                   type: string
                   description: The URL of the file to extract
+                strategy:
+                  type: string
+                  description: The strategy to use to extract the PDF text (ocr_only, auto, fast)
       responses:
         '200':
           description: File URL processed successfully
