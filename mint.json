@@ -52,12 +52,6 @@
       ]
     },
     {
-      "group": "Hallucination API",
-      "pages": [
-        "hallucination-check/check-if-the-ai-generated-response-is-hallucinated"
-      ]
-    },
-    {
       "group": "File API",
       "pages": [
         "api-reference/files/upload-file",
