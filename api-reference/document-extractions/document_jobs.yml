@@ -27,8 +27,12 @@ paths:
                   type: string
                   format: uri
                   description: The URL of the document to be processed
+                doc_type:
+                  type: string
+                  description: Optional document type to help with classification, extraction, and validation
               example:
                 file_url: "https://example-bucket.s3.amazonaws.com/uploads/document.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EXAMPLEKEY%2F20240527%2Fus-west-1%2Fs3%2Faws4_request&X-Amz-Date=20240527T004338Z&X-Amz-Expires=900&X-Amz-Signature=example-signature&X-Amz-SignedHeaders=host"
+                doc_type: "mega_invoice"
       responses:
         '200':
           description: Document submitted successfully
