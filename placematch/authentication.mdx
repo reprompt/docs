@@ -1,0 +1,49 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate with the Place Match API"
+---
+
+# Authentication
+
+The Place Match API uses API key authentication. All requests must include your API key in the Authorization header.
+
+## Getting Your API Key
+
+1. Sign up at [app.repromptai.com](https://app.repromptai.com)
+2. Navigate to the API Keys section
+3. Generate a new API key for Place Match
+
+## Using Your API Key
+
+Include your API key in the `Authorization` header of every request:
+
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
+
+## Example Request
+
+```bash
+curl -X POST "https://api.repromptai.com/v1/placematch/match" \
+  -H "Authorization: Bearer sk-pm-1234567890abcdef" \
+  -H "Content-Type: application/json" \
+  -d '{"source_place": {...}}'
+```
+
+## Security Best Practices
+
+- **Keep your API key secure** - Never expose it in client-side code
+- **Use environment variables** - Store your API key in environment variables
+- **Rotate keys regularly** - Generate new keys periodically
+- **Monitor usage** - Track API usage in your dashboard
+
+## Rate Limits
+
+- **Standard tier**: 100 requests per minute
+- **Pro tier**: 1,000 requests per minute
+- **Enterprise**: Custom limits available
+
+Rate limit headers are included in every response:
+- `X-RateLimit-Limit`: Your rate limit
+- `X-RateLimit-Remaining`: Remaining requests
+- `X-RateLimit-Reset`: When the limit resets

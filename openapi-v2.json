@@ -1,0 +1,368 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sitewise Place Enrichment API v2",
+    "description": "\n## What's New in v2\n\n- **Enhanced Batch Processing**: Improved performance and reliability\n- **New Webhook Support**: Real-time notifications for job completion\n- **Advanced Filtering**: More granular control over enrichment attributes\n- **Improved Rate Limiting**: Better handling of high-volume requests\n\n## Batch Processing Guide\n\nThe `/v2/place_enrichment/batches` endpoint allows you to submit multiple places in a single batch for attribute enrichment. \nThe batch will be processed asynchronously, and you can track its status using the returned batch ID.\n\n#### Typical workflow:\n1. Prepare your batch payload with:\n   - A unique batch name for identification\n   - List of places with their IDs and input data\n   - Optional attribute set specification\n   - Optional webhook URL for notifications\n2. Submit the batch using the POST `/v2/place_enrichment/batches` endpoint\n3. Use the returned batch ID to:\n   - Check batch status at GET `/v2/place_enrichment/batches/{batch_id}`\n   - Retrieve results at GET `/v2/place_enrichment/jobs?batchId={batch_id}`\n   - Receive webhook notifications (if configured)\n",
+    "version": "2.0"
+  },
+  "paths": {
+    "/v2/place_enrichment/batches": {
+      "post": {
+        "tags": ["batches-v2"],
+        "summary": "Submit Batch v2",
+        "description": "Submit a batch of places for enrichment processing with enhanced features including webhook support and improved performance monitoring.",
+        "operationId": "submit_batch_v2",
+        "security": [{"HTTPBearer": []}],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [{"type": "string"}, {"type": "null"}],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PlaceBatchPayloadV2"},
+              "examples": {
+                "enhanced_batch": {
+                  "summary": "Enhanced batch with webhook support",
+                  "value": {
+                    "batch_id": "d98e206f-ff1d-4b5a-b0d8-18fff0757fef",
+                    "batch_name": "NYC Restaurants March 2024 - Enhanced",
+                    "webhook_url": "https://your-app.com/webhooks/batch-complete",
+                    "priority": "high",
+                    "jobs": [
+                      {
+                        "place_id": "place_nyc_123",
+                        "inputs": {
+                          "name": "Joe's Pizza",
+                          "latitude": 40.7359,
+                          "longitude": -73.9911,
+                          "full_address": "7 Carmine St, New York, NY 10014"
+                        }
+                      }
+                    ],
+                    "attribute_set": "core",
+                    "kick_off_jobs_now": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted batch for processing with enhanced tracking",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/SubmittedPlaceBatchResponseV2"}
+              }
+            }
+          },
+          "400": {"description": "Invalid input format"},
+          "401": {"description": "Invalid API credentials"}
+        }
+      },
+      "get": {
+        "tags": ["batches-v2"],
+        "summary": "List All Batches v2",
+        "description": "Retrieve batches with enhanced filtering and sorting options.",
+        "operationId": "list_all_batches_v2",
+        "security": [{"HTTPBearer": []}],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query", 
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "in_progress", "completed", "failed"],
+              "title": "Status Filter"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["low", "normal", "high"],
+              "title": "Priority Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enhanced batch list with filtering and metadata",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/PaginatedBatchesResponseV2"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/place_enrichment/jobs": {
+      "post": {
+        "tags": ["jobs-v2"],
+        "summary": "Submit Job v2",
+        "description": "Submit a single place for enrichment with enhanced attribute selection and real-time processing options.",
+        "operationId": "submit_job_v2",
+        "security": [{"HTTPBearer": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/PlaceJobV2"},
+              "example": {
+                "place_id": "place_nyc_123",
+                "inputs": {
+                  "name": "Joe's Pizza",
+                  "latitude": 40.7359,
+                  "longitude": -73.9911,
+                  "full_address": "7 Carmine St, New York, NY 10014"
+                },
+                "attribute_set": "enhanced",
+                "priority": "high",
+                "webhook_url": "https://your-app.com/webhooks/job-complete"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Job submitted successfully"},
+          "202": {"description": "Job queued for processing"}
+        }
+      }
+    },
+    "/v2/webhooks/configure": {
+      "post": {
+        "tags": ["webhooks-v2"],
+        "summary": "Configure Webhook Endpoints",
+        "description": "Configure webhook endpoints for real-time notifications about batch and job completion.",
+        "operationId": "configure_webhooks_v2",
+        "security": [{"HTTPBearer": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/WebhookConfig"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Webhook configured successfully"},
+          "400": {"description": "Invalid webhook configuration"}
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PlaceBatchPayloadV2": {
+        "type": "object",
+        "required": ["batch_name", "jobs"],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id",
+            "description": "Optional unique identifier for the batch"
+          },
+          "batch_name": {
+            "type": "string", 
+            "title": "Batch Name",
+            "description": "Descriptive name for the batch"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/PlaceJobV2"},
+            "title": "Jobs",
+            "description": "List of jobs to process. Maximum of 100,000 jobs per batch in v2."
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "title": "Webhook URL",
+            "description": "Optional webhook URL for batch completion notifications"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high"],
+            "default": "normal",
+            "title": "Priority",
+            "description": "Processing priority for the batch"
+          },
+          "attribute_set": {
+            "type": "string",
+            "enum": ["basic", "core", "enhanced", "premium"],
+            "title": "Attribute Set",
+            "description": "Enhanced attribute sets available in v2"
+          }
+        }
+      },
+      "PlaceJobV2": {
+        "type": "object",
+        "required": ["place_id", "inputs"],
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "title": "Place Id"
+          },
+          "inputs": {
+            "type": "object",
+            "title": "Place Inputs"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high"],
+            "default": "normal"
+          },
+          "webhook_url": {
+            "type": "string",
+            "format": "uri",
+            "title": "Job Webhook URL"
+          },
+          "attribute_set": {
+            "type": "string",
+            "enum": ["basic", "core", "enhanced", "premium"]
+          }
+        }
+      },
+      "SubmittedPlaceBatchResponseV2": {
+        "type": "object",
+        "required": ["id", "batch_name", "jobs", "estimated_completion"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "batch_name": {
+            "type": "string",
+            "title": "Batch Name"
+          },
+          "jobs": {
+            "type": "object",
+            "title": "Job Status Counts"
+          },
+          "estimated_completion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Estimated Completion Time",
+            "description": "New in v2: Estimated completion time based on current queue"
+          },
+          "webhook_configured": {
+            "type": "boolean",
+            "title": "Webhook Configured",
+            "description": "Whether webhook notifications are configured for this batch"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high"]
+          }
+        }
+      },
+      "PaginatedBatchesResponseV2": {
+        "type": "object",
+        "required": ["batches", "total", "limit", "offset", "filters_applied"],
+        "properties": {
+          "batches": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/BatchJobV2"}
+          },
+          "total": {"type": "integer"},
+          "limit": {"type": "integer"},
+          "offset": {"type": "integer"},
+          "filters_applied": {
+            "type": "object",
+            "title": "Applied Filters",
+            "description": "New in v2: Shows which filters were applied to the query"
+          }
+        }
+      },
+      "BatchJobV2": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "batch_name": {"type": "string"},
+          "status": {"type": "string"},
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high"]
+          },
+          "created_at": {"type": "string", "format": "date-time"},
+          "estimated_completion": {"type": "string", "format": "date-time"},
+          "job_counts": {
+            "type": "object",
+            "title": "Enhanced Job Counts"
+          }
+        }
+      },
+      "WebhookConfig": {
+        "type": "object",
+        "required": ["url", "events"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "title": "Webhook URL"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["batch.completed", "batch.failed", "job.completed", "job.failed"]
+            },
+            "title": "Events to Subscribe To"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Webhook Secret",
+            "description": "Optional secret for webhook signature verification"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/v2/sitewise",
+      "description": "Sitewise API v2 server"
+    }
+  ]
+}

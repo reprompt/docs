@@ -1,0 +1,197 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Reprompt",
+  "openapi": "/openapi.json",
+  "colors": {
+    "primary": "#6366f1",
+    "light": "#6366f1",
+    "dark": "#4f46e5"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "anchors": [
+      {
+        "anchor": "Blog",
+        "icon": "newspaper",
+        "href": "https://blog.repromptai.com"
+      },
+      {
+        "anchor": "Changelog",
+        "icon": "list",
+        "href": "/changelog"
+      }
+    ],
+    "tabs": [
+      {
+        "tab": "Place Enrichment",
+        "icon": "sparkles",
+        "dropdowns": [
+          {
+            "dropdown": "v2.0 (Current)",
+            "icon": "sparkles",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "introduction",
+                  "quickstart",
+                  "development"
+                ]
+              },
+              {
+                "group": "API Reference",
+                "openapi": "openapi-v2.json"
+              },
+              {
+                "group": "Data Models",
+                "pages": [
+                  "schemas/place-job",
+                  "schemas/universal-place",
+                  "schemas/batch-job",
+                  "schemas/job-list-response",
+                  "schemas/place-job-result"
+                ]
+              },
+              {
+                "group": "Schema Reference",
+                "pages": [
+                  "schemas/attribute-set"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "v1.0 (Legacy)",
+            "icon": "archive-box",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "introduction",
+                  "quickstart",
+                  "development"
+                ]
+              },
+              {
+                "group": "API Reference (Legacy)",
+                "openapi": "openapi-v1.json"
+              },
+              {
+                "group": "Data Models",
+                "pages": [
+                  "schemas/place-job",
+                  "schemas/universal-place",
+                  "schemas/batch-job",
+                  "schemas/job-list-response",
+                  "schemas/place-job-result"
+                ]
+              },
+              {
+                "group": "Schema Reference",
+                "pages": [
+                  "schemas/attribute-set"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "dropdown": "Place Match",
+        "icon": "arrows-pointing-in",
+        "dropdowns": [
+          {
+            "dropdown": "v2.0 (Current)",
+            "icon": "arrows-pointing-in",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "placematch/v2/introduction",
+                  "placematch/v2/quickstart",
+                  "placematch/v2/authentication"
+                ]
+              },
+              {
+                "group": "API Reference",
+                "pages": [
+                  "placematch/v2/match-places",
+                  "placematch/v2/batch-matching",
+                  "placematch/v2/confidence-scores"
+                ]
+              },
+              {
+                "group": "Data Models",
+                "pages": [
+                  "placematch/v2/schemas/match-request",
+                  "placematch/v2/schemas/match-response",
+                  "placematch/v2/schemas/confidence-level"
+                ]
+              }
+            ]
+          },
+          {
+            "dropdown": "v1.0 (Legacy)",
+            "icon": "archive-box",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "placematch/introduction",
+                  "placematch/quickstart",
+                  "placematch/authentication"
+                ]
+              },
+              {
+                "group": "API Reference",
+                "pages": [
+                  "placematch/match-places",
+                  "placematch/batch-matching",
+                  "placematch/confidence-scores"
+                ]
+              },
+              {
+                "group": "Data Models",
+                "pages": [
+                  "placematch/schemas/match-request",
+                  "placematch/schemas/match-response",
+                  "placematch/schemas/confidence-level"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/dark.webp",
+    "dark": "/logo/dark.webp"
+  },
+  "api": {
+    "openapi": "openapi.json",
+    "playground": {
+      "mode": "show"
+    }
+  },
+  "background": {
+    "color": {
+      "dark": "#111827"
+    }
+  },
+  "navbar": {
+    "links": [],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.repromptai.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/reprompt",
+      "linkedin": "https://www.linkedin.com/company/reprompt"
+    }
+  }
+}

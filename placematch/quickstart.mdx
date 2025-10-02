@@ -1,0 +1,82 @@
+---
+title: "Place Match Quickstart"
+description: "Get started with the Place Match API in minutes"
+---
+
+# Quickstart Guide
+
+This guide will help you make your first Place Match API call in just a few minutes.
+
+## Prerequisites
+
+- API key (get one from your [dashboard](https://app.repromptai.com))
+- Basic understanding of REST APIs
+
+## Your First Match Request
+
+### 1. Single Place Match
+
+```bash
+curl -X POST "https://api.repromptai.com/v1/placematch/match" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_place": {
+      "name": "Starbucks",
+      "address": "123 Main St, New York, NY 10001",
+      "latitude": 40.7128,
+      "longitude": -74.0060
+    },
+    "candidate_places": [
+      {
+        "id": "place_1",
+        "name": "Starbucks Coffee",
+        "address": "123 Main Street, New York, NY 10001",
+        "latitude": 40.7129,
+        "longitude": -74.0061
+      },
+      {
+        "id": "place_2", 
+        "name": "Coffee Shop",
+        "address": "456 Broadway, New York, NY 10001",
+        "latitude": 40.7150,
+        "longitude": -74.0070
+      }
+    ]
+  }'
+```
+
+### 2. Response
+
+```json
+{
+  "matches": [
+    {
+      "candidate_id": "place_1",
+      "confidence_score": 0.95,
+      "match_type": "high_confidence",
+      "reasons": [
+        "Name similarity: 0.92",
+        "Address match: exact",
+        "Geographic proximity: 15m"
+      ]
+    },
+    {
+      "candidate_id": "place_2",
+      "confidence_score": 0.12,
+      "match_type": "no_match",
+      "reasons": [
+        "Name similarity: 0.15",
+        "Address different",
+        "Geographic proximity: 1.2km"
+      ]
+    }
+  ]
+}
+```
+
+## Next Steps
+
+- [Learn about batch matching](/placematch/batch-matching)
+- [Understand confidence scores](/placematch/confidence-scores)
+- [Explore data models](/placematch/schemas/match-request)
