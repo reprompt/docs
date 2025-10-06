@@ -1,0 +1,108 @@
+---
+title: "Batch Matching"
+description: "Process multiple place matches efficiently in batches"
+---
+
+# Batch Matching
+
+Process multiple place matching operations in a single request for improved efficiency and throughput.
+
+## Endpoint
+
+```
+POST /v1/placematch/batch
+```
+
+## Request Body
+
+```json
+{
+  "batch_name": "NYC Restaurants Dedup",
+  "matches": [
+    {
+      "match_id": "match_1",
+      "source_place": {
+        "name": "Joe's Pizza",
+        "address": "123 Main St, New York, NY",
+        "latitude": 40.7128,
+        "longitude": -74.0060
+      },
+      "candidate_places": [
+        {
+          "id": "candidate_1",
+          "name": "Joe's Pizza Restaurant",
+          "address": "123 Main Street, New York, NY 10001"
+        }
+      ]
+    }
+  ],
+  "options": {
+    "min_confidence": 0.7,
+    "max_distance_meters": 1000,
+    "async": true
+  }
+}
+```
+
+## Synchronous Response
+
+For small batches (< 100 matches), results are returned immediately:
+
+```json
+{
+  "batch_id": "batch_2024_03_15_123456",
+  "status": "completed",
+  "results": [
+    {
+      "match_id": "match_1", 
+      "matches": [
+        {
+          "candidate_id": "candidate_1",
+          "confidence_score": 0.95,
+          "match_type": "high_confidence"
+        }
+      ]
+    }
+  ],
+  "processing_time_ms": 1250
+}
+```
+
+## Asynchronous Processing
+
+For larger batches, use async processing:
+
+### 1. Submit Batch
+
+```bash
+curl -X POST "https://api.repromptai.com/v1/placematch/batch" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{"async": true, "matches": [...]}'
+```
+
+### 2. Check Status
+
+```bash
+curl "https://api.repromptai.com/v1/placematch/batch/batch_123456" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### 3. Get Results
+
+```bash
+curl "https://api.repromptai.com/v1/placematch/batch/batch_123456/results" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Batch Limits
+
+- **Synchronous**: Up to 100 matches per request
+- **Asynchronous**: Up to 10,000 matches per batch
+- **Rate limits**: 10 concurrent batches per account
+
+## Best Practices
+
+- Use descriptive `batch_name` for tracking
+- Include `match_id` for result correlation
+- Set appropriate `min_confidence` thresholds
+- Use async processing for large datasets

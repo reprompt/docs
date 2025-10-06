@@ -1,0 +1,114 @@
+---
+title: "PlaceJob"
+description: "Job submission model for place enrichment processing"
+---
+
+# PlaceJob
+
+The `PlaceJob` model represents a single job for place enrichment processing. This is the primary model used when submitting individual places for attribute enrichment.
+
+## Schema Definition
+
+<Note>
+This schema documentation is manually maintained but represents the structure defined in your OpenAPI specification. Keep this in sync with your Pydantic models.
+</Note>
+
+<ResponseField name="place_id" type="string" required>
+  Unique identifier for the place. This will be retained as the external customer ID in the database.
+  
+  **Example:** `"place_nyc_123"`
+</ResponseField>
+
+<ResponseField name="inputs" type="UniversalPlace" required>
+  The place data to be enriched. See [UniversalPlace](/schemas/universal-place) for detailed schema.
+</ResponseField>
+
+<ResponseField name="attributes" type="array<string>" optional>
+  List of specific attributes to enrich using enum values (e.g., `email_address`, `phone_number`). 
+  
+  If both `attribute_set` and `attributes` are provided, `attributes` takes precedence.
+  
+  **Example:** `["website", "phone", "categories"]`
+</ResponseField>
+
+<ResponseField name="attribute_set" type="AttributeSet" optional>
+  Predefined set of attributes to enrich. See [AttributeSet](/schemas/attribute-set) for available options.
+  
+  **Options:** `"open_closed"` | `"core"` | `"all"`
+</ResponseField>
+
+<ResponseField name="refresh" type="boolean" optional default="false">
+  If true, will force a refresh of the place even if it has already been enriched.
+</ResponseField>
+
+<ResponseField name="eval" type="boolean" optional default="false">
+  When true, enables evaluation mode with 100% LangSmith tracing sampling rate.
+</ResponseField>
+
+<ResponseField name="eval_id" type="string" optional>
+  UUID identifier for evaluation session. All places in same batch share the same eval_id when enable_eval=True.
+</ResponseField>
+
+<ResponseField name="prefilled_data" type="object" optional>
+  Dictionary of prefilled attribute data to insert directly into the database. Keys should match attribute names (e.g., 'phoneNumbers', 'websites'). 
+  
+  Data will be validated against the enrichment's response model schema.
+</ResponseField>
+
+## Usage Examples
+
+### Basic Job Submission
+
+```json
+{
+  "place_id": "place_nyc_123",
+  "inputs": {
+    "name": "Joe's Pizza",
+    "latitude": 40.7359,
+    "longitude": -73.9911,
+    "full_address": "7 Carmine St, New York, NY 10014"
+  },
+  "attribute_set": "core"
+}
+```
+
+### Advanced Job with Specific Attributes
+
+```json
+{
+  "place_id": "restaurant_001",
+  "inputs": {
+    "name": "The Italian Corner",
+    "latitude": 40.7589,
+    "longitude": -73.9851,
+    "full_address": "123 Main St, New York, NY 10001"
+  },
+  "attributes": ["website", "phone", "categories", "opening_hours"],
+  "refresh": true
+}
+```
+
+### Job with Prefilled Data
+
+```json
+{
+  "place_id": "cafe_456",
+  "inputs": {
+    "name": "Central Cafe",
+    "latitude": 40.7614,
+    "longitude": -73.9776
+  },
+  "attribute_set": "core",
+  "prefilled_data": {
+    "phoneNumbers": "+1234567890",
+    "websites": "https://centralcafe.com",
+    "closed_permanently": false
+  }
+}
+```
+
+## Related Models
+
+- [UniversalPlace](/schemas/universal-place) - Input place data structure
+- [PlaceJobResult](/schemas/place-job-result) - Job result model
+- [AttributeSet](/schemas/attribute-set) - Available attribute sets

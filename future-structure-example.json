@@ -1,0 +1,49 @@
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Place Enrichment",
+        "groups": [
+          {
+            "group": "v2 (Current)",
+            "openapi": "enrichment-v2.json"
+          },
+          {
+            "group": "v1 (Legacy)",
+            "openapi": "enrichment-v1.json"
+          },
+          {
+            "group": "Schemas",
+            "pages": ["schemas/place-job", "schemas/universal-place"]
+          }
+        ]
+      },
+      {
+        "tab": "PlaceMatch",
+        "groups": [
+          {
+            "group": "v3 (Current)",
+            "openapi": "placematch-v3.json"
+          },
+          {
+            "group": "v2 (Legacy)",
+            "openapi": "placematch-v2.json"
+          },
+          {
+            "group": "Examples",
+            "pages": ["placematch/examples", "placematch/migration-guide"]
+          }
+        ]
+      },
+      {
+        "tab": "Geocoding",
+        "groups": [
+          {
+            "group": "v2 (Current)",
+            "openapi": "geocoding-v2.json"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+---
+title: "AttributeSet"
+description: "Enumeration of predefined attribute sets for place enrichment"
+---
+
+# AttributeSet
+
+The `AttributeSet` enum defines predefined groups of attributes that can be enriched for a place. This allows you to specify the scope of enrichment without listing individual attributes.
+
+## Available Values
+
+<ResponseField name="open_closed" type="enum">
+  **Focused enrichment** that only checks if the business is permanently closed. 
+  
+  - ⚡ **Fastest option** when you only need operating status
+  - 🎯 **Use case:** Quick validation of business status
+  - ⏱️ **Processing time:** ~30 seconds per place
+</ResponseField>
+
+<ResponseField name="core" type="enum">
+  **Default enrichment** that includes essential business attributes.
+  
+  **Includes:**
+  - Website URL
+  - Phone number  
+  - Social media profiles (Instagram, Facebook)
+  - Basic operating status (open/closed)
+  - Primary business category
+  
+  - 🎯 **Use case:** General business information gathering
+  - ⏱️ **Processing time:** ~2-3 minutes per place
+  - 💡 **Recommended** for most use cases
+</ResponseField>
+
+<ResponseField name="all" type="enum">
+  **Comprehensive enrichment** including all core attributes plus additional detailed data.
+  
+  **Includes everything from `core` plus:**
+  - Price tier ($ to $$$$)
+  - Cuisine types (for restaurants)
+  - Amenities and features
+  - Detailed business analysis
+  - Opening hours
+  - Reviews and ratings data
+  - Additional contact information
+  
+  - 🎯 **Use case:** Complete business intelligence
+  - ⏱️ **Processing time:** ~5-8 minutes per place
+  - 💰 **Higher cost** but most complete data
+</ResponseField>
+
+## Usage Examples
+
+### Quick Status Check
+
+```json
+{
+  "place_id": "restaurant_001",
+  "inputs": {
+    "name": "Joe's Pizza",
+    "latitude": 40.7359,
+    "longitude": -73.9911
+  },
+  "attribute_set": "open_closed"
+}
+```
+
+### Standard Business Information
+
+```json
+{
+  "place_id": "business_456", 
+  "inputs": {
+    "name": "Central Cafe",
+    "full_address": "123 Main St, New York, NY"
+  },
+  "attribute_set": "core"
+}
+```
+
+### Complete Business Intelligence
+
+```json
+{
+  "place_id": "detailed_analysis_789",
+  "inputs": {
+    "name": "The Italian Corner",
+    "latitude": 40.7589,
+    "longitude": -73.9851
+  },
+  "attribute_set": "all"
+}
+```
+
+## Performance Comparison
+
+| Attribute Set | Processing Time | Attributes | Cost | Best For |
+|---------------|-----------------|------------|------|----------|
+| `open_closed` | ~30 seconds | 1-2 | $ | Status validation |
+| `core` | ~2-3 minutes | 5-8 | $$ | General info |
+| `all` | ~5-8 minutes | 15+ | $$$ | Complete analysis |
+
+## Alternative: Custom Attributes
+
+Instead of using predefined sets, you can specify individual attributes:
+
+```json
+{
+  "place_id": "custom_001",
+  "inputs": { "name": "Business Name" },
+  "attributes": ["website", "phone", "categories"]
+}
+```
+
+<Note>
+When both `attribute_set` and `attributes` are provided, the `attributes` array takes precedence.
+</Note>
+
+## Related Models
+
+- [PlaceJob](/schemas/place-job) - Uses AttributeSet for job configuration
+- [PlaceBatchPayload](/schemas/place-batch-payload) - Batch-level attribute set configuration

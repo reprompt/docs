@@ -1,15 +1,71 @@
 {
-    "name": "Reprompt",
-    "colors": {
-        "primary": "#000000"
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Reprompt",
+  "openapi": "/openapi.json",
+  "colors": {
+    "primary": "#6366f1",
+    "light": "#6366f1",
+    "dark": "#4f46e5"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Changelog",
+          "href": "https://blog.repromptai.com"
+        }
+      ]
     },
-    "theme": "maple",
-    "navigation": {
-    "groups": [
-            {
-            "group": "API reference",
-            "openapi": "openapi-latest.json"
-            }
+
+    "versions": [
+      {"version": "v2.0", 
+        "default": true,
+            "groups": [
+          {
+            "group": "Place Enrichment",
+            "openapi": "openapi-v2.json"
+          }
+          ]
+      },
+      {"version": "v1.0", 
+        "groups": [
+          {
+            "group": "Place Enrichment",
+            "openapi": "openapi-v1.json"
+          }
         ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/dark.webp",
+    "dark": "/logo/dark.webp"
+  },
+  "api": {
+    "openapi": "openapi.json",
+    "playground": {
+      "mode": "show"
     }
+  },
+  "background": {
+    "color": {
+      "dark": "#111827"
+    }
+  },
+  "navbar": {
+    "links": [],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.repromptai.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/reprompt",
+      "linkedin": "https://www.linkedin.com/company/reprompt"
+    }
+  }
 }
