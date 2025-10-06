@@ -76,7 +76,7 @@ paths:
 
 
   /test:
-    post:
+    get:
       summary: Retrieve all people extractions or a specific extraction by ID
       operationId: getPeopleExtractions
       tags:

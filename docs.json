@@ -1,0 +1,15 @@
+{
+    "name": "Reprompt",
+    "colors": {
+        "primary": "#000000"
+    },
+    "theme": "maple",
+    "navigation": {
+    "groups": [
+            {
+            "group": "API reference",
+            "openapi": "openapi-latest.json"
+            }
+        ]
+    }
+}
