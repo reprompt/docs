@@ -1,6 +1,6 @@
 ---
 title: "Authentication"
-description: "Learn how to authenticate with the Reprompt API using Bearer tokens"
+description: "Welcome back {user.FirstName}"
 ---
 
 ## Overview
@@ -10,7 +10,7 @@ The Reprompt API uses **Bearer token authentication** to secure all API endpoint
 ## Getting Your API Key
 
 1. Log into your dashboard at [app.repromptai.com](https://app.repromptai.com)
-2. Navigate to **Settings** > **API Keys**
+2. Navigate to **Settings** \> **API Keys**
 3. Copy your organization-specific API key
 4. Keep your API key secure - treat it like a password
 
@@ -39,6 +39,7 @@ curl -X POST \
   }'
 ```
 
+
 ```javascript Node.js
 const response = await fetch(
   'https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{org_slug}/place_enrichment/enrich',
@@ -62,6 +63,7 @@ const response = await fetch(
 const data = await response.json();
 console.log(data);
 ```
+
 
 ```python Python
 import requests
@@ -108,20 +110,17 @@ Most API endpoints require an `{org_slug}` parameter in the URL path. This is yo
 <Steps>
   <Step title="Use Environment Variables">
     Store your API key in environment variables, not in your code:
-    
+
     ```bash
     export REPROMPT_API_KEY="your_api_key_here"
     ```
   </Step>
-  
   <Step title="Rotate Keys Regularly">
     Generate new API keys periodically and revoke old ones from your dashboard.
   </Step>
-  
   <Step title="Use HTTPS Only">
     Always make API requests over HTTPS to ensure your API key is encrypted in transit.
   </Step>
-  
   <Step title="Monitor Usage">
     Track your API usage in the dashboard to detect any unauthorized access.
   </Step>
