@@ -2,7 +2,6 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Reprompt",
-  "openapi": "/openapi.json",
   "colors": {
     "primary": "#6366f1",
     "light": "#6366f1",
@@ -10,30 +9,19 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Changelog",
-          "href": "https://blog.repromptai.com"
-        }
-      ]
-    },
+
 
     "versions": [
-      {"version": "v2.0", 
-        "default": true,
-            "groups": [
-          {
-            "group": "Place Enrichment",
-            "openapi": "openapi-v2.json"
-          }
-          ]
-      },
-      {"version": "v1.0", 
+      {
+        "version": "1.0.0",
         "groups": [
           {
-            "group": "Place Enrichment",
-            "openapi": "openapi-v1.json"
+            "group": "Getting started",
+            "pages": ["test"]
+          },
+          {
+            "group": "Grab",
+            "openapi": "https://api.repromptai.com/v1/grab/openapi.json?apiKey=sk-v8vcws62o68jyu7th50a23v7"
           }
         ]
       }
@@ -47,6 +35,13 @@
     "openapi": "openapi.json",
     "playground": {
       "mode": "show"
+    },
+    "mdx": {
+      "server": "https://api.repromptai.com/v1",
+      "auth": {
+        "method": "key",
+        "name": "bearer"
+      }
     }
   },
   "background": {
