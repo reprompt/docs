@@ -1,0 +1,4668 @@
+{
+  "openapi": "3.1.0", 
+  "info": {
+    "title": "Grab Place Enrichment API", 
+    "description": "\n## Batch Processing Guide\n\nThe `/place_enrichment/batches` endpoint allows you to submit multiple places in a single batch for attribute enrichment. \nThe batch will be processed asynchronously, and you can track its status using the returned batch ID.\n\n\n#### Typical workflow:\n1. Prepare your batch payload with:\n   - A unique batch name for identification\n   - List of places with their IDs and input data\n   - Optional attribute set specification\n2. Submit the batch using the POST `/place_enrichment/batches` endpoint\n3. Use the returned batch ID to:\n   - Check batch status at GET `/place_enrichment/batches/{batch_id}`\n   - Retrieve results at GET `/place_enrichment/jobs?batchId={batch_id}`\n\n\n#### Submitting a Batch:\n\nUse POST `/place_enrichment/batches` to submit a batch.\n\n**Example Batch Payload:**\n```json\n{\n    \"batch_name\": \"NYC Restaurants March 2024\",\n    \"attribute_set\": \"core\", \n    \"jobs\": [\n        {\n            \"place_id\": \"place_nyc_123\",\n            \"inputs\": {\n                \"name\": \"Joe's Pizza\",\n                \"latitude\": 40.7359,\n                \"longitude\": -73.9911,\n                \"full_address\": \"7 Carmine St, New York, NY 10014\",\n                \"street\": \"Carmine St\",\n                \"city\": \"New York\",\n                \"state\": \"NY\",\n                \"postalCode\": \"10014\",\n                \"house\": \"7\",\n                \"country\": \"United States\",\n                \"country_code\": \"US\",\n                \"type\": \"restaurant\",\n                \"website\": \"http://www.joespizzanyc.com\",\n                \"phone\": \"+12122555803\"\n            }\n        }\n    ]\n}\n```\n**Place Input Parameters:**\nFor more details on the place input parameters, see the ```UniversalPlace``` schema in the schemas section below.\n\n**Attribute Sets:**\n\nThe `attribute_set` parameter in your request determines which attributes will be enriched. Available options:\n\n| Value | Description |\n|-------|-------------|\n| core | Default. Includes essential business attributes like website, phone, social media profiles, and basic operating status. Best for general business information. |\n| all | Comprehensive enrichment including all core attributes plus additional data like price tier, cuisine types, amenities, and detailed business analysis. Takes longer but provides the most complete data. |\n| open_closed | Focused enrichment that only checks if the business is permanently closed. Fastest option when you only need operating status. |\n\n#### Tracking Batch Status:\n\nUse GET `/place_enrichment/batches/{batch_id}` to monitor the progress of your batch. The response includes:\n\n```json\n{\n    \"id\": \"batch_2024_03_15_123456\",\n    \"batch_name\": \"NYC Restaurants March 2024\",\n    \"status\": \"in_progress\",\n    \"jobs\": {\n        \"pending\": [\"place_id_2\", \"place_id_3\"],\n        \"in_progress\": [\"place_id_1\"],\n        \"completed\": [\"place_id_4\", \"place_id_5\"],\n        \"failed\": []\n    },\n    \"created_at\": \"2024-03-15T10:30:00Z\",\n    \"updated_at\": \"2024-03-15T10:35:00Z\"\n}\n```\n\nThe status field will be one of:\n- `pending`: Batch is queued but not yet started\n- `in_progress`: Batch is currently being processed\n- `completed`: All jobs in the batch are finished\n- `failed`: Batch encountered critical errors\n\n#### Retrieving Job Results:\n\nOnce jobs are completed, use GET `/place_enrichment/jobs?batchId={batch_id}` to get the enrichment results. The response includes:\n\n```json\n{\n    \"jobs\": [\n        {\n            \"place_id\": \"place_nyc_123\",\n            \"status\": \"completed\",\n            \"outputs\": {\n                \"website\": \"https://www.joespizzanyc.com\",\n                \"phone\": \"+12122555803\",\n                \"social_profiles\": {\n                    \"instagram\": \"joespizzanyc\",\n                    \"facebook\": \"joespizzanyc\"\n                },\n                \"is_permanently_closed\": False,\n                \"price_tier\": \"$$\",\n                \"last_enriched\": \"2024-03-15T10:35:00Z\"\n            },\n            \"job_metadata\": {\n                \"created_at\": \"2024-03-15T10:30:00Z\",\n                \"completed_at\": \"2024-03-15T10:35:00Z\",\n                \"processing_time_seconds\": 300\n            }\n        }\n    ],\n    \"total_count\": 1,\n    \"completed_count\": 1\n}\n```\n\nEach job result includes:\n- Original place ID for tracking\n- Enrichment outputs based on the requested attribute set\n- Job metadata including timing information\n- Processing status and any error details if failed\n\n**Attribute Statuses:**\n\nAttributes like name, address, phone number, and website include an `attribute_status` field indicating the verification state:\n\n| Status | Description |\n|--------|-------------|\n| NOT_RUN | The attribute was not processed |\n| RUN_CONDITION_FAILED | The attribute was processed but failed the run condition |\n| RUN | The attribute was processed |\n| ERROR | The attribute processing failed |\n\nExample response with attribute statuses:\n```json\n{\n    \"outputs\": {\n        \"website\": \"https://www.joespizzanyc.com\",\n        \"phone\": \"+12122555803\"\n    },\n    \"job_metadata\": {\n        \"attribute_status\": {\n            \"website\": \"RUN\",\n            \"phone\": \"RUN\",\n            \"address\": \"RUN\",\n            \"name\": \"RUN\"\n        }\n    }\n}\n```\n", 
+    "version": "1.0"
+  }, 
+  "paths": {
+    "/place_enrichment/jobs/reprocess": {
+      "post": {
+        "tags": [
+          "jobs"
+        ], 
+        "summary": "Reprocess Jobs", 
+        "operationId": "reprocess_jobs__org_slug__place_enrichment_jobs_reprocess_post", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprocessJobRequest"
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/batches": {
+      "post": {
+        "tags": [
+          "batches"
+        ], 
+        "summary": "Submit Batch", 
+        "description": "Submit a batch of places for enrichment processing\n\nThe batch_id field is optional. If not provided, a new UUID will be generated.\nIf an existing batch ID is provided, the new jobs will be added to that batch,\nand any existing jobs with the same place_id will be updated.\n\n**Prefilled Data Feature:**\n\nYou can include prefilled attribute data using the `prefilled_data` field in each job.\nThis allows you to insert known attribute values directly into the database without\nrequiring AI enrichment. This feature is only available when `kick_off_jobs_now` is False.\n\nSupported prefilled attributes:\n- `phoneNumbers`: Phone number information\n- `websites`: Website URL and validation data  \n- `closed_permanently`: Business closure status\n- `openingHours`: Operating hours information\n- `categories`: Business categories\n- Custom attributes: Any custom attribute key\n\nExample prefilled data formats:\n```json\n{\n    \"phoneNumbers\": \"+12122555803\",  // Simple string format\n    // OR complex format:\n    \"phoneNumbers\": {\n        \"phone_number\": \"+12122555803\",\n        \"additional_numbers\": [\n            {\"phone_type\": \"whatsapp\", \"phone_number\": \"+12122555804\"}\n        ],\n        \"reasoning\": \"Found on official website\",\n        \"confidence\": \"HIGH\"\n    },\n    \"websites\": \"https://example.com\",  // Simple string format\n    // OR complex format:\n    \"websites\": {\n        \"url\": \"https://example.com\",\n        \"has_website\": true,\n        \"reasoning\": \"Official business website\",\n        \"confidence\": \"NAP\"\n    },\n    \"closed_permanently\": false,  // Simple boolean format\n    // OR complex format:\n    \"closed_permanently\": {\n        \"is_permanently_closed\": false,\n        \"reasoning\": \"Business is currently operating\",\n        \"confidence\": \"HIGH\"\n    }\n}\n```", 
+        "operationId": "submit_batch__org_slug__place_enrichment_batches_post", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceBatchPayload"
+              }, 
+              "examples": {
+                "basic_batch": {
+                  "summary": "Basic batch without prefilled data", 
+                  "value": {
+                    "batch_id": "d98e206f-ff1d-4b5a-b0d8-18fff0757fef", 
+                    "batch_name": "NYC Restaurants March 2024", 
+                    "jobs": [
+                      {
+                        "place_id": "place_nyc_123", 
+                        "inputs": {
+                          "name": "Joe's Pizza", 
+                          "latitude": 40.7359, 
+                          "longitude": -73.9911, 
+                          "full_address": "7 Carmine St, New York, NY 10014"
+                        }
+                      }
+                    ], 
+                    "attribute_set": "core", 
+                    "kick_off_jobs_now": true
+                  }
+                }, 
+                "prefilled_batch": {
+                  "summary": "Batch with prefilled attribute data", 
+                  "value": {
+                    "batch_id": "d98e206f-ff1d-4b5a-b0d8-18fff0757fef", 
+                    "batch_name": "NYC Restaurants with Prefilled Data", 
+                    "jobs": [
+                      {
+                        "place_id": "place_nyc_123", 
+                        "inputs": {
+                          "name": "Joe's Pizza", 
+                          "latitude": 40.7359, 
+                          "longitude": -73.9911, 
+                          "full_address": "7 Carmine St, New York, NY 10014"
+                        }, 
+                        "prefilled_data": {
+                          "phoneNumbers": {
+                            "phone_number": "+12122555803", 
+                            "reasoning": "Phone number from business listing", 
+                            "confidence": "HIGH"
+                          }, 
+                          "websites": {
+                            "url": "https://www.joespizzanyc.com", 
+                            "has_website": true, 
+                            "reasoning": "Official website found", 
+                            "confidence": "NAP"
+                          }, 
+                          "closed_permanently": {
+                            "is_permanently_closed": false, 
+                            "reasoning": "Business is currently operating", 
+                            "confidence": "HIGH"
+                          }
+                        }
+                      }
+                    ], 
+                    "attribute_set": "core", 
+                    "kick_off_jobs_now": false
+                  }
+                }
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "200": {
+            "description": "Successfully submitted batch for processing", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedPlaceBatchResponse"
+                }, 
+                "example": {
+                  "id": "batch_2024_03_15_123456", 
+                  "batch_name": "NYC Restaurants March 2024", 
+                  "status": "pending", 
+                  "jobs": {
+                    "pending": [
+                      "place_nyc_123", 
+                      "place_nyc_456"
+                    ], 
+                    "in_progress": [], 
+                    "completed": [], 
+                    "failed": []
+                  }
+                }
+              }
+            }
+          }, 
+          "400": {
+            "description": "Batch size exceeds maximum limit of 50,000 records or invalid input format"
+          }, 
+          "401": {
+            "description": "Invalid API credentials"
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }, 
+      "get": {
+        "tags": [
+          "batches"
+        ], 
+        "summary": "List All Batches Endpoint", 
+        "description": "Retrieve batches for an organization with pagination and optional search by name.\n\nReturns a paginated list of batch jobs with their metadata including batch ID, \ncreation timestamp, and job counts. If 'query' is provided, only batches whose name matches (case-insensitive, substring) will be returned.", 
+        "operationId": "list_all_batches_endpoint__org_slug__place_enrichment_batches_get", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "limit", 
+            "in": "query", 
+            "required": false, 
+            "schema": {
+              "type": "integer", 
+              "maximum": 500, 
+              "minimum": 1, 
+              "description": "Number of batches to return per page", 
+              "default": 10, 
+              "title": "Limit"
+            }, 
+            "description": "Number of batches to return per page"
+          }, 
+          {
+            "name": "offset", 
+            "in": "query", 
+            "required": false, 
+            "schema": {
+              "type": "integer", 
+              "minimum": 0, 
+              "description": "Number of batches to skip", 
+              "default": 0, 
+              "title": "Offset"
+            }, 
+            "description": "Number of batches to skip"
+          }, 
+          {
+            "name": "query", 
+            "in": "query", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "description": "Optional search string to filter batches by name (case-insensitive)", 
+              "title": "Query"
+            }, 
+            "description": "Optional search string to filter batches by name (case-insensitive)"
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "List of all batches for the organization with pagination", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedBatchesResponse"
+                }, 
+                "example": {
+                  "batches": [
+                    {
+                      "id": "batch_2025_03_10_123456", 
+                      "name": "NYC Restaurants March 2025", 
+                      "created_at": "2025-03-10T15:30:00Z", 
+                      "organization_id": "org-abc123", 
+                      "job_count": 150, 
+                      "completed_count": 142, 
+                      "failed_count": 3, 
+                      "pending_count": 0, 
+                      "in_progress_count": 5
+                    }
+                  ], 
+                  "total": 42, 
+                  "limit": 10, 
+                  "offset": 0
+                }
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/batches/{batch_id}": {
+      "get": {
+        "tags": [
+          "batches"
+        ], 
+        "summary": "Get Batch Status Endpoint", 
+        "operationId": "get_batch_status_endpoint__org_slug__place_enrichment_batches__batch_id__get", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "batch_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": {
+              "type": "string", 
+              "title": "Batch Id"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedPlaceBatchResponse"
+                }
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }, 
+      "delete": {
+        "tags": [
+          "batches"
+        ], 
+        "summary": "Delete Batch Endpoint", 
+        "operationId": "delete_batch_endpoint__org_slug__place_enrichment_batches__batch_id__delete", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "batch_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": {
+              "type": "string", 
+              "title": "Batch Id"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }, 
+      "put": {
+        "tags": [
+          "batches"
+        ], 
+        "summary": "Update Batch Endpoint", 
+        "description": "Update batch properties like name.", 
+        "operationId": "update_batch_endpoint__org_slug__place_enrichment_batches__batch_id__put", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "batch_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": {
+              "type": "string", 
+              "title": "Batch Id"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBatchRequest"
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/jobs": {
+      "post": {
+        "tags": [
+          "jobs"
+        ], 
+        "summary": "Submit Job", 
+        "description": "Submit a place for asynchronous enrichment processing.", 
+        "operationId": "submit_job__org_slug__place_enrichment_jobs_post", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceJob"
+              }, 
+              "example": {
+                "place_id": "place_nyc_123", 
+                "inputs": {
+                  "name": "Joe's Pizza", 
+                  "latitude": 40.7359, 
+                  "longitude": -73.9911, 
+                  "full_address": "7 Carmine St, New York, NY 10014"
+                }, 
+                "attribute_set": "core", 
+                "attributes": [
+                  "menu", 
+                  "owner_info"
+                ]
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object", 
+                  "additionalProperties": true, 
+                  "title": "Response Submit Job  Org Slug  Place Enrichment Jobs Post"
+                }
+              }
+            }
+          }, 
+          "202": {
+            "description": "Job successfully submitted for processing", 
+            "content": {
+              "application/json": {
+                "example": {
+                  "place_id": "place_nyc_123", 
+                  "inputs": {
+                    "name": "Joe's Pizza", 
+                    "latitude": 40.7359, 
+                    "longitude": -73.9911, 
+                    "full_address": "7 Carmine St, New York, NY 10014"
+                  }, 
+                  "status": "pending"
+                }
+              }
+            }
+          }, 
+          "400": {
+            "description": "Invalid input format"
+          }, 
+          "401": {
+            "description": "Invalid API credentials"
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }, 
+      "get": {
+        "tags": [
+          "jobs"
+        ], 
+        "summary": "Retrieve Jobs Endpoint", 
+        "operationId": "retrieve_jobs_endpoint__org_slug__place_enrichment_jobs_get", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "batchId", 
+            "in": "query", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Batchid"
+            }
+          }, 
+          {
+            "name": "limit", 
+            "in": "query", 
+            "required": false, 
+            "schema": {
+              "type": "integer", 
+              "default": 10000, 
+              "title": "Limit"
+            }
+          }, 
+          {
+            "name": "offset", 
+            "in": "query", 
+            "required": false, 
+            "schema": {
+              "type": "integer", 
+              "default": 0, 
+              "title": "Offset"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListResponse"
+                }
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/enrich": {
+      "post": {
+        "tags": [
+          "jobs"
+        ], 
+        "summary": "Submit Enrichment", 
+        "operationId": "submit_enrichment__org_slug__place_enrichment_enrich_post", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceJob"
+              }, 
+              "example": {
+                "place_id": "place_nyc_123", 
+                "inputs": {
+                  "name": "Joe's Pizza", 
+                  "latitude": 40.7359, 
+                  "longitude": -73.9911, 
+                  "full_address": "7 Carmine St, New York, NY 10014"
+                }, 
+                "attribute_set": "core", 
+                "attributes": [
+                  "websites", 
+                  "categories", 
+                  "closed_permanently"
+                ]
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "200": {
+            "description": "Successfully enriched place data", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceJobResult"
+                }, 
+                "example": {
+                  "place_id": "place_nyc_123", 
+                  "status": "completed", 
+                  "inputs": {
+                    "name": "Joe's Pizza", 
+                    "latitude": 40.7359, 
+                    "longitude": -73.9911, 
+                    "full_address": "7 Carmine St, New York, NY 10014"
+                  }, 
+                  "outputs": {
+                    "website": "https://www.joespizzanyc.com", 
+                    "phone": "+12122555803", 
+                    "social_profiles": {
+                      "instagram": "joespizzanyc", 
+                      "facebook": "joespizzanyc"
+                    }, 
+                    "is_permanently_closed": false, 
+                    "price_tier": "$$", 
+                    "last_enriched": "2024-03-15T10:35:00Z"
+                  }, 
+                  "job_metadata": {
+                    "last_enriched": "2024-03-15T10:35:00Z", 
+                    "attribute_status": {
+                      "website": "RUN", 
+                      "phone": "RUN", 
+                      "address": "RUN", 
+                      "name": "RUN"
+                    }
+                  }
+                }
+              }
+            }
+          }, 
+          "400": {
+            "description": "Invalid input format"
+          }, 
+          "401": {
+            "description": "Invalid API credentials"
+          }, 
+          "404": {
+            "description": "Enrichment failed or not found"
+          }, 
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/jobs/{place_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ], 
+        "summary": "Get Job By Id", 
+        "operationId": "get_job_by_id__org_slug__place_enrichment_jobs__place_id__get", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "place_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": {
+              "type": "string", 
+              "title": "Place Id"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceJobResult"
+                }
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }, 
+      "delete": {
+        "tags": [
+          "jobs"
+        ], 
+        "summary": "Delete Job Endpoint", 
+        "operationId": "delete_job_endpoint__org_slug__place_enrichment_jobs__place_id__delete", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "place_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": {
+              "type": "string", 
+              "title": "Place Id"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/batches/{batch_id}/reprocess": {
+      "post": {
+        "tags": [
+          "batches"
+        ], 
+        "summary": "Reprocess Batch Endpoint", 
+        "operationId": "reprocess_batch_endpoint__org_slug__place_enrichment_batches__batch_id__reprocess_post", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "batch_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": {
+              "type": "string", 
+              "title": "Batch Id"
+            }
+          }, 
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprocessBatchRequest", 
+                "properties": {
+                  "failed_only": {
+                    "type": "boolean", 
+                    "description": "When true, only reprocess jobs with 'failed' status. When false, reprocess all jobs in the batch.", 
+                    "default": true
+                  }, 
+                  "incomplete_only": {
+                    "type": "boolean", 
+                    "description": "When true, only reprocess jobs with 'pending' or 'in_progress' status. When false, reprocess all jobs in the batch (unless failed_only is true).", 
+                    "default": false
+                  }, 
+                  "refresh": {
+                    "type": "boolean", 
+                    "description": "When true, force fresh enrichment ignoring cached data.", 
+                    "default": false
+                  }, 
+                  "attributes": {
+                    "type": "array", 
+                    "items": {
+                      "type": "string"
+                    }, 
+                    "description": "List of specific attributes to enrich (e.g. 'websites', 'phoneNumbers'). If provided, overrides attribute_set."
+                  }, 
+                  "attribute_set": {
+                    "type": "string", 
+                    "description": "Predefined group of attributes to enrich: 'core', 'all', or 'open_closed'", 
+                    "enum": [
+                      "core", 
+                      "all", 
+                      "open_closed"
+                    ]
+                  }
+                }
+              }, 
+              "example": {
+                "failed_only": true, 
+                "incomplete_only": false, 
+                "refresh": false, 
+                "attributes": [
+                  "website", 
+                  "phone", 
+                  "categories"
+                ], 
+                "attribute_set": "core"
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "200": {
+            "description": "Successfully initiated batch reprocessing", 
+            "content": {
+              "application/json": {
+                "schema": {}, 
+                "example": {
+                  "status": "success", 
+                  "message": "Started reprocessing 42 FAILED jobs from batch batch_2024_04_01_123456", 
+                  "job_count": 42, 
+                  "batch_id": "batch_2024_04_01_123456"
+                }
+              }
+            }
+          }, 
+          "404": {
+            "description": "Batch not found"
+          }, 
+          "400": {
+            "description": "No jobs found in batch"
+          }, 
+          "401": {
+            "description": "Invalid API credentials"
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/attributes": {
+      "get": {
+        "tags": [
+          "attributes"
+        ], 
+        "summary": "Get Enrichment Attributes", 
+        "description": "Get metadata for all available enrichment attributes", 
+        "operationId": "get_enrichment_attributes__org_slug__place_enrichment_attributes_get", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object", 
+                  "additionalProperties": {
+                    "type": "array", 
+                    "items": {
+                      "type": "string"
+                    }
+                  }, 
+                  "title": "Response Get Enrichment Attributes  Org Slug  Place Enrichment Attributes Get"
+                }
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }, 
+    "/place_enrichment/custom_attributes": {
+      "post": {
+        "tags": [
+          "attributes"
+        ], 
+        "summary": "Create a new AI attribute with a default schema", 
+        "operationId": "create_ai_attribute_with_defaults_endpoint__org_slug__place_enrichment_custom_attributes_post", 
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ], 
+        "parameters": [
+          {
+            "name": "apiKey", 
+            "in": "header", 
+            "required": false, 
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ], 
+              "title": "Apikey"
+            }
+          }
+        ], 
+        "requestBody": {
+          "required": true, 
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMinimalAIAttributeRequest"
+              }
+            }
+          }
+        }, 
+        "responses": {
+          "201": {
+            "description": "Successful Response", 
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomAttributeResponse"
+                }
+              }
+            }
+          }
+        }, 
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "admin", 
+              "org:grab"
+            ]
+          }
+        }
+      }
+    }
+  }, 
+  "components": {
+    "schemas": {
+      "AddressDetails": {
+        "properties": {
+          "full_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Full Address", 
+            "description": "Full formatted address string"
+          }, 
+          "unit_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Unit Number", 
+            "description": "An apartment, unit, office, lot, or other secondary unit designator"
+          }, 
+          "floor": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Floor", 
+            "description": "Expressions indicating a floor number e.g. '3rd Floor', 'Ground Floor', etc."
+          }, 
+          "building": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Building", 
+            "description": "Building name e.g. 'Sun Hung Kai Centre', 'The Center', 'Empire State Building'"
+          }, 
+          "block": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Block", 
+            "description": "Block number, used in Singapore (SG) e.g., 'Block 329', Malaysia (MY) e.g., 'Blok A', and Indonesia (ID) e.g., 'Blok G5 No. 17'"
+          }, 
+          "km": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Km", 
+            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta‑Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
+          }, 
+          "house": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "House"
+          }, 
+          "street": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Street"
+          }, 
+          "suburb": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Suburb"
+          }, 
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "City"
+          }, 
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "State"
+          }, 
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Country"
+          }, 
+          "postalCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Postalcode"
+          }
+        }, 
+        "type": "object", 
+        "title": "AddressDetails"
+      }, 
+      "AttributeSet": {
+        "type": "string", 
+        "enum": [
+          "open_closed", 
+          "core", 
+          "all"
+        ], 
+        "title": "AttributeSet", 
+        "description": "Defines the set of attributes to enrich for a place."
+      }, 
+      "AttributeStatusEnum": {
+        "type": "string", 
+        "enum": [
+          "NOT FOUND", 
+          "ADDED", 
+          "VERIFIED", 
+          "CORRECTED", 
+          "NOT VERIFIED", 
+          "NOT ENRICHED", 
+          "RUN", 
+          "RUN_CONDITION_FAILED", 
+          "ERROR", 
+          "NOT_RUN"
+        ], 
+        "title": "AttributeStatusEnum"
+      }, 
+      "BatchJob": {
+        "properties": {
+          "id": {
+            "type": "string", 
+            "title": "Id"
+          }, 
+          "batch_name": {
+            "type": "string", 
+            "title": "Batch Name"
+          }, 
+          "status_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            }, 
+            "type": "object", 
+            "title": "Status Counts"
+          }, 
+          "created_at": {
+            "type": "string", 
+            "format": "date-time", 
+            "title": "Created At"
+          }, 
+          "status": {
+            "$ref": "#/components/schemas/BatchJobStatus"
+          }, 
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "id", 
+          "batch_name", 
+          "status_counts", 
+          "created_at", 
+          "status"
+        ], 
+        "title": "BatchJob"
+      }, 
+      "BatchJobStatus": {
+        "type": "string", 
+        "enum": [
+          "pending", 
+          "queued", 
+          "in_progress", 
+          "completed", 
+          "failed"
+        ], 
+        "title": "BatchJobStatus"
+      }, 
+      "ConfidenceScore": {
+        "type": "string", 
+        "enum": [
+          "VERY_HIGH", 
+          "HIGH", 
+          "MEDIUM", 
+          "LOW", 
+          "NONE"
+        ], 
+        "title": "ConfidenceScore"
+      }, 
+      "CreateMinimalAIAttributeRequest": {
+        "properties": {
+          "name": {
+            "type": "string", 
+            "title": "Name", 
+            "description": "Name for the new AI attribute"
+          }, 
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Description", 
+            "description": "Optional description for the attribute"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "name"
+        ], 
+        "title": "CreateMinimalAIAttributeRequest"
+      }, 
+      "CustomAttributeResponse": {
+        "properties": {
+          "attribute_key": {
+            "type": "string", 
+            "title": "Attribute Key"
+          }, 
+          "data": {
+            "type": "object"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "attribute_key", 
+          "data"
+        ], 
+        "title": "CustomAttributeResponse", 
+        "description": "Response model for custom attribute creation"
+      }, 
+      "GrabJobOutputs": {
+        "properties": {
+          "qualified_input_place": {
+            "anyOf": [
+              {}, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Qualified Input Place"
+          }, 
+          "coordinates": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  }, 
+                  {
+                    "type": "number"
+                  }
+                ], 
+                "type": "array", 
+                "maxItems": 2, 
+                "minItems": 2
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Coordinates"
+          }, 
+          "coordinates_distance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Coordinates Distance", 
+            "description": "Distance in meters between input coordinates and enriched coordinates. Returns 0 if coordinates were not enriched."
+          }, 
+          "open_closed_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Open Closed Status"
+          }, 
+          "open_closed_status_confidence_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "date_closed": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Date Closed"
+          }, 
+          "date_opened": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Date Opened"
+          }, 
+          "placekey": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Placekey"
+          }, 
+          "reprompt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Reprompt Id"
+          }, 
+          "chain_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Chain Id"
+          }, 
+          "chain_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Chain Name"
+          }, 
+          "chain_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Chain Domains"
+          }, 
+          "alternative_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Alternative Names"
+          }, 
+          "chain_wikipedia_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Chain Wikipedia Url"
+          }, 
+          "number_of_locations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Number Of Locations"
+          }, 
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Logo Url"
+          }, 
+          "enriched_custom": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Enriched Custom"
+          }, 
+          "facebook_followers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Facebook Followers"
+          }, 
+          "facebook_likes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Facebook Likes"
+          }, 
+          "facebook_page_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Facebook Page Id"
+          }, 
+          "facebook_bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Facebook Bio"
+          }, 
+          "instagram_followers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Followers"
+          }, 
+          "instagram_media_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Media Count"
+          }, 
+          "instagram_username": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Username"
+          }, 
+          "instagram_profile_pic_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Profile Pic Url"
+          }, 
+          "instagram_bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Bio"
+          }, 
+          "instagram_monthly_user_counts": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                }, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Monthly User Counts", 
+            "description": "Monthly follower counts as YYYY-MM key to count value mapping"
+          }, 
+          "instagram_monthly_like_counts": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                }, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Monthly Like Counts", 
+            "description": "Monthly like counts as YYYY-MM key to count value mapping"
+          }, 
+          "instagram_monthly_interaction_counts": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                }, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Monthly Interaction Counts", 
+            "description": "Monthly interaction counts as YYYY-MM key to count value mapping"
+          }, 
+          "tiktok_followers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Tiktok Followers"
+          }, 
+          "tiktok_video_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Tiktok Video Count"
+          }, 
+          "tiktok_bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Tiktok Bio"
+          }, 
+          "approximate_review_count": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Approximate Review Count", 
+            "description": "Approximate review count in buckets (e.g., '<10', '10-50', '50-100', etc.)"
+          }, 
+          "approximate_average_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Approximate Average Rating", 
+            "description": "Approximate average rating out of 5 from web search"
+          }, 
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Name"
+          }, 
+          "multilingual_names": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }, 
+                {
+                  "type": "null"
+                }
+              ]
+            }, 
+            "type": "object", 
+            "title": "Multilingual Names"
+          }, 
+          "alt_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Alt Name"
+          }, 
+          "official_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Official Name"
+          }, 
+          "brand_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Brand Name"
+          }, 
+          "common_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Common Names"
+          }, 
+          "name_translations": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                }, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Name Translations"
+          }, 
+          "food_service_links": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "home_service_links": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "storefront_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StorefrontImage"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Storefront Images"
+          }, 
+          "has_delivery": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Has Delivery"
+          }, 
+          "has_takeout": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Has Takeout"
+          }, 
+          "has_dining": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Has Dining"
+          }, 
+          "has_pickup": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Has Pickup"
+          }, 
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Email"
+          }, 
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AddressDetails"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "description": "International normalized version of the address"
+          }, 
+          "address_localized": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Address Localized"
+          }, 
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Categories"
+          }, 
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website"
+          }, 
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Phone"
+          }, 
+          "phone_additional": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Phone Additional"
+          }, 
+          "naics_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Naics Code"
+          }, 
+          "naics_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Naics Description"
+          }, 
+          "merchant_category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Merchant Category Code"
+          }, 
+          "mcc_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Mcc Description"
+          }, 
+          "merchant_category_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Merchant Category Group"
+          }, 
+          "merchant_super_industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Merchant Super Industry"
+          }, 
+          "instagram": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram"
+          }, 
+          "facebook": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Facebook"
+          }, 
+          "tiktok": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Tiktok"
+          }, 
+          "opening_hours": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                }, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Opening Hours"
+          }, 
+          "opening_hours_grouped_by_hours": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Opening Hours Grouped By Hours"
+          }, 
+          "is_open_24h": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Is Open 24H"
+          }, 
+          "menu_urls": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Menu Urls"
+          }, 
+          "menu_url_official": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Menu Url Official", 
+            "description": "The official menu URL from the business's own website"
+          }, 
+          "menu_content": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Menu Content", 
+            "description": "Structured menu content parsed from the official menu URL"
+          }, 
+          "menu_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Menu Images", 
+            "description": "List of S3 URLs for menu images found through image search"
+          }, 
+          "price_tier": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Price Tier"
+          }, 
+          "average_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Average Price", 
+            "description": "Average price in local currency (from price_tier enrichment)"
+          }, 
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Currency", 
+            "description": "3-letter ISO currency code for average_price (from price_tier enrichment)"
+          }, 
+          "cuisines": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Cuisines"
+          }, 
+          "review_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Review Count", 
+            "description": "Total number of reviews (integer for exact count, string bucket for approximate count)"
+          }, 
+          "average_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Average Rating", 
+            "description": "Average rating out of 5"
+          }, 
+          "wilson_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Wilson Score", 
+            "description": "Wilson score lower bound (confidence=0.95) for positive ratings"
+          }, 
+          "popularity": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Popularity", 
+            "description": "Popularity score from 0 to 1 based on average rating and review count"
+          }, 
+          "review_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Review Summary", 
+            "description": "One-line summary of reviews"
+          }, 
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Summary", 
+            "description": "One-line summary of reviews (schema-expected field name)"
+          }, 
+          "user_review_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Review Count", 
+            "description": "Exact number of user reviews (from user_reviews enrichment)"
+          }, 
+          "user_average_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Average Rating", 
+            "description": "Average rating out of 5 (from user_reviews enrichment)"
+          }, 
+          "user_wilson_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Wilson Score", 
+            "description": "Wilson score lower bound for positive ratings (from user_reviews enrichment)"
+          }, 
+          "user_popularity": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Popularity", 
+            "description": "Popularity score from 0 to 1 (from user_reviews enrichment)"
+          }, 
+          "user_review_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Review Summary", 
+            "description": "One-line summary of user reviews (from user_reviews enrichment)"
+          }, 
+          "user_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Summary", 
+            "description": "One-line summary of user reviews - alternate field (from user_reviews enrichment)"
+          }, 
+          "approx_review_count": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Approx Review Count", 
+            "description": "Legacy field - use review_count instead"
+          }, 
+          "approx_average_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Approx Average Rating", 
+            "description": "Legacy field - use average_rating instead"
+          }, 
+          "approx_review_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Approx Review Summary", 
+            "description": "Legacy field - use review_summary instead"
+          }, 
+          "user_reviews_reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "User Reviews Reasoning", 
+            "description": "Reasoning for user reviews enrichment"
+          }, 
+          "approximate_user_reviews_reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Approximate User Reviews Reasoning", 
+            "description": "Legacy reasoning field for approximate user reviews"
+          }, 
+          "recent_review_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Recent Review Count"
+          }, 
+          "instagram_profile": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Instagram Profile"
+          }, 
+          "owner_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Owner Phone"
+          }, 
+          "owner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Owner Email"
+          }, 
+          "building_footprint": {
+            "anyOf": [
+              {}, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Building Footprint"
+          }, 
+          "parcel": {
+            "anyOf": [
+              {}, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parcel"
+          }, 
+          "foursquare_place_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Id"
+          }, 
+          "foursquare_place_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Name"
+          }, 
+          "foursquare_place_match_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Match Confidence"
+          }, 
+          "foursquare_place_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Phone"
+          }, 
+          "foursquare_place_website": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Website"
+          }, 
+          "foursquare_place_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Latitude"
+          }, 
+          "foursquare_place_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Longitude"
+          }, 
+          "foursquare_place_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Address"
+          }, 
+          "foursquare_place_category_labels": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Category Labels"
+          }, 
+          "foursquare_place_category_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Category Ids"
+          }, 
+          "foursquare_place_date_refreshed": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Date Refreshed"
+          }, 
+          "foursquare_place_date_created": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Date Created"
+          }, 
+          "foursquare_place_original": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Foursquare Place Original"
+          }, 
+          "overture_place_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Id"
+          }, 
+          "overture_place_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Name"
+          }, 
+          "overture_place_match_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Match Confidence"
+          }, 
+          "overture_place_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Phone"
+          }, 
+          "overture_place_website": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Website"
+          }, 
+          "overture_place_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Latitude"
+          }, 
+          "overture_place_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Longitude"
+          }, 
+          "overture_place_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Address"
+          }, 
+          "overture_place_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Category"
+          }, 
+          "overture_place_original": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Overture Place Original"
+          }, 
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Entity Type"
+          }, 
+          "digital_footprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Digital Footprint"
+          }, 
+          "place_definition": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Place Definition"
+          }, 
+          "place_reality": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Place Reality"
+          }, 
+          "website_traffic_monthly_visits": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Monthly Visits", 
+            "description": "Monthly website visits from SimilarWeb"
+          }, 
+          "website_traffic_source_social_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Source Social Percentage", 
+            "description": "Percentage of website traffic from social media sources"
+          }, 
+          "website_traffic_source_paid_referrals_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Source Paid Referrals Percentage", 
+            "description": "Percentage of website traffic from paid referrals"
+          }, 
+          "website_traffic_source_mail_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Source Mail Percentage", 
+            "description": "Percentage of website traffic from email/mail sources"
+          }, 
+          "website_traffic_source_referrals_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Source Referrals Percentage", 
+            "description": "Percentage of website traffic from referral sources"
+          }, 
+          "website_traffic_source_search_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Source Search Percentage", 
+            "description": "Percentage of website traffic from search engines"
+          }, 
+          "website_traffic_source_direct_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Source Direct Percentage", 
+            "description": "Percentage of website traffic from direct visits"
+          }, 
+          "website_traffic_top_keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Website Traffic Top Keywords", 
+            "description": "Top keywords driving traffic to the website"
+          }, 
+          "parking_spaces_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parking Spaces Total", 
+            "description": "Total number of parking spaces available for customers"
+          }, 
+          "parking_spaces_street": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parking Spaces Street", 
+            "description": "Number of street parking spaces available"
+          }, 
+          "parking_spaces_shared": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parking Spaces Shared", 
+            "description": "Number of shared parking spaces available"
+          }, 
+          "parking_spaces_dedicated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parking Spaces Dedicated", 
+            "description": "Number of dedicated parking spaces available"
+          }, 
+          "parking_spaces_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parking Spaces Image Url", 
+            "description": "URL of the satellite/aerial image used for analysis"
+          }, 
+          "traffic_control": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Traffic Control", 
+            "description": "Whether traffic control manages traffic ingress/egress to the location"
+          }, 
+          "one_line_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "One Line Summary", 
+            "description": "A brief, descriptive phrase capturing the essence and atmosphere of the place"
+          }, 
+          "geofence_mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Geofence Mask", 
+            "description": "S3 URL of the geofence visualization image showing school boundaries"
+          }, 
+          "geofence_geojson": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Geofence Geojson", 
+            "description": "GeoJSON polygon coordinates defining the school geofence boundary"
+          }, 
+          "vision_open_closed_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Vision Open Closed Status", 
+            "description": "Status of the place (open, closed, replaced, uncertain)"
+          }, 
+          "vision_open_closed_confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Vision Open Closed Confidence", 
+            "description": "Confidence level (high, medium, low)"
+          }, 
+          "vision_open_closed_confirmation_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Vision Open Closed Confirmation Date", 
+            "description": "Date when status was confirmed from image timestamp, or null if unsure"
+          }, 
+          "vision_open_closed_photos": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true, 
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Vision Open Closed Photos", 
+            "description": "Array of photo evidence with URLs, timestamps, and Mapillary app URLs"
+          }, 
+          "buildings_geojson": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Buildings Geojson", 
+            "description": "GeoJSON FeatureCollection of building footprints within the property"
+          }, 
+          "parking_geojson": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parking Geojson", 
+            "description": "GeoJSON FeatureCollection of identified parking areas"
+          }, 
+          "parcels_geojson": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Parcels Geojson", 
+            "description": "GeoJSON FeatureCollection of property parcels/geofence boundaries"
+          }, 
+          "visualization_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Visualization Image Url", 
+            "description": "URL to the satellite image visualization showing all geometry overlays"
+          }, 
+          "analysis_metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Analysis Metadata", 
+            "description": "Metadata about the geometry analysis including counts and parameters"
+          }, 
+          "site_quality_score": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Site Quality Score", 
+            "description": "Overall site quality assessment (excellent, good, fair, poor, unknown)"
+          }, 
+          "accessibility_rating": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Accessibility Rating", 
+            "description": "How accessible the site is from major roads (excellent, good, fair, poor, unknown)"
+          }, 
+          "accessibility_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Accessibility Summary", 
+            "description": "Summary of route accessibility from cardinal directions"
+          }, 
+          "primary_turns_required": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Primary Turns Required", 
+            "description": "Number of turns required from primary access route"
+          }, 
+          "min_turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Min Turns", 
+            "description": "The minimum number of turns required to reach the destination from the primary access route"
+          }, 
+          "primary_turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Primary Turns", 
+            "description": "The number of turns required from the primary access route"
+          }, 
+          "primary_turns_route_matrix_visualization": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Primary Turns Route Matrix Visualization", 
+            "description": "Route matrix visualization data for map rendering"
+          }, 
+          "visibility_rating": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Visibility Rating", 
+            "description": "How visible the business is from the street (high, medium, low, none, unknown)"
+          }, 
+          "signage_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Signage Summary", 
+            "description": "Summary of available signage (pylon, monument)"
+          }, 
+          "has_brand_signage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Has Brand Signage", 
+            "description": "Whether the business has identifiable brand signage"
+          }, 
+          "pylon_sign_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Sign Exists", 
+            "description": "Whether a pylon sign exists at the location"
+          }, 
+          "pylon_coordinates": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Coordinates", 
+            "description": "Pylon sign coordinates as [latitude, longitude]"
+          }, 
+          "pylon_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Latitude", 
+            "description": "Latitude of the pylon sign"
+          }, 
+          "pylon_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Longitude", 
+            "description": "Longitude of the pylon sign"
+          }, 
+          "pylon_number_of_brands": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Number Of Brands", 
+            "description": "Number of brands on pylon sign (single, multiple, uncertain, none)"
+          }, 
+          "pylon_reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Reasoning", 
+            "description": "Reasoning for pylon sign analysis"
+          }, 
+          "pylon_includes_brand_sign": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Pylon Includes Brand Sign", 
+            "description": "Whether pylon sign includes the target brand"
+          }, 
+          "monument_sign_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Sign Exists", 
+            "description": "Whether a monument sign exists at the location"
+          }, 
+          "monument_coordinates": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Coordinates", 
+            "description": "Monument sign coordinates as [latitude, longitude]"
+          }, 
+          "monument_latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Latitude", 
+            "description": "Latitude of the monument sign"
+          }, 
+          "monument_longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Longitude", 
+            "description": "Longitude of the monument sign"
+          }, 
+          "monument_number_of_brands": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Number Of Brands", 
+            "description": "Number of brands on monument sign (single, multiple, uncertain, none)"
+          }, 
+          "monument_reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Reasoning", 
+            "description": "Reasoning for monument sign analysis"
+          }, 
+          "monument_includes_brand_sign": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Monument Includes Brand Sign", 
+            "description": "Whether monument sign includes the target brand"
+          }, 
+          "sign_locations": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true, 
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Sign Locations", 
+            "description": "List of all detected sign locations with coordinates and details"
+          }, 
+          "location_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Location Type", 
+            "description": "Type of location (shopping_center, standalone_building, mixed_use_building, unknown)"
+          }, 
+          "building_condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Building Condition", 
+            "description": "Detailed description of building condition and maintenance"
+          }, 
+          "building_condition_score": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Building Condition Score", 
+            "description": "Building condition quality score (above_average, average, below_average, none)"
+          }, 
+          "shopping_center_condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Shopping Center Condition", 
+            "description": "Condition of shopping center if applicable, null otherwise"
+          }, 
+          "shopping_center_condition_score": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Shopping Center Condition Score", 
+            "description": "Shopping center condition quality score (above_average, average, below_average, none)"
+          }, 
+          "location_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Location Category", 
+            "description": "Type of location (shopping_center, standalone_building, mixed_use_building, unknown)"
+          }, 
+          "building_condition_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Building Condition Summary", 
+            "description": "Summary of building and property condition"
+          }, 
+          "building_condition_rating": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Building Condition Rating", 
+            "description": "Building condition score (excellent, good, fair, poor)"
+          }, 
+          "key_strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Key Strengths", 
+            "description": "Key strengths of the location"
+          }, 
+          "potential_concerns": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Potential Concerns", 
+            "description": "Potential concerns or weaknesses"
+          }, 
+          "route_matrix_visualization": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Route Matrix Visualization", 
+            "description": "Consolidated route matrix data for map visualization including routes, candidate points, and center coordinates"
+          }, 
+          "prominence": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Prominence", 
+            "description": "Overall prominence level (excellent, average, not visible)"
+          }, 
+          "entrance_views": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true, 
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Entrance Views", 
+            "description": "Street view images showing entrance visibility"
+          }, 
+          "search_aliases": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Search Aliases", 
+            "description": "Array of search queries that refer to this place"
+          }, 
+          "located_within_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Located Within Name"
+          }, 
+          "located_within_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Located Within Type"
+          }, 
+          "located_within_floor_or_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Located Within Floor Or Level"
+          }, 
+          "test_attribute_test_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Test Attribute Test Value"
+          }, 
+          "test_attribute_processing_time_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Test Attribute Processing Time Seconds"
+          }, 
+          "test_attribute_random_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Test Attribute Random Number"
+          }, 
+          "grab_categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Grab Categories"
+          }
+        }, 
+        "additionalProperties": false, 
+        "type": "object", 
+        "title": "GrabJobOutputs"
+      }, 
+      "JobConfidenceScores": {
+        "properties": {
+          "open_closed_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "description": "Confidence score for the open/closed status of a place. VERY_HIGH (95% accuracy) indicates extremely reliable open/closed status. HIGH (90% accuracy) indicates very reliable status. MEDIUM (80% accuracy) indicates reasonably reliable status. LOW (70% accuracy) indicates limited online evidence but likely correct status.NONE indicates insufficient evidence to determine status. This happens when a place has no internet presence at all."
+          }, 
+          "phone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "website": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "categories": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "opening_hours": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "entity_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "name": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "parking_spaces": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "parking_spaces_total": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "parking_spaces_street": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "parking_spaces_shared": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "parking_spaces_dedicated": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "chain": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "tiktok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "price_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "approximate_user_reviews": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "menu": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ]
+          }, 
+          "school_geofence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "description": "Confidence score for school geofence data. HIGH indicates OSM-based geofence with reliable school boundary data. MEDIUM indicates parcel-based geofence using property data analysis. NONE indicates no data"
+          }
+        }, 
+        "type": "object", 
+        "title": "JobConfidenceScores"
+      }, 
+      "JobListResponse": {
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceJobResult"
+            }, 
+            "type": "array", 
+            "title": "Jobs"
+          }, 
+          "total": {
+            "type": "integer", 
+            "title": "Total", 
+            "description": "Total number of jobs available"
+          }, 
+          "limit": {
+            "type": "integer", 
+            "title": "Limit", 
+            "description": "Number of jobs per page"
+          }, 
+          "offset": {
+            "type": "integer", 
+            "title": "Offset", 
+            "description": "Starting position of the current page"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "jobs", 
+          "total", 
+          "limit", 
+          "offset"
+        ], 
+        "title": "JobListResponse"
+      }, 
+      "JobMetadata": {
+        "properties": {
+          "last_enriched": {
+            "anyOf": [
+              {
+                "type": "string", 
+                "format": "date-time"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Last Enriched", 
+            "description": "Timestamp of the last enrichment"
+          }, 
+          "enrichment_metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true, 
+                  "type": "object"
+                }, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Enrichment Metadata"
+          }, 
+          "attribute_status": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AttributeStatusEnum"
+            }, 
+            "type": "object", 
+            "title": "Attribute Status"
+          }, 
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Country Code"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "attribute_status"
+        ], 
+        "title": "JobMetadata"
+      }, 
+      "PaginatedBatchesResponse": {
+        "properties": {
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/BatchJob"
+            }, 
+            "type": "array", 
+            "title": "Batches"
+          }, 
+          "total": {
+            "type": "integer", 
+            "title": "Total"
+          }, 
+          "limit": {
+            "type": "integer", 
+            "title": "Limit"
+          }, 
+          "offset": {
+            "type": "integer", 
+            "title": "Offset"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "batches", 
+          "total", 
+          "limit", 
+          "offset"
+        ], 
+        "title": "PaginatedBatchesResponse"
+      }, 
+      "PlaceBatchPayload": {
+        "properties": {
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Batch Id", 
+            "description": "Optional unique identifier for the batch. If not provided, a new UUID will be generated. If an existing batch ID is provided, new jobs will be added to that batch."
+          }, 
+          "batch_name": {
+            "type": "string", 
+            "title": "Batch Name", 
+            "description": "The name of the batch. Only for display purposes. Recommended to use a descriptive human readable name."
+          }, 
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceJob"
+            }, 
+            "type": "array", 
+            "title": "Jobs", 
+            "description": "List of jobs to process. Maximum of 50,000 jobs per batch."
+          }, 
+          "attribute_set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttributeSet"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "description": "Specifies the set of attributes to enrich."
+          }, 
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attributes", 
+            "description": "Specifies the list of attributes to enrich. If this is specified it will override the attribute_set. You cannot specify both."
+          }, 
+          "kick_off_jobs_now": {
+            "type": "boolean", 
+            "title": "Kick Off Jobs Now", 
+            "description": "Flag to determine if jobs should be kicked off immediately. Only for internal use.", 
+            "default": true
+          }, 
+          "eval": {
+            "type": "boolean", 
+            "title": "Eval", 
+            "description": "When true, enables evaluation mode with 100% LangSmith tracing sampling rate.", 
+            "default": false
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "batch_name", 
+          "jobs"
+        ], 
+        "title": "PlaceBatchPayload"
+      }, 
+      "PlaceJob": {
+        "properties": {
+          "place_id": {
+            "type": "string", 
+            "title": "Place Id", 
+            "description": "The customer-identifier for the place and retained as external_customer_id in the database. When not set, will automatically generate a UUID."
+          }, 
+          "inputs": {
+            "$ref": "#/components/schemas/UniversalPlace"
+          }, 
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attributes", 
+            "description": "List of specific attributes to enrich using enum values (e.g., email_address, phone_number). If both attribute_set and attributes are provided, attributes takes precedence."
+          }, 
+          "attribute_set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttributeSet"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "description": "Specifies the set of attributes to enrich"
+          }, 
+          "attributes_enrichments": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attributes Enrichments"
+          }, 
+          "refresh": {
+            "type": "boolean", 
+            "title": "Refresh", 
+            "description": "If true, will force a refresh of the place even if it has already been enriched.", 
+            "default": false
+          }, 
+          "eval": {
+            "type": "boolean", 
+            "title": "Eval", 
+            "description": "When true, enables evaluation mode with 100% LangSmith tracing sampling rate.", 
+            "default": false
+          }, 
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Eval Id", 
+            "description": "UUID identifier for evaluation session. All places in same batch share the same eval_id when enable_eval=True."
+          }, 
+          "prefilled_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true, 
+                "type": "object"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Prefilled Data", 
+            "description": "Dictionary of prefilled attribute data to insert directly into the database. Keys should match attribute names (e.g., 'phoneNumbers', 'websites'). Data will be validated against the enrichment's response model schema."
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "place_id", 
+          "inputs"
+        ], 
+        "title": "PlaceJob"
+      }, 
+      "PlaceJobResult": {
+        "properties": {
+          "place_id": {
+            "type": "string", 
+            "title": "Place Id"
+          }, 
+          "status": {
+            "type": "string", 
+            "title": "Status"
+          }, 
+          "job_metadata": {
+            "$ref": "#/components/schemas/JobMetadata"
+          }, 
+          "inputs": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UniversalPlace"
+              }
+            ], 
+            "title": "Inputs", 
+            "discriminator": {
+              "propertyName": "input_type", 
+              "mapping": {
+                "place": "#/components/schemas/UniversalPlace", 
+                "query": "#/components/schemas/InputQuery"
+              }
+            }
+          }, 
+          "outputs": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GrabJobOutputs"
+              }
+            ], 
+            "title": "Outputs"
+          }, 
+          "reasoning": {
+            "type": "object"
+          }, 
+          "confidence_scores": {
+            "$ref": "#/components/schemas/JobConfidenceScores", 
+            "description": "Confidence scores for various attributes"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "place_id", 
+          "status", 
+          "job_metadata", 
+          "inputs", 
+          "outputs", 
+          "reasoning"
+        ], 
+        "title": "PlaceJobResult"
+      }, 
+      "ReprocessBatchRequest": {
+        "properties": {
+          "failed_only": {
+            "type": "boolean", 
+            "title": "Failed Only", 
+            "description": "When true, only reprocess jobs with 'failed' status. When false, reprocess all jobs in the batch.", 
+            "default": true
+          }, 
+          "incomplete_only": {
+            "type": "boolean", 
+            "title": "Incomplete Only", 
+            "description": "When true, only reprocess jobs with 'pending', 'queued' or 'in_progress' status. When false, reprocess all jobs in the batch (unless failed_only is true).", 
+            "default": false
+          }, 
+          "refresh": {
+            "type": "boolean", 
+            "title": "Refresh", 
+            "description": "When true, force fresh enrichment ignoring cached data.", 
+            "default": false
+          }, 
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attributes", 
+            "description": "List of specific attributes to enrich (e.g. 'websites', 'phoneNumbers'). If provided, overrides attribute_set."
+          }, 
+          "attribute_set": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attribute Set", 
+            "description": "Predefined group of attributes to enrich: 'core', 'all', or 'open_closed'"
+          }, 
+          "use_mega_agent": {
+            "type": "boolean", 
+            "title": "Use Mega Agent", 
+            "description": "When true, use the mega agent for core attribute enrichment. Only works with core attributes.", 
+            "default": false
+          }, 
+          "mega_agent_model": {
+            "type": "string", 
+            "title": "Mega Agent Model", 
+            "description": "Model to use for mega agent processing. Defaults to gpt-4.1.", 
+            "default": "gpt-4.1"
+          }, 
+          "enable_eval": {
+            "type": "boolean", 
+            "title": "Enable Eval", 
+            "description": "When true, enable evaluation mode with full LangSmith tracing (sampling rate = 1.0)", 
+            "default": false
+          }, 
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Eval Id", 
+            "description": "Optional evaluation session ID for tracking evaluation batches"
+          }, 
+          "use_turbo": {
+            "type": "boolean", 
+            "title": "Use Turbo", 
+            "description": "When true, use the turbo queue for faster processing, bypassing normal queue limits", 
+            "default": false
+          }
+        }, 
+        "type": "object", 
+        "title": "ReprocessBatchRequest"
+      }, 
+      "ReprocessJobRequest": {
+        "properties": {
+          "place_ids": {
+            "items": {
+              "type": "string"
+            }, 
+            "type": "array", 
+            "title": "Place Ids"
+          }, 
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                }, 
+                "type": "array"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attributes"
+          }, 
+          "attribute_set": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Attribute Set"
+          }, 
+          "refresh": {
+            "type": "boolean", 
+            "title": "Refresh", 
+            "default": false
+          }, 
+          "send_pusher_updates": {
+            "type": "boolean", 
+            "title": "Send Pusher Updates", 
+            "default": false
+          }, 
+          "enable_eval": {
+            "type": "boolean", 
+            "title": "Enable Eval", 
+            "description": "When true, enable evaluation mode with full LangSmith tracing (sampling rate = 1.0)", 
+            "default": false
+          }, 
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Eval Id", 
+            "description": "Optional evaluation session ID for tracking evaluation batches"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "place_ids"
+        ], 
+        "title": "ReprocessJobRequest"
+      }, 
+      "StorefrontImage": {
+        "properties": {
+          "url": {
+            "type": "string", 
+            "title": "Url"
+          }, 
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              }, 
+              {
+                "type": "null"
+              }
+            ], 
+            "title": "Title"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "url"
+        ], 
+        "title": "StorefrontImage"
+      }, 
+      "SubmittedPlaceBatchResponse": {
+        "properties": {
+          "id": {
+            "type": "string", 
+            "title": "Id", 
+            "description": "Unique identifier for tracking the batch", 
+            "example": "batch_2024_03_15_123456"
+          }, 
+          "batch_name": {
+            "type": "string", 
+            "title": "Batch Name", 
+            "description": "User-provided name to identify the batch", 
+            "example": "NYC Restaurants March 2024"
+          }, 
+          "status": {
+            "$ref": "#/components/schemas/BatchJobStatus", 
+            "description": "Current processing status of the batch. Initially PENDING, changes to IN_PROGRESS when processing starts", 
+            "default": "pending", 
+            "example": "pending"
+          }, 
+          "jobs": {
+            "type": "object"
+          }, 
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ], 
+            "description": "Batch statistics and metadata. Basic stats available to all organizations, detailed stats only for Reprompt."
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "id", 
+          "batch_name", 
+          "jobs"
+        ], 
+        "title": "SubmittedPlaceBatchResponse", 
+        "description": "Represents the response when submitting a new batch of places for enrichment", 
+        "example": {
+          "batch_name": "NYC Restaurants March 2024", 
+          "id": "batch_2024_03_15_123456", 
+          "jobs": {
+            "completed": [], 
+            "failed": [], 
+            "in_progress": [], 
+            "pending": [
+              "place_nyc_123", 
+              "place_nyc_456", 
+              "place_nyc_789"
+            ]
+          }, 
+          "status": "pending"
+        }
+      }, 
+      "UniversalPlace": {
+        "properties": {
+          "type": {
+            "aliases": [
+              "types", 
+              "category", 
+              "categories"
+            ]
+          }
+        }, 
+        "additionalProperties": true, 
+        "type": "object", 
+        "required": [
+          "name"
+        ], 
+        "title": "UniversalPlace"
+      }, 
+      "UpdateBatchRequest": {
+        "properties": {
+          "batch_name": {
+            "type": "string", 
+            "title": "Batch Name", 
+            "description": "New name for the batch"
+          }
+        }, 
+        "type": "object", 
+        "required": [
+          "batch_name"
+        ], 
+        "title": "UpdateBatchRequest"
+      }
+    }, 
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http", 
+        "scheme": "bearer"
+      }
+    }
+  }, 
+  "servers": [
+    {
+      "url": "https://reprompt--reprompt-fastapi-fastapi-app-dev.us-west.modal.run/v1/grab", 
+      "description": "Grab API server"
+    }
+  ]
+}
