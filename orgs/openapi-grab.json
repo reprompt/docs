@@ -1128,7 +1128,7 @@
           "attributes"
         ], 
         "summary": "Create a new AI attribute with a default schema", 
-        "operationId": "create_ai_attribute_with_defaults_endpoint__org_slug__place_enrichment_custom_attributes_post", 
+        "operationId": "create_ai_attribute_with_defaults_endpoint__org_slug__place_enrichment_custom_attributes_postaaa", 
         "security": [
           {
             "HTTPBearer": []
