@@ -28,7 +28,7 @@
           },
           {
             "group": "Table22 API Reference",
-            "openapi": "orgs/openapi-table22.json"
+            "openapi": "openapi-table22.json"
           }
         ]
       }

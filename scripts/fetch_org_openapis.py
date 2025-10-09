@@ -111,7 +111,7 @@ async def main():
             
             try:
                 with open(output_file, 'w') as f:
-                    json.dump(openapi_data, f, indent=2)
+                    json.dump(openapi_data, f, indent=2, separators=(', ', ': '), ensure_ascii=False)
                 success_count += 1
             except IOError as e:
                 print(f"❌ Error writing {output_file}: {e}")

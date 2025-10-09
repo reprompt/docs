@@ -59,7 +59,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
-              "org:table22"
+
             ]
           }
         }
@@ -2276,7 +2276,7 @@
   },
   "servers": [
     {
-      "url": "/v1/table22",
+      "url": "/v1",
       "description": "Table22 API server"
     }
   ]
