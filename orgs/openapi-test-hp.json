@@ -59,6 +59,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -201,6 +202,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -314,6 +316,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -374,6 +377,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -430,6 +434,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -497,6 +502,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -598,6 +604,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -683,6 +690,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -801,6 +809,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -861,6 +870,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -917,6 +927,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -1044,6 +1055,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -1103,6 +1115,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
@@ -1164,6 +1177,7 @@
         "x-mint": {
           "metadata": {
             "groups": [
+              "admin", 
               "org:test-hp"
             ]
           }
