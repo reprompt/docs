@@ -7,7 +7,7 @@
   }, 
   "servers": [
     {
-      "url": "/v2", 
+      "url": "https://reprompt--reprompt-fastapi-fastapi-app-dev.us-west.modal.run/v2", 
       "description": "V2 API server"
     }
   ],
