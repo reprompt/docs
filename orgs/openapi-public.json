@@ -1,9 +1,4 @@
 {
-  "servers": [
-    {
-      "url": "https://api.repromptai.com/v1"
-    }
-  ],
   "openapi": "3.1.0",
   "info": {
     "title": "Place Enrichment API",
@@ -2173,7 +2168,7 @@
               }
             ],
             "title": "Km",
-            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta‑Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
+            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta\u2011Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
           },
           "house": {
             "anyOf": [
@@ -8952,7 +8947,7 @@
               }
             ],
             "title": "Km",
-            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta‑Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
+            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta\u2011Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
           },
           "house": {
             "anyOf": [
@@ -9307,7 +9302,7 @@
             "type": "string",
             "title": "Country",
             "description": "Country name",
-            "default": "日本"
+            "default": "\u65e5\u672c"
           },
           "country_code": {
             "type": "string",
@@ -9318,29 +9313,29 @@
           },
           "postal_code": {
             "type": "string",
-            "pattern": "^(?:〒)?(?:\\d{3}-\\d{4}|\\d{7})$",
+            "pattern": "^(?:\u3012)?(?:\\d{3}-\\d{4}|\\d{7})$",
             "title": "Postal Code",
-            "description": "7-digit postal code in the format '〒123-4567', '123-4567' or '1234567'"
+            "description": "7-digit postal code in the format '\u3012123-4567', '123-4567' or '1234567'"
           },
           "prefecture": {
             "type": "string",
             "title": "Prefecture",
-            "description": "Prefecture name, e.g., 熊本県 (Kumamoto Prefecture)"
+            "description": "Prefecture name, e.g., \u718a\u672c\u770c (Kumamoto Prefecture)"
           },
           "municipality": {
             "type": "string",
             "title": "Municipality",
-            "description": "City, ward, town, or district name, e.g., 阿蘇市 (Aso City)"
+            "description": "City, ward, town, or district name, e.g., \u963f\u8607\u5e02 (Aso City)"
           },
           "town_area": {
             "type": "string",
             "title": "Town Area",
-            "description": "Town or area within the municipality, e.g., 内牧 (Uchimaki)"
+            "description": "Town or area within the municipality, e.g., \u5185\u7267 (Uchimaki)"
           },
           "street_address": {
             "type": "string",
             "title": "Street Address",
-            "description": "Street address including block and house number, e.g., ２５２−６"
+            "description": "Street address including block and house number, e.g., \uff12\uff15\uff12\u2212\uff16"
           }
         },
         "type": "object",
@@ -9354,12 +9349,12 @@
         "title": "JapaneseAddress",
         "description": "Schema for Japanese addresses. It covers common components like postal codes, prefectures, municipalities, and detailed address parts.",
         "example": {
-          "country": "日本",
-          "municipality": "阿蘇市",
+          "country": "\u65e5\u672c",
+          "municipality": "\u963f\u8607\u5e02",
           "postal_code": "869-2301",
-          "prefecture": "熊本県",
-          "street_address": "２５２−６",
-          "town_area": "内牧"
+          "prefecture": "\u718a\u672c\u770c",
+          "street_address": "\uff12\uff15\uff12\u2212\uff16",
+          "town_area": "\u5185\u7267"
         }
       },
       "JobConfidenceScores": {
@@ -12683,7 +12678,7 @@
               }
             ],
             "title": "Km",
-            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta‑Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
+            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta\u2011Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
           },
           "house": {
             "anyOf": [

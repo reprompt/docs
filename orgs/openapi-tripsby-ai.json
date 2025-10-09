@@ -1,0 +1,2283 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tripsby-Ai Place Enrichment API",
+    "description": "\n## Batch Processing Guide\n\nThe `/place_enrichment/batches` endpoint allows you to submit multiple places in a single batch for attribute enrichment. \nThe batch will be processed asynchronously, and you can track its status using the returned batch ID.\n\n\n#### Typical workflow:\n1. Prepare your batch payload with:\n   - A unique batch name for identification\n   - List of places with their IDs and input data\n   - Optional attribute set specification\n2. Submit the batch using the POST `/place_enrichment/batches` endpoint\n3. Use the returned batch ID to:\n   - Check batch status at GET `/place_enrichment/batches/{batch_id}`\n   - Retrieve results at GET `/place_enrichment/jobs?batchId={batch_id}`\n\n\n#### Submitting a Batch:\n\nUse POST `/place_enrichment/batches` to submit a batch.\n\n**Example Batch Payload:**\n```json\n{\n    \"batch_name\": \"NYC Restaurants March 2024\",\n    \"attribute_set\": \"core\", \n    \"jobs\": [\n        {\n            \"place_id\": \"place_nyc_123\",\n            \"inputs\": {\n                \"name\": \"Joe's Pizza\",\n                \"latitude\": 40.7359,\n                \"longitude\": -73.9911,\n                \"full_address\": \"7 Carmine St, New York, NY 10014\",\n                \"street\": \"Carmine St\",\n                \"city\": \"New York\",\n                \"state\": \"NY\",\n                \"postalCode\": \"10014\",\n                \"house\": \"7\",\n                \"country\": \"United States\",\n                \"country_code\": \"US\",\n                \"type\": \"restaurant\",\n                \"website\": \"http://www.joespizzanyc.com\",\n                \"phone\": \"+12122555803\"\n            }\n        }\n    ]\n}\n```\n**Place Input Parameters:**\nFor more details on the place input parameters, see the ```UniversalPlace``` schema in the schemas section below.\n\n**Attribute Sets:**\n\nThe `attribute_set` parameter in your request determines which attributes will be enriched. Available options:\n\n| Value | Description |\n|-------|-------------|\n| core | Default. Includes essential business attributes like website, phone, social media profiles, and basic operating status. Best for general business information. |\n| all | Comprehensive enrichment including all core attributes plus additional data like price tier, cuisine types, amenities, and detailed business analysis. Takes longer but provides the most complete data. |\n| open_closed | Focused enrichment that only checks if the business is permanently closed. Fastest option when you only need operating status. |\n\n#### Tracking Batch Status:\n\nUse GET `/place_enrichment/batches/{batch_id}` to monitor the progress of your batch. The response includes:\n\n```json\n{\n    \"id\": \"batch_2024_03_15_123456\",\n    \"batch_name\": \"NYC Restaurants March 2024\",\n    \"status\": \"in_progress\",\n    \"jobs\": {\n        \"pending\": [\"place_id_2\", \"place_id_3\"],\n        \"in_progress\": [\"place_id_1\"],\n        \"completed\": [\"place_id_4\", \"place_id_5\"],\n        \"failed\": []\n    },\n    \"created_at\": \"2024-03-15T10:30:00Z\",\n    \"updated_at\": \"2024-03-15T10:35:00Z\"\n}\n```\n\nThe status field will be one of:\n- `pending`: Batch is queued but not yet started\n- `in_progress`: Batch is currently being processed\n- `completed`: All jobs in the batch are finished\n- `failed`: Batch encountered critical errors\n\n#### Retrieving Job Results:\n\nOnce jobs are completed, use GET `/place_enrichment/jobs?batchId={batch_id}` to get the enrichment results. The response includes:\n\n```json\n{\n    \"jobs\": [\n        {\n            \"place_id\": \"place_nyc_123\",\n            \"status\": \"completed\",\n            \"outputs\": {\n                \"website\": \"https://www.joespizzanyc.com\",\n                \"phone\": \"+12122555803\",\n                \"social_profiles\": {\n                    \"instagram\": \"joespizzanyc\",\n                    \"facebook\": \"joespizzanyc\"\n                },\n                \"is_permanently_closed\": False,\n                \"price_tier\": \"$$\",\n                \"last_enriched\": \"2024-03-15T10:35:00Z\"\n            },\n            \"job_metadata\": {\n                \"created_at\": \"2024-03-15T10:30:00Z\",\n                \"completed_at\": \"2024-03-15T10:35:00Z\",\n                \"processing_time_seconds\": 300\n            }\n        }\n    ],\n    \"total_count\": 1,\n    \"completed_count\": 1\n}\n```\n\nEach job result includes:\n- Original place ID for tracking\n- Enrichment outputs based on the requested attribute set\n- Job metadata including timing information\n- Processing status and any error details if failed\n\n**Attribute Statuses:**\n\nAttributes like name, address, phone number, and website include an `attribute_status` field indicating the verification state:\n\n| Status | Description |\n|--------|-------------|\n| NOT_RUN | The attribute was not processed |\n| RUN_CONDITION_FAILED | The attribute was processed but failed the run condition |\n| RUN | The attribute was processed |\n| ERROR | The attribute processing failed |\n\nExample response with attribute statuses:\n```json\n{\n    \"outputs\": {\n        \"website\": \"https://www.joespizzanyc.com\",\n        \"phone\": \"+12122555803\"\n    },\n    \"job_metadata\": {\n        \"attribute_status\": {\n            \"website\": \"RUN\",\n            \"phone\": \"RUN\",\n            \"address\": \"RUN\",\n            \"name\": \"RUN\"\n        }\n    }\n}\n```\n",
+    "version": "1.0"
+  },
+  "paths": {
+    "/place_enrichment/jobs/reprocess": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Reprocess Jobs",
+        "operationId": "reprocess_jobs__org_slug__place_enrichment_jobs_reprocess_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprocessJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/batches": {
+      "post": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Submit Batch",
+        "description": "Submit a batch of places for enrichment processing\n\nThe batch_id field is optional. If not provided, a new UUID will be generated.\nIf an existing batch ID is provided, the new jobs will be added to that batch,\nand any existing jobs with the same place_id will be updated.\n\n**Prefilled Data Feature:**\n\nYou can include prefilled attribute data using the `prefilled_data` field in each job.\nThis allows you to insert known attribute values directly into the database without\nrequiring AI enrichment. This feature is only available when `kick_off_jobs_now` is False.\n\nSupported prefilled attributes:\n- `phoneNumbers`: Phone number information\n- `websites`: Website URL and validation data  \n- `closed_permanently`: Business closure status\n- `openingHours`: Operating hours information\n- `categories`: Business categories\n- Custom attributes: Any custom attribute key\n\nExample prefilled data formats:\n```json\n{\n    \"phoneNumbers\": \"+12122555803\",  // Simple string format\n    // OR complex format:\n    \"phoneNumbers\": {\n        \"phone_number\": \"+12122555803\",\n        \"additional_numbers\": [\n            {\"phone_type\": \"whatsapp\", \"phone_number\": \"+12122555804\"}\n        ],\n        \"reasoning\": \"Found on official website\",\n        \"confidence\": \"HIGH\"\n    },\n    \"websites\": \"https://example.com\",  // Simple string format\n    // OR complex format:\n    \"websites\": {\n        \"url\": \"https://example.com\",\n        \"has_website\": true,\n        \"reasoning\": \"Official business website\",\n        \"confidence\": \"NAP\"\n    },\n    \"closed_permanently\": false,  // Simple boolean format\n    // OR complex format:\n    \"closed_permanently\": {\n        \"is_permanently_closed\": false,\n        \"reasoning\": \"Business is currently operating\",\n        \"confidence\": \"HIGH\"\n    }\n}\n```",
+        "operationId": "submit_batch__org_slug__place_enrichment_batches_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceBatchPayload"
+              },
+              "examples": {
+                "basic_batch": {
+                  "summary": "Basic batch without prefilled data",
+                  "value": {
+                    "batch_id": "d98e206f-ff1d-4b5a-b0d8-18fff0757fef",
+                    "batch_name": "NYC Restaurants March 2024",
+                    "jobs": [
+                      {
+                        "place_id": "place_nyc_123",
+                        "inputs": {
+                          "name": "Joe's Pizza",
+                          "latitude": 40.7359,
+                          "longitude": -73.9911,
+                          "full_address": "7 Carmine St, New York, NY 10014"
+                        }
+                      }
+                    ],
+                    "attribute_set": "core",
+                    "kick_off_jobs_now": true
+                  }
+                },
+                "prefilled_batch": {
+                  "summary": "Batch with prefilled attribute data",
+                  "value": {
+                    "batch_id": "d98e206f-ff1d-4b5a-b0d8-18fff0757fef",
+                    "batch_name": "NYC Restaurants with Prefilled Data",
+                    "jobs": [
+                      {
+                        "place_id": "place_nyc_123",
+                        "inputs": {
+                          "name": "Joe's Pizza",
+                          "latitude": 40.7359,
+                          "longitude": -73.9911,
+                          "full_address": "7 Carmine St, New York, NY 10014"
+                        },
+                        "prefilled_data": {
+                          "phoneNumbers": {
+                            "phone_number": "+12122555803",
+                            "reasoning": "Phone number from business listing",
+                            "confidence": "HIGH"
+                          },
+                          "websites": {
+                            "url": "https://www.joespizzanyc.com",
+                            "has_website": true,
+                            "reasoning": "Official website found",
+                            "confidence": "NAP"
+                          },
+                          "closed_permanently": {
+                            "is_permanently_closed": false,
+                            "reasoning": "Business is currently operating",
+                            "confidence": "HIGH"
+                          }
+                        }
+                      }
+                    ],
+                    "attribute_set": "core",
+                    "kick_off_jobs_now": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully submitted batch for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedPlaceBatchResponse"
+                },
+                "example": {
+                  "id": "batch_2024_03_15_123456",
+                  "batch_name": "NYC Restaurants March 2024",
+                  "status": "pending",
+                  "jobs": {
+                    "pending": [
+                      "place_nyc_123",
+                      "place_nyc_456"
+                    ],
+                    "in_progress": [],
+                    "completed": [],
+                    "failed": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Batch size exceeds maximum limit of 50,000 records or invalid input format"
+          },
+          "401": {
+            "description": "Invalid API credentials"
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "List All Batches Endpoint",
+        "description": "Retrieve batches for an organization with pagination and optional search by name.\n\nReturns a paginated list of batch jobs with their metadata including batch ID, \ncreation timestamp, and job counts. If 'query' is provided, only batches whose name matches (case-insensitive, substring) will be returned.",
+        "operationId": "list_all_batches_endpoint__org_slug__place_enrichment_batches_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Number of batches to return per page",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "Number of batches to return per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of batches to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of batches to skip"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional search string to filter batches by name (case-insensitive)",
+              "title": "Query"
+            },
+            "description": "Optional search string to filter batches by name (case-insensitive)"
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all batches for the organization with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedBatchesResponse"
+                },
+                "example": {
+                  "batches": [
+                    {
+                      "id": "batch_2025_03_10_123456",
+                      "name": "NYC Restaurants March 2025",
+                      "created_at": "2025-03-10T15:30:00Z",
+                      "organization_id": "org-abc123",
+                      "job_count": 150,
+                      "completed_count": 142,
+                      "failed_count": 3,
+                      "pending_count": 0,
+                      "in_progress_count": 5
+                    }
+                  ],
+                  "total": 42,
+                  "limit": 10,
+                  "offset": 0
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/batches/{batch_id}": {
+      "get": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Get Batch Status Endpoint",
+        "operationId": "get_batch_status_endpoint__org_slug__place_enrichment_batches__batch_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmittedPlaceBatchResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Delete Batch Endpoint",
+        "operationId": "delete_batch_endpoint__org_slug__place_enrichment_batches__batch_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Update Batch Endpoint",
+        "description": "Update batch properties like name.",
+        "operationId": "update_batch_endpoint__org_slug__place_enrichment_batches__batch_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/jobs": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Submit Job",
+        "description": "Submit a place for asynchronous enrichment processing.",
+        "operationId": "submit_job__org_slug__place_enrichment_jobs_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceJob"
+              },
+              "example": {
+                "place_id": "place_nyc_123",
+                "inputs": {
+                  "name": "Joe's Pizza",
+                  "latitude": 40.7359,
+                  "longitude": -73.9911,
+                  "full_address": "7 Carmine St, New York, NY 10014"
+                },
+                "attribute_set": "core",
+                "attributes": [
+                  "menu",
+                  "owner_info"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Submit Job  Org Slug  Place Enrichment Jobs Post"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Job successfully submitted for processing",
+            "content": {
+              "application/json": {
+                "example": {
+                  "place_id": "place_nyc_123",
+                  "inputs": {
+                    "name": "Joe's Pizza",
+                    "latitude": 40.7359,
+                    "longitude": -73.9911,
+                    "full_address": "7 Carmine St, New York, NY 10014"
+                  },
+                  "status": "pending"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input format"
+          },
+          "401": {
+            "description": "Invalid API credentials"
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Retrieve Jobs Endpoint",
+        "operationId": "retrieve_jobs_endpoint__org_slug__place_enrichment_jobs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Batchid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10000,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/enrich": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Submit Enrichment",
+        "operationId": "submit_enrichment__org_slug__place_enrichment_enrich_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceJob"
+              },
+              "example": {
+                "place_id": "place_nyc_123",
+                "inputs": {
+                  "name": "Joe's Pizza",
+                  "latitude": 40.7359,
+                  "longitude": -73.9911,
+                  "full_address": "7 Carmine St, New York, NY 10014"
+                },
+                "attribute_set": "core",
+                "attributes": [
+                  "websites",
+                  "categories",
+                  "closed_permanently"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully enriched place data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceJobResult"
+                },
+                "example": {
+                  "place_id": "place_nyc_123",
+                  "status": "completed",
+                  "inputs": {
+                    "name": "Joe's Pizza",
+                    "latitude": 40.7359,
+                    "longitude": -73.9911,
+                    "full_address": "7 Carmine St, New York, NY 10014"
+                  },
+                  "outputs": {
+                    "website": "https://www.joespizzanyc.com",
+                    "phone": "+12122555803",
+                    "social_profiles": {
+                      "instagram": "joespizzanyc",
+                      "facebook": "joespizzanyc"
+                    },
+                    "is_permanently_closed": false,
+                    "price_tier": "$$",
+                    "last_enriched": "2024-03-15T10:35:00Z"
+                  },
+                  "job_metadata": {
+                    "last_enriched": "2024-03-15T10:35:00Z",
+                    "attribute_status": {
+                      "website": "RUN",
+                      "phone": "RUN",
+                      "address": "RUN",
+                      "name": "RUN"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input format"
+          },
+          "401": {
+            "description": "Invalid API credentials"
+          },
+          "404": {
+            "description": "Enrichment failed or not found"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/jobs/{place_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job By Id",
+        "operationId": "get_job_by_id__org_slug__place_enrichment_jobs__place_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Place Id"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceJobResult"
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Delete Job Endpoint",
+        "operationId": "delete_job_endpoint__org_slug__place_enrichment_jobs__place_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Place Id"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/batches/{batch_id}/reprocess": {
+      "post": {
+        "tags": [
+          "batches"
+        ],
+        "summary": "Reprocess Batch Endpoint",
+        "operationId": "reprocess_batch_endpoint__org_slug__place_enrichment_batches__batch_id__reprocess_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprocessBatchRequest",
+                "properties": {
+                  "failed_only": {
+                    "type": "boolean",
+                    "description": "When true, only reprocess jobs with 'failed' status. When false, reprocess all jobs in the batch.",
+                    "default": true
+                  },
+                  "incomplete_only": {
+                    "type": "boolean",
+                    "description": "When true, only reprocess jobs with 'pending' or 'in_progress' status. When false, reprocess all jobs in the batch (unless failed_only is true).",
+                    "default": false
+                  },
+                  "refresh": {
+                    "type": "boolean",
+                    "description": "When true, force fresh enrichment ignoring cached data.",
+                    "default": false
+                  },
+                  "attributes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of specific attributes to enrich (e.g. 'websites', 'phoneNumbers'). If provided, overrides attribute_set."
+                  },
+                  "attribute_set": {
+                    "type": "string",
+                    "description": "Predefined group of attributes to enrich: 'core', 'all', or 'open_closed'",
+                    "enum": [
+                      "core",
+                      "all",
+                      "open_closed"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "failed_only": true,
+                "incomplete_only": false,
+                "refresh": false,
+                "attributes": [
+                  "website",
+                  "phone",
+                  "categories"
+                ],
+                "attribute_set": "core"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully initiated batch reprocessing",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "status": "success",
+                  "message": "Started reprocessing 42 FAILED jobs from batch batch_2024_04_01_123456",
+                  "job_count": 42,
+                  "batch_id": "batch_2024_04_01_123456"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Batch not found"
+          },
+          "400": {
+            "description": "No jobs found in batch"
+          },
+          "401": {
+            "description": "Invalid API credentials"
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/attributes": {
+      "get": {
+        "tags": [
+          "attributes"
+        ],
+        "summary": "Get Enrichment Attributes",
+        "description": "Get metadata for all available enrichment attributes",
+        "operationId": "get_enrichment_attributes__org_slug__place_enrichment_attributes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "title": "Response Get Enrichment Attributes  Org Slug  Place Enrichment Attributes Get"
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    },
+    "/place_enrichment/custom_attributes": {
+      "post": {
+        "tags": [
+          "attributes"
+        ],
+        "summary": "Create a new AI attribute with a default schema",
+        "operationId": "create_ai_attribute_with_defaults_endpoint__org_slug__place_enrichment_custom_attributes_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Apikey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMinimalAIAttributeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomAttributeResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-mint": {
+          "metadata": {
+            "groups": [
+              "org:tripsby-ai"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddressDetails": {
+        "properties": {
+          "full_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Address",
+            "description": "Full formatted address string"
+          },
+          "unit_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Number",
+            "description": "An apartment, unit, office, lot, or other secondary unit designator"
+          },
+          "floor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floor",
+            "description": "Expressions indicating a floor number e.g. '3rd Floor', 'Ground Floor', etc."
+          },
+          "building": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Building",
+            "description": "Building name e.g. 'Sun Hung Kai Centre', 'The Center', 'Empire State Building'"
+          },
+          "block": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block",
+            "description": "Block number, used in Singapore (SG) e.g., 'Block 329', Malaysia (MY) e.g., 'Blok A', and Indonesia (ID) e.g., 'Blok G5 No. 17'"
+          },
+          "km": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Km",
+            "description": "Kilometer marker, commonly used in Malaysia (MY) e.g., 'KM 12, Jalan Cheras' and Indonesia (ID) e.g., 'KM 53, Jl. Tol Jakarta\u2011Cikampek'. Rarely used in Singapore. Should be parsed as a number (e.g., 'KM 75' should be parsed as '75')."
+          },
+          "house": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "House"
+          },
+          "street": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street"
+          },
+          "suburb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suburb"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "postalCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postalcode"
+          }
+        },
+        "type": "object",
+        "title": "AddressDetails"
+      },
+      "AttributeSet": {
+        "type": "string",
+        "enum": [
+          "open_closed",
+          "core",
+          "all"
+        ],
+        "title": "AttributeSet",
+        "description": "Defines the set of attributes to enrich for a place."
+      },
+      "AttributeStatusEnum": {
+        "type": "string",
+        "enum": [
+          "NOT FOUND",
+          "ADDED",
+          "VERIFIED",
+          "CORRECTED",
+          "NOT VERIFIED",
+          "NOT ENRICHED",
+          "RUN",
+          "RUN_CONDITION_FAILED",
+          "ERROR",
+          "NOT_RUN"
+        ],
+        "title": "AttributeStatusEnum"
+      },
+      "BatchJob": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "batch_name": {
+            "type": "string",
+            "title": "Batch Name"
+          },
+          "status_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Status Counts"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BatchJobStatus"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "batch_name",
+          "status_counts",
+          "created_at",
+          "status"
+        ],
+        "title": "BatchJob"
+      },
+      "BatchJobStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "queued",
+          "in_progress",
+          "completed",
+          "failed"
+        ],
+        "title": "BatchJobStatus"
+      },
+      "ConfidenceScore": {
+        "type": "string",
+        "enum": [
+          "VERY_HIGH",
+          "HIGH",
+          "MEDIUM",
+          "LOW",
+          "NONE"
+        ],
+        "title": "ConfidenceScore"
+      },
+      "CreateMinimalAIAttributeRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Name for the new AI attribute"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Optional description for the attribute"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateMinimalAIAttributeRequest"
+      },
+      "CustomAttributeResponse": {
+        "properties": {
+          "attribute_key": {
+            "type": "string",
+            "title": "Attribute Key"
+          },
+          "data": {
+            "type": "object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attribute_key",
+          "data"
+        ],
+        "title": "CustomAttributeResponse",
+        "description": "Response model for custom attribute creation"
+      },
+      "JobConfidenceScores": {
+        "properties": {
+          "open_closed_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Confidence score for the open/closed status of a place. VERY_HIGH (95% accuracy) indicates extremely reliable open/closed status. HIGH (90% accuracy) indicates very reliable status. MEDIUM (80% accuracy) indicates reasonably reliable status. LOW (70% accuracy) indicates limited online evidence but likely correct status.NONE indicates insufficient evidence to determine status. This happens when a place has no internet presence at all."
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "website": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "opening_hours": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parking_spaces": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parking_spaces_total": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parking_spaces_street": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parking_spaces_shared": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parking_spaces_dedicated": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "chain": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tiktok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "price_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approximate_user_reviews": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "menu": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "school_geofence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfidenceScore"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Confidence score for school geofence data. HIGH indicates OSM-based geofence with reliable school boundary data. MEDIUM indicates parcel-based geofence using property data analysis. NONE indicates no data"
+          }
+        },
+        "type": "object",
+        "title": "JobConfidenceScores"
+      },
+      "JobListResponse": {
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceJobResult"
+            },
+            "type": "array",
+            "title": "Jobs"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of jobs available"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Number of jobs per page"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "description": "Starting position of the current page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobs",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "JobListResponse"
+      },
+      "JobMetadata": {
+        "properties": {
+          "last_enriched": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Enriched",
+            "description": "Timestamp of the last enrichment"
+          },
+          "enrichment_metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrichment Metadata"
+          },
+          "attribute_status": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AttributeStatusEnum"
+            },
+            "type": "object",
+            "title": "Attribute Status"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attribute_status"
+        ],
+        "title": "JobMetadata"
+      },
+      "PaginatedBatchesResponse": {
+        "properties": {
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/BatchJob"
+            },
+            "type": "array",
+            "title": "Batches"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batches",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "PaginatedBatchesResponse"
+      },
+      "PlaceBatchPayload": {
+        "properties": {
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id",
+            "description": "Optional unique identifier for the batch. If not provided, a new UUID will be generated. If an existing batch ID is provided, new jobs will be added to that batch."
+          },
+          "batch_name": {
+            "type": "string",
+            "title": "Batch Name",
+            "description": "The name of the batch. Only for display purposes. Recommended to use a descriptive human readable name."
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceJob"
+            },
+            "type": "array",
+            "title": "Jobs",
+            "description": "List of jobs to process. Maximum of 50,000 jobs per batch."
+          },
+          "attribute_set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttributeSet"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Specifies the set of attributes to enrich."
+          },
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributes",
+            "description": "Specifies the list of attributes to enrich. If this is specified it will override the attribute_set. You cannot specify both."
+          },
+          "kick_off_jobs_now": {
+            "type": "boolean",
+            "title": "Kick Off Jobs Now",
+            "description": "Flag to determine if jobs should be kicked off immediately. Only for internal use.",
+            "default": true
+          },
+          "eval": {
+            "type": "boolean",
+            "title": "Eval",
+            "description": "When true, enables evaluation mode with 100% LangSmith tracing sampling rate.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_name",
+          "jobs"
+        ],
+        "title": "PlaceBatchPayload"
+      },
+      "PlaceJob": {
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "title": "Place Id",
+            "description": "The customer-identifier for the place and retained as external_customer_id in the database. When not set, will automatically generate a UUID."
+          },
+          "inputs": {
+            "$ref": "#/components/schemas/UniversalPlace"
+          },
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributes",
+            "description": "List of specific attributes to enrich using enum values (e.g., email_address, phone_number). If both attribute_set and attributes are provided, attributes takes precedence."
+          },
+          "attribute_set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttributeSet"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Specifies the set of attributes to enrich"
+          },
+          "attributes_enrichments": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributes Enrichments"
+          },
+          "refresh": {
+            "type": "boolean",
+            "title": "Refresh",
+            "description": "If true, will force a refresh of the place even if it has already been enriched.",
+            "default": false
+          },
+          "eval": {
+            "type": "boolean",
+            "title": "Eval",
+            "description": "When true, enables evaluation mode with 100% LangSmith tracing sampling rate.",
+            "default": false
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id",
+            "description": "UUID identifier for evaluation session. All places in same batch share the same eval_id when enable_eval=True."
+          },
+          "prefilled_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prefilled Data",
+            "description": "Dictionary of prefilled attribute data to insert directly into the database. Keys should match attribute names (e.g., 'phoneNumbers', 'websites'). Data will be validated against the enrichment's response model schema."
+          }
+        },
+        "type": "object",
+        "required": [
+          "place_id",
+          "inputs"
+        ],
+        "title": "PlaceJob"
+      },
+      "PlaceJobResult": {
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "title": "Place Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "job_metadata": {
+            "$ref": "#/components/schemas/JobMetadata"
+          },
+          "inputs": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UniversalPlace"
+              }
+            ],
+            "title": "Inputs",
+            "discriminator": {
+              "propertyName": "input_type",
+              "mapping": {
+                "place": "#/components/schemas/UniversalPlace",
+                "query": "#/components/schemas/InputQuery"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object"
+          },
+          "reasoning": {
+            "type": "object"
+          },
+          "confidence_scores": {
+            "$ref": "#/components/schemas/JobConfidenceScores",
+            "description": "Confidence scores for various attributes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "place_id",
+          "status",
+          "job_metadata",
+          "inputs",
+          "outputs",
+          "reasoning"
+        ],
+        "title": "PlaceJobResult"
+      },
+      "ReprocessBatchRequest": {
+        "properties": {
+          "failed_only": {
+            "type": "boolean",
+            "title": "Failed Only",
+            "description": "When true, only reprocess jobs with 'failed' status. When false, reprocess all jobs in the batch.",
+            "default": true
+          },
+          "incomplete_only": {
+            "type": "boolean",
+            "title": "Incomplete Only",
+            "description": "When true, only reprocess jobs with 'pending', 'queued' or 'in_progress' status. When false, reprocess all jobs in the batch (unless failed_only is true).",
+            "default": false
+          },
+          "refresh": {
+            "type": "boolean",
+            "title": "Refresh",
+            "description": "When true, force fresh enrichment ignoring cached data.",
+            "default": false
+          },
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributes",
+            "description": "List of specific attributes to enrich (e.g. 'websites', 'phoneNumbers'). If provided, overrides attribute_set."
+          },
+          "attribute_set": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribute Set",
+            "description": "Predefined group of attributes to enrich: 'core', 'all', or 'open_closed'"
+          },
+          "use_mega_agent": {
+            "type": "boolean",
+            "title": "Use Mega Agent",
+            "description": "When true, use the mega agent for core attribute enrichment. Only works with core attributes.",
+            "default": false
+          },
+          "mega_agent_model": {
+            "type": "string",
+            "title": "Mega Agent Model",
+            "description": "Model to use for mega agent processing. Defaults to gpt-4.1.",
+            "default": "gpt-4.1"
+          },
+          "enable_eval": {
+            "type": "boolean",
+            "title": "Enable Eval",
+            "description": "When true, enable evaluation mode with full LangSmith tracing (sampling rate = 1.0)",
+            "default": false
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id",
+            "description": "Optional evaluation session ID for tracking evaluation batches"
+          },
+          "use_turbo": {
+            "type": "boolean",
+            "title": "Use Turbo",
+            "description": "When true, use the turbo queue for faster processing, bypassing normal queue limits",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ReprocessBatchRequest"
+      },
+      "ReprocessJobRequest": {
+        "properties": {
+          "place_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Place Ids"
+          },
+          "attributes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributes"
+          },
+          "attribute_set": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribute Set"
+          },
+          "refresh": {
+            "type": "boolean",
+            "title": "Refresh",
+            "default": false
+          },
+          "send_pusher_updates": {
+            "type": "boolean",
+            "title": "Send Pusher Updates",
+            "default": false
+          },
+          "enable_eval": {
+            "type": "boolean",
+            "title": "Enable Eval",
+            "description": "When true, enable evaluation mode with full LangSmith tracing (sampling rate = 1.0)",
+            "default": false
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id",
+            "description": "Optional evaluation session ID for tracking evaluation batches"
+          }
+        },
+        "type": "object",
+        "required": [
+          "place_ids"
+        ],
+        "title": "ReprocessJobRequest"
+      },
+      "StorefrontImage": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "StorefrontImage"
+      },
+      "SubmittedPlaceBatchResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for tracking the batch",
+            "example": "batch_2024_03_15_123456"
+          },
+          "batch_name": {
+            "type": "string",
+            "title": "Batch Name",
+            "description": "User-provided name to identify the batch",
+            "example": "NYC Restaurants March 2024"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BatchJobStatus",
+            "description": "Current processing status of the batch. Initially PENDING, changes to IN_PROGRESS when processing starts",
+            "default": "pending",
+            "example": "pending"
+          },
+          "jobs": {
+            "type": "object"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Batch statistics and metadata. Basic stats available to all organizations, detailed stats only for Reprompt."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "batch_name",
+          "jobs"
+        ],
+        "title": "SubmittedPlaceBatchResponse",
+        "description": "Represents the response when submitting a new batch of places for enrichment",
+        "example": {
+          "batch_name": "NYC Restaurants March 2024",
+          "id": "batch_2024_03_15_123456",
+          "jobs": {
+            "completed": [],
+            "failed": [],
+            "in_progress": [],
+            "pending": [
+              "place_nyc_123",
+              "place_nyc_456",
+              "place_nyc_789"
+            ]
+          },
+          "status": "pending"
+        }
+      },
+      "UniversalPlace": {
+        "properties": {
+          "type": {
+            "aliases": [
+              "types",
+              "category",
+              "categories"
+            ]
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "UniversalPlace"
+      },
+      "UpdateBatchRequest": {
+        "properties": {
+          "batch_name": {
+            "type": "string",
+            "title": "Batch Name",
+            "description": "New name for the batch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_name"
+        ],
+        "title": "UpdateBatchRequest"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/v1/tripsby-ai",
+      "description": "Tripsby-Ai API server"
+    }
+  ]
+}
