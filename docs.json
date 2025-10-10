@@ -12,14 +12,6 @@
       {
         "group": "Default",
         "pages": ["home"]
-      },
-      {
-        "group": "API Reference - PDL",
-        "openapi": "orgs/openapi-pdl.json"
-      },
-      {
-        "group": "API Reference - Grab",
-        "openapi": "orgs/openapi-grab.json"
       }
     ]
   }
