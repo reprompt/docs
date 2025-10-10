@@ -9,22 +9,43 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "versions": [
+    "tabs": [
       {
-        "version": "2.0.0",
-        "groups": [
+        "tab": "API Reference",
+        "icon": "square-terminal",
+        "versions": [
           {
-            "group": "V2 API Reference",
-            "openapi": "openapi-v2.json"
+            "version": "2.0.0",
+            "groups": [
+              {
+                "group": "V2 API Reference",
+                "openapi": "openapi-v2.json"
+              }
+            ]
+          },
+          {
+            "version": "1.0.0",
+            "groups": [
+              {
+                "group": "V1 API Reference",
+                "openapi": "openapi-v1.json"
+              }
+            ]
           }
         ]
       },
       {
-        "version": "1.0.0",
+        "tab": "Docs",
+        "icon": "book",
         "groups": [
           {
-            "group": "V1 API Reference",
-            "openapi": "openapi-v1.json"
+            "group": "Guides",
+            "icon": "file-text",
+            "pages": [
+              "guides/open-closed",
+              "guides/trip-category",
+              "guides/placematch"
+            ]
           }
         ]
       }
