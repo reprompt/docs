@@ -18,6 +18,15 @@
             "openapi": "openapi-v2.json"
           }
         ]
+      },
+      {
+        "version": "1.0.0",
+        "groups": [
+          {
+            "group": "V1 API Reference",
+            "openapi": "openapi-v1.json"
+          }
+        ]
       }
     ]
   },
