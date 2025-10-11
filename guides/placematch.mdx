@@ -1,5 +1,5 @@
 ---
-title: "PlaceMatching"
+title: "PlaceMatch"
 description: "This guide covers Reprompt's place matching API"
 ---
 
@@ -7,7 +7,7 @@ description: "This guide covers Reprompt's place matching API"
 
 Reprompt’s place matching conflates an input place against one or more sources (e.g., Reprompt, Overture, Foursquare, or your own data). The engine combines traditional similarity (name, location, category) with LLM verification to produce high-confidence matches.
 
-- Output format: GeoJSON `FeatureCollection`
+- Output format: GeoJSON `FeatureCollection` 
 - Each `Feature.properties` includes:
   - **`source`**: where the match came from
   - **`confidence_score`**: overall confidence (0–1)
