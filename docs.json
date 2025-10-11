@@ -19,7 +19,7 @@
             "groups": [
               {
                 "group": "V2 API Reference",
-                "openapi": "openapi-v2.json"
+                "openapi": "https://api.reprompt.io/v2/openapi.json"
               }
             ]
           },
