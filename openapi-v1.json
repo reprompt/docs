@@ -1,11 +1,319 @@
 {
    "openapi":"3.1.0",
    "info":{
-      "title":"Grab Place Enrichment API",
+      "title":"Reprompt Place Enrichment API",
       "description":"\n## Batch Processing Guide\n\nThe `/place_enrichment/batches` endpoint allows you to submit multiple places in a single batch for attribute enrichment. \nThe batch will be processed asynchronously, and you can track its status using the returned batch ID.\n\n\n#### Typical workflow:\n1. Prepare your batch payload with:\n   - A unique batch name for identification\n   - List of places with their IDs and input data\n   - Optional attribute set specification\n2. Submit the batch using the POST `/place_enrichment/batches` endpoint\n3. Use the returned batch ID to:\n   - Check batch status at GET `/place_enrichment/batches/{batch_id}`\n   - Retrieve results at GET `/place_enrichment/jobs?batchId={batch_id}`\n\n\n#### Submitting a Batch:\n\nUse POST `/place_enrichment/batches` to submit a batch.\n\n**Example Batch Payload:**\n```json\n{\n    \"batch_name\": \"NYC Restaurants March 2024\",\n    \"attribute_set\": \"core\", \n    \"jobs\": [\n        {\n            \"place_id\": \"place_nyc_123\",\n            \"inputs\": {\n                \"name\": \"Joe's Pizza\",\n                \"latitude\": 40.7359,\n                \"longitude\": -73.9911,\n                \"full_address\": \"7 Carmine St, New York, NY 10014\",\n                \"street\": \"Carmine St\",\n                \"city\": \"New York\",\n                \"state\": \"NY\",\n                \"postalCode\": \"10014\",\n                \"house\": \"7\",\n                \"country\": \"United States\",\n                \"country_code\": \"US\",\n                \"type\": \"restaurant\",\n                \"website\": \"http://www.joespizzanyc.com\",\n                \"phone\": \"+12122555803\"\n            }\n        }\n    ]\n}\n```\n**Place Input Parameters:**\nFor more details on the place input parameters, see the ```UniversalPlace``` schema in the schemas section below.\n\n**Attribute Sets:**\n\nThe `attribute_set` parameter in your request determines which attributes will be enriched. Available options:\n\n| Value | Description |\n|-------|-------------|\n| core | Default. Includes essential business attributes like website, phone, social media profiles, and basic operating status. Best for general business information. |\n| all | Comprehensive enrichment including all core attributes plus additional data like price tier, cuisine types, amenities, and detailed business analysis. Takes longer but provides the most complete data. |\n| open_closed | Focused enrichment that only checks if the business is permanently closed. Fastest option when you only need operating status. |\n\n#### Tracking Batch Status:\n\nUse GET `/place_enrichment/batches/{batch_id}` to monitor the progress of your batch. The response includes:\n\n```json\n{\n    \"id\": \"batch_2024_03_15_123456\",\n    \"batch_name\": \"NYC Restaurants March 2024\",\n    \"status\": \"in_progress\",\n    \"jobs\": {\n        \"pending\": [\"place_id_2\", \"place_id_3\"],\n        \"in_progress\": [\"place_id_1\"],\n        \"completed\": [\"place_id_4\", \"place_id_5\"],\n        \"failed\": []\n    },\n    \"created_at\": \"2024-03-15T10:30:00Z\",\n    \"updated_at\": \"2024-03-15T10:35:00Z\"\n}\n```\n\nThe status field will be one of:\n- `pending`: Batch is queued but not yet started\n- `in_progress`: Batch is currently being processed\n- `completed`: All jobs in the batch are finished\n- `failed`: Batch encountered critical errors\n\n#### Retrieving Job Results:\n\nOnce jobs are completed, use GET `/place_enrichment/jobs?batchId={batch_id}` to get the enrichment results. The response includes:\n\n```json\n{\n    \"jobs\": [\n        {\n            \"place_id\": \"place_nyc_123\",\n            \"status\": \"completed\",\n            \"outputs\": {\n                \"website\": \"https://www.joespizzanyc.com\",\n                \"phone\": \"+12122555803\",\n                \"social_profiles\": {\n                    \"instagram\": \"joespizzanyc\",\n                    \"facebook\": \"joespizzanyc\"\n                },\n                \"is_permanently_closed\": False,\n                \"price_tier\": \"$$\",\n                \"last_enriched\": \"2024-03-15T10:35:00Z\"\n            },\n            \"job_metadata\": {\n                \"created_at\": \"2024-03-15T10:30:00Z\",\n                \"completed_at\": \"2024-03-15T10:35:00Z\",\n                \"processing_time_seconds\": 300\n            }\n        }\n    ],\n    \"total_count\": 1,\n    \"completed_count\": 1\n}\n```\n\nEach job result includes:\n- Original place ID for tracking\n- Enrichment outputs based on the requested attribute set\n- Job metadata including timing information\n- Processing status and any error details if failed\n\n**Attribute Statuses:**\n\nAttributes like name, address, phone number, and website include an `attribute_status` field indicating the verification state:\n\n| Status | Description |\n|--------|-------------|\n| NOT_RUN | The attribute was not processed |\n| RUN_CONDITION_FAILED | The attribute was processed but failed the run condition |\n| RUN | The attribute was processed |\n| ERROR | The attribute processing failed |\n\nExample response with attribute statuses:\n```json\n{\n    \"outputs\": {\n        \"website\": \"https://www.joespizzanyc.com\",\n        \"phone\": \"+12122555803\"\n    },\n    \"job_metadata\": {\n        \"attribute_status\": {\n            \"website\": \"RUN\",\n            \"phone\": \"RUN\",\n            \"address\": \"RUN\",\n            \"name\": \"RUN\"\n        }\n    }\n}\n```\n",
       "version":"1.0"
    },
    "paths":{
+      "/placematch":{
+         "post":{
+            "tags":[
+               "Places",
+               "Places"
+            ],
+            "summary":"Placematch",
+            "description":"Match a place against multiple geospatial data sources using AI-powered conflation algorithms.\n\nGiven information about a place (address, name, coordinates) we will find the right place. This is also called entity resolution.\n\nReprompt supports multiple backends for matching against:\n- **Our own database** of places we picked up from crawling the web\n- **[Foursquare OS Places](https://opensource.foursquare.com/os-places/)** - amazing open data project with 100M+ global POIs (Apache 2.0 license)\n- **[Overture Places](https://overturemaps.org/)** - open map data from the Overture Maps Foundation with 64M+ places (CDLA Permissive 2.0)\n- **Your own data** - supply your own candidates to match against\n\n**Input Modes (all automatically geocoded if coordinates missing):**\n- **Name-only**: Provide `place.name` (e.g., \"central park nyc\") - automatically resolved and geocoded\n- **Name + Address**: Provide `place.name` + `place.address` - automatically geocoded to get coordinates\n- **Precise matching**: Provide `place.name` + `place.address` + coordinates (best accuracy, no geocoding needed)\n\n**Note:** Coordinates-only searches (without name) are not yet supported but on the roadmap.\n\n**Supported Sources:**\n- **reprompt**: Reprompt's proprietary place database (default if not specified)\n- **overture**: Overture Maps Foundation open data\n- **foursquare**: Foursquare Places API data\n- **byod**: Match against your own data candidates\n\n**Key Use Cases:**\n1. **Data cleaning**: Clean messy/inconsistent place data against authoritative sources\n2. **Location matching**: Match user coordinates against your proprietary POI database\n3. **Deduplication**: Find duplicate places across different datasets\n\n**Matching considers:**\n- Name similarity and normalization\n- Geographic proximity and distance\n- Category/type alignment\n- Address components\n- Geographic context when minimal info provided\n\n**Response includes:**\n- Matched places as GeoJSON features\n- Confidence scores and match explanations\n- Detailed conflation metadata\n- Search operation metadata",
+            "operationId":"placematch_endpoint_placematch_post",
+            "security":[
+               {
+                  "HTTPBearer":[
+                     
+                  ]
+               }
+            ],
+            "parameters":[
+               {
+                  "name":"apiKey",
+                  "in":"header",
+                  "required":false,
+                  "schema":{
+                     "anyOf":[
+                        {
+                           "type":"string"
+                        },
+                        {
+                           "type":"null"
+                        }
+                     ],
+                     "title":"Apikey"
+                  }
+               }
+            ],
+            "requestBody":{
+               "required":true,
+               "content":{
+                  "application/json":{
+                     "schema":{
+                        "$ref":"#/components/schemas/PlacematchRequest"
+                     },
+                     "examples":{
+                        "name_only_search":{
+                           "summary":"Name-only fuzzy search (auto-resolved and geocoded)",
+                           "description":"Search by name only - automatically resolves to find address and geocodes coordinates",
+                           "value":{
+                              "place":{
+                                 "name":"central park nyc"
+                              },
+                              "match_sources":[
+                                 "reprompt"
+                              ],
+                              "max_matches":3
+                           }
+                        },
+                        "name_address_search":{
+                           "summary":"Name + address (auto-geocoded)",
+                           "description":"Search by name and address - automatically geocodes to get coordinates",
+                           "value":{
+                              "place":{
+                                 "name":"Zheng Li Machine Repair",
+                                 "address":"Jalan BPP 8/2, Petaling, 43300, Selangor, Malaysia"
+                              },
+                              "match_sources":[
+                                 "reprompt",
+                                 "overture"
+                              ],
+                              "max_matches":3
+                           }
+                        },
+                        "precise_matching":{
+                           "summary":"Precise matching with name+address+coordinates",
+                           "description":"Most precise matching mode using all available place information",
+                           "value":{
+                              "place":{
+                                 "name":"Starbucks",
+                                 "address":"1585 Broadway, New York, NY 10036",
+                                 "latitude":40.7614327,
+                                 "longitude":-73.9776216
+                              },
+                              "match_sources":[
+                                 "reprompt",
+                                 "overture"
+                              ],
+                              "max_matches":3
+                           }
+                        },
+                        "user_location_vs_your_data":{
+                           "summary":"Match user location against your own data",
+                           "description":"Mobile app scenario: User is at a location, match against your proprietary POI database",
+                           "value":{
+                              "place":{
+                                 "latitude":37.7749,
+                                 "longitude":-122.4194
+                              },
+                              "match_sources":[
+                                 "byod"
+                              ],
+                              "match_byod_candidates":[
+                                 {
+                                    "name":"Blue Bottle Coffee",
+                                    "latitude":37.775,
+                                    "longitude":-122.4195
+                                 },
+                                 {
+                                    "name":"Ritual Coffee Roasters",
+                                    "latitude":37.7748,
+                                    "longitude":-122.4193
+                                 },
+                                 {
+                                    "name":"Philz Coffee",
+                                    "latitude":37.7751,
+                                    "longitude":-122.4192
+                                 }
+                              ],
+                              "radius":100,
+                              "max_results":3
+                           }
+                        },
+                        "match_against_your_own_data":{
+                           "summary":"Match against your own data",
+                           "value":{
+                              "place":{
+                                 "name":"Joe's Coffee"
+                              },
+                              "match_sources":[
+                                 "byod",
+                                 "foursquare"
+                              ],
+                              "match_byod_candidates":[
+                                 {
+                                    "name":"Joe's Coffee Shop",
+                                    "latitude":40.759,
+                                    "longitude":-73.985
+                                 },
+                                 {
+                                    "name":"Joey's Cafe",
+                                    "latitude":40.7588,
+                                    "longitude":-73.9852
+                                 }
+                              ]
+                           }
+                        }
+                     }
+                  }
+               }
+            },
+            "responses":{
+               "200":{
+                  "description":"Successfully matched places",
+                  "content":{
+                     "application/json":{
+                        "schema":{
+                           "$ref":"#/components/schemas/PlacematchResponse"
+                        },
+                        "examples":{
+                           "user_location_match":{
+                              "summary":"User location matched to BYOD",
+                              "value":{
+                                 "type":"FeatureCollection",
+                                 "features":[
+                                    {
+                                       "type":"Feature",
+                                       "geometry":{
+                                          "type":"Point",
+                                          "coordinates":[
+                                             -122.4195,
+                                             37.775
+                                          ]
+                                       },
+                                       "properties":{
+                                          "name":"Blue Bottle Coffee",
+                                          "address":"315 Linden St, San Francisco, CA 94102",
+                                          "category":"coffee_shop",
+                                          "phone":"+14158964500",
+                                          "source":"byod",
+                                          "is_match":true,
+                                          "confidence":"VERY_HIGH",
+                                          "reasoning":"High confidence match: very close location (12m away) with precise GPS coordinates"
+                                       }
+                                    }
+                                 ],
+                                 "metadata":{
+                                    "total_results":1,
+                                    "sources_searched":[
+                                       "byod"
+                                    ],
+                                    "search_radius_meters":100
+                                 }
+                              }
+                           },
+                           "messy_data_cleaned":{
+                              "summary":"Messy data matched to Overture",
+                              "value":{
+                                 "type":"FeatureCollection",
+                                 "features":[
+                                    {
+                                       "type":"Feature",
+                                       "geometry":{
+                                          "type":"Point",
+                                          "coordinates":[
+                                             -73.9851,
+                                             40.7589
+                                          ]
+                                       },
+                                       "properties":{
+                                          "name":"McDonald's",
+                                          "address":"1528 Broadway, New York, NY 10036",
+                                          "category":"fast_food",
+                                          "categories":[
+                                             "fast_food",
+                                             "restaurant"
+                                          ],
+                                          "source":"overture",
+                                          "is_match":true,
+                                          "confidence":"HIGH",
+                                          "reasoning":"Good match: normalized name similarity and location within acceptable range"
+                                       }
+                                    }
+                                 ],
+                                 "metadata":{
+                                    "total_results":1,
+                                    "sources_searched":[
+                                       "overture"
+                                    ],
+                                    "search_radius_meters":200
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               },
+               "400":{
+                  "description":"Invalid input or validation error",
+                  "content":{
+                     "application/json":{
+                        "examples":{
+                           "missing_input_error":{
+                              "summary":"No input provided",
+                              "value":{
+                                 "error":"validation_error",
+                                 "message":"Must provide at least a name OR coordinates",
+                                 "details":{
+                                    
+                                 }
+                              }
+                           },
+                           "incomplete_coordinates_error":{
+                              "summary":"Only latitude or longitude provided",
+                              "value":{
+                                 "error":"validation_error",
+                                 "message":"Both latitude and longitude must be provided together",
+                                 "details":{
+                                    
+                                 }
+                              }
+                           },
+                           "address_without_name_error":{
+                              "summary":"Address provided without name",
+                              "value":{
+                                 "error":"validation_error",
+                                 "message":"Address can only be provided together with a name",
+                                 "details":{
+                                    "suggestion":"Include place.name when providing place.address"
+                                 }
+                              }
+                           }
+                        },
+                        "schema":{
+                           "$ref":"#/components/schemas/PlacematchErrorResponse"
+                        }
+                     }
+                  }
+               },
+               "501":{
+                  "description":"Feature not yet supported (coordinates-only searches, etc.)",
+                  "content":{
+                     "application/json":{
+                        "schema":{
+                           "$ref":"#/components/schemas/PlacematchErrorResponse"
+                        }
+                     }
+                  }
+               },
+               "502":{
+                  "description":"External service error",
+                  "content":{
+                     "application/json":{
+                        "schema":{
+                           "$ref":"#/components/schemas/PlacematchErrorResponse"
+                        }
+                     }
+                  }
+               },
+               "504":{
+                  "description":"Request timeout",
+                  "content":{
+                     "application/json":{
+                        "schema":{
+                           "$ref":"#/components/schemas/PlacematchErrorResponse"
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      },
       "/place_enrichment/jobs/reprocess":{
          "post":{
             "tags":[
@@ -1115,6 +1423,186 @@
                }
             }
          }
+      },
+      "/geofencing/search":{
+         "post":{
+            "tags":[
+               "geofencing"
+            ],
+            "summary":"Search Geofences",
+            "description":"Detect and extract geographic features from satellite imagery using AI spatial understanding.\n\nThis endpoint uses advanced AI models to analyze satellite imagery and identify specific \ngeographic features like buildings, parking lots, school grounds, or any custom features \nyou specify in natural language.\n\n**Input Options:**\n- **By Coordinates**: Provide latitude, longitude, and zoom level\n- **By Place Name**: Provide a place name/address that will be geocoded automatically\n\n**Feature Detection:**\n- Describe the features you want to detect in natural language\n- Examples: \"school buildings\", \"parking lots with over 10 spaces\", \"playgrounds\"\n- The AI will identify and outline these features in the satellite imagery\n\n**Parcel Boundaries:**\n- Set `include_parcel=true` to also fetch property/parcel boundaries from OpenStreetMap\n- Works best when using `place_name` (e.g., \"Lowell High School, San Francisco, CA\")\n- Gets the actual boundary polygon of the specified place/institution\n- Parcel boundaries are marked with `feature_type: \"parcel_boundary\"` in the response\n- AI-detected features are marked with `feature_type: \"ai_detected\"`\n\n**Output:**\n- GeoJSON FeatureCollection with polygon geometries for detected features\n- Each feature includes properties with the original query, feature index, and feature type\n- Metadata includes detection statistics and processing information\n\n**Use Cases:**\n- Property boundary detection\n- Infrastructure mapping\n- Land use analysis\n- Facility management\n- Urban planning",
+            "operationId":"search_geofences__org_slug__geofencing_search_post",
+            "security":[
+               {
+                  "HTTPBearer":[
+                     
+                  ]
+               }
+            ],
+            "parameters":[
+               {
+                  "name":"apiKey",
+                  "in":"header",
+                  "required":false,
+                  "schema":{
+                     "anyOf":[
+                        {
+                           "type":"string"
+                        },
+                        {
+                           "type":"null"
+                        }
+                     ],
+                     "title":"Apikey"
+                  }
+               }
+            ],
+            "requestBody":{
+               "required":true,
+               "content":{
+                  "application/json":{
+                     "schema":{
+                        "$ref":"#/components/schemas/GeofenceRequest"
+                     },
+                     "examples":{
+                        "by_place_name":{
+                           "summary":"Search by place name",
+                           "value":{
+                              "place_name":"Lowell High School, San Francisco, CA",
+                              "feature_query":"Entire School Grounds",
+                              "include_parcel":true,
+                              "zoom":17
+                           }
+                        },
+                        "by_coordinates":{
+                           "summary":"Search by coordinates",
+                           "value":{
+                              "latitude":37.38567,
+                              "longitude":-122.08745,
+                              "zoom":17,
+                              "feature_query":"school buildings",
+                              "include_parcel":false
+                           }
+                        },
+                        "custom_features":{
+                           "summary":"Custom feature detection",
+                           "value":{
+                              "place_name":"Central Park, New York, NY",
+                              "feature_query":"playgrounds and recreational areas"
+                           }
+                        }
+                     }
+                  }
+               }
+            },
+            "responses":{
+               "200":{
+                  "description":"Successfully detected geographic features",
+                  "content":{
+                     "application/json":{
+                        "schema":{
+                           "$ref":"#/components/schemas/GeofenceResponse"
+                        },
+                        "example":{
+                           "geojson":{
+                              "type":"FeatureCollection",
+                              "features":[
+                                 {
+                                    "type":"Feature",
+                                    "geometry":{
+                                       "type":"Polygon",
+                                       "coordinates":[
+                                          [
+                                             [
+                                                -122.08745,
+                                                37.38567
+                                             ],
+                                             [
+                                                -122.08745,
+                                                37.3858
+                                             ],
+                                             [
+                                                -122.0873,
+                                                37.3858
+                                             ],
+                                             [
+                                                -122.0873,
+                                                37.38567
+                                             ],
+                                             [
+                                                -122.08745,
+                                                37.38567
+                                             ]
+                                          ]
+                                       ]
+                                    },
+                                    "properties":{
+                                       "feature_query":"school buildings",
+                                       "feature_index":0,
+                                       "feature_type":"ai_detected"
+                                    }
+                                 },
+                                 {
+                                    "type":"Feature",
+                                    "geometry":{
+                                       "type":"Polygon",
+                                       "coordinates":[
+                                          [
+                                             [
+                                                -122.0875,
+                                                37.3856
+                                             ],
+                                             [
+                                                -122.0875,
+                                                37.3859
+                                             ],
+                                             [
+                                                -122.0872,
+                                                37.3859
+                                             ],
+                                             [
+                                                -122.0872,
+                                                37.3856
+                                             ],
+                                             [
+                                                -122.0875,
+                                                37.3856
+                                             ]
+                                          ]
+                                       ]
+                                    },
+                                    "properties":{
+                                       "feature_query":"school buildings",
+                                       "feature_index":1,
+                                       "feature_type":"parcel_boundary"
+                                    }
+                                 }
+                              ]
+                           },
+                           "metadata":{
+                              "features_found":2,
+                              "center_coordinates":[
+                                 37.38567,
+                                 -122.08745
+                              ],
+                              "zoom_level":17,
+                              "parcel_included":true
+                           }
+                        }
+                     }
+                  }
+               },
+               "400":{
+                  "description":"Invalid request parameters"
+               },
+               "401":{
+                  "description":"Invalid API credentials"
+               },
+               "500":{
+                  "description":"Geofencing processing failed"
+               }
+            }
+         }
       }
    },
    "components":{
@@ -1409,41 +1897,45 @@
             "title":"CustomAttributeResponse",
             "description":"Response model for custom attribute creation"
          },
-         "GrabJobOutputs":{
+         "GeofenceRequest":{
             "properties":{
-               "qualified_input_place":{
+               "place_name":{
                   "anyOf":[
                      {
-                        
+                        "type":"string"
                      },
                      {
                         "type":"null"
                      }
                   ],
-                  "title":"Qualified Input Place"
+                  "title":"Place Name",
+                  "description":"Place name or address to search for"
                },
-               "coordinates":{
+               "latitude":{
                   "anyOf":[
                      {
-                        "prefixItems":[
-                           {
-                              "type":"number"
-                           },
-                           {
-                              "type":"number"
-                           }
-                        ],
-                        "type":"array",
-                        "maxItems":2,
-                        "minItems":2
+                        "type":"number"
                      },
                      {
                         "type":"null"
                      }
                   ],
-                  "title":"Coordinates"
+                  "title":"Latitude",
+                  "description":"Latitude coordinate"
                },
-               "coordinates_distance":{
+               "longitude":{
+                  "anyOf":[
+                     {
+                        "type":"number"
+                     },
+                     {
+                        "type":"null"
+                     }
+                  ],
+                  "title":"Longitude",
+                  "description":"Longitude coordinate"
+               },
+               "zoom":{
                   "anyOf":[
                      {
                         "type":"integer"
@@ -1452,10 +1944,22 @@
                         "type":"null"
                      }
                   ],
-                  "title":"Coordinates Distance",
-                  "description":"Distance in meters between input coordinates and enriched coordinates. Returns 0 if coordinates were not enriched."
+                  "title":"Zoom",
+                  "description":"Map zoom level (default: 17)",
+                  "default":17
                },
-               "open_closed_status":{
+               "feature_query":{
+                  "type":"string",
+                  "title":"Feature Query",
+                  "description":"Description of features to detect (e.g., 'school grounds', 'buildings', 'parking lots')"
+               },
+               "include_parcel":{
+                  "type":"boolean",
+                  "title":"Include Parcel",
+                  "description":"Whether to include parcel boundary in response",
+                  "default":false
+               },
+               "model_name":{
                   "anyOf":[
                      {
                         "type":"string"
@@ -1464,124 +1968,11 @@
                         "type":"null"
                      }
                   ],
-                  "title":"Open Closed Status"
+                  "title":"Model Name",
+                  "description":"Gemini model to use for spatial understanding",
+                  "default":"gemini-2.5-pro-preview-05-06"
                },
-               "open_closed_status_confidence_score":{
-                  "anyOf":[
-                     {
-                        "$ref":"#/components/schemas/ConfidenceScore"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ]
-               },
-               "date_closed":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Date Closed"
-               },
-               "date_opened":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Date Opened"
-               },
-               "placekey":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Placekey"
-               },
-               "reprompt_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Reprompt Id"
-               },
-               "chain_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Chain Id"
-               },
-               "chain_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Chain Name"
-               },
-               "chain_domains":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Chain Domains"
-               },
-               "alternative_names":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Alternative Names"
-               },
-               "chain_wikipedia_url":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Chain Wikipedia Url"
-               },
-               "number_of_locations":{
+               "thinking_budget":{
                   "anyOf":[
                      {
                         "type":"integer"
@@ -1590,2196 +1981,39 @@
                         "type":"null"
                      }
                   ],
-                  "title":"Number Of Locations"
-               },
-               "logo_url":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Logo Url"
-               },
-               "enriched_custom":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Enriched Custom"
-               },
-               "facebook_followers":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Facebook Followers"
-               },
-               "facebook_likes":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Facebook Likes"
-               },
-               "facebook_page_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Facebook Page Id"
-               },
-               "facebook_bio":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Facebook Bio"
-               },
-               "instagram_followers":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Followers"
-               },
-               "instagram_media_count":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Media Count"
-               },
-               "instagram_username":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Username"
-               },
-               "instagram_profile_pic_url":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Profile Pic Url"
-               },
-               "instagram_bio":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Bio"
-               },
-               "instagram_monthly_user_counts":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":{
-                           "type":"integer"
-                        },
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Monthly User Counts",
-                  "description":"Monthly follower counts as YYYY-MM key to count value mapping"
-               },
-               "instagram_monthly_like_counts":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":{
-                           "type":"integer"
-                        },
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Monthly Like Counts",
-                  "description":"Monthly like counts as YYYY-MM key to count value mapping"
-               },
-               "instagram_monthly_interaction_counts":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":{
-                           "type":"integer"
-                        },
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Monthly Interaction Counts",
-                  "description":"Monthly interaction counts as YYYY-MM key to count value mapping"
-               },
-               "tiktok_followers":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Tiktok Followers"
-               },
-               "tiktok_video_count":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Tiktok Video Count"
-               },
-               "tiktok_bio":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Tiktok Bio"
-               },
-               "approximate_review_count":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Approximate Review Count",
-                  "description":"Approximate review count in buckets (e.g., '<10', '10-50', '50-100', etc.)"
-               },
-               "approximate_average_rating":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Approximate Average Rating",
-                  "description":"Approximate average rating out of 5 from web search"
-               },
-               "name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Name"
-               },
-               "multilingual_names":{
-                  "additionalProperties":{
-                     "anyOf":[
-                        {
-                           "type":"string"
-                        },
-                        {
-                           "type":"null"
-                        }
-                     ]
-                  },
-                  "type":"object",
-                  "title":"Multilingual Names"
-               },
-               "alt_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Alt Name"
-               },
-               "official_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Official Name"
-               },
-               "brand_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Brand Name"
-               },
-               "common_names":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Common Names"
-               },
-               "name_translations":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":{
-                           "type":"string"
-                        },
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Name Translations"
-               },
-               "food_service_links":{
-                  "anyOf":[
-                     {
-                        "type":"null"
-                     }
-                  ]
-               },
-               "home_service_links":{
-                  "anyOf":[
-                     {
-                        "type":"null"
-                     }
-                  ]
-               },
-               "storefront_images":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "$ref":"#/components/schemas/StorefrontImage"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Storefront Images"
-               },
-               "has_delivery":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Has Delivery"
-               },
-               "has_takeout":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Has Takeout"
-               },
-               "has_dining":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Has Dining"
-               },
-               "has_pickup":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Has Pickup"
-               },
-               "email":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Email"
-               },
-               "address":{
-                  "anyOf":[
-                     {
-                        "$ref":"#/components/schemas/AddressDetails"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "description":"International normalized version of the address"
-               },
-               "address_localized":{
-                  "anyOf":[
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Address Localized"
-               },
-               "categories":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Categories"
-               },
-               "website":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website"
-               },
-               "phone":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Phone"
-               },
-               "phone_additional":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Phone Additional"
-               },
-               "naics_code":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Naics Code"
-               },
-               "naics_description":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Naics Description"
-               },
-               "merchant_category_code":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Merchant Category Code"
-               },
-               "mcc_description":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Mcc Description"
-               },
-               "merchant_category_group":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Merchant Category Group"
-               },
-               "merchant_super_industry":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Merchant Super Industry"
-               },
-               "instagram":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram"
-               },
-               "facebook":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Facebook"
-               },
-               "tiktok":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Tiktok"
-               },
-               "opening_hours":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":{
-                           "type":"string"
-                        },
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Opening Hours"
-               },
-               "opening_hours_grouped_by_hours":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"object"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Opening Hours Grouped By Hours"
-               },
-               "is_open_24h":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Is Open 24H"
-               },
-               "menu_urls":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Menu Urls"
-               },
-               "menu_url_official":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Menu Url Official",
-                  "description":"The official menu URL from the business's own website"
-               },
-               "menu_content":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"object"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Menu Content",
-                  "description":"Structured menu content parsed from the official menu URL"
-               },
-               "menu_images":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Menu Images",
-                  "description":"List of S3 URLs for menu images found through image search"
-               },
-               "price_tier":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Price Tier"
-               },
-               "average_price":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Average Price",
-                  "description":"Average price in local currency (from price_tier enrichment)"
-               },
-               "currency":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Currency",
-                  "description":"3-letter ISO currency code for average_price (from price_tier enrichment)"
-               },
-               "cuisines":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Cuisines"
-               },
-               "review_count":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Review Count",
-                  "description":"Total number of reviews (integer for exact count, string bucket for approximate count)"
-               },
-               "average_rating":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Average Rating",
-                  "description":"Average rating out of 5"
-               },
-               "wilson_score":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Wilson Score",
-                  "description":"Wilson score lower bound (confidence=0.95) for positive ratings"
-               },
-               "popularity":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Popularity",
-                  "description":"Popularity score from 0 to 1 based on average rating and review count"
-               },
-               "review_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Review Summary",
-                  "description":"One-line summary of reviews"
-               },
-               "summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Summary",
-                  "description":"One-line summary of reviews (schema-expected field name)"
-               },
-               "user_review_count":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Review Count",
-                  "description":"Exact number of user reviews (from user_reviews enrichment)"
-               },
-               "user_average_rating":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Average Rating",
-                  "description":"Average rating out of 5 (from user_reviews enrichment)"
-               },
-               "user_wilson_score":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Wilson Score",
-                  "description":"Wilson score lower bound for positive ratings (from user_reviews enrichment)"
-               },
-               "user_popularity":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Popularity",
-                  "description":"Popularity score from 0 to 1 (from user_reviews enrichment)"
-               },
-               "user_review_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Review Summary",
-                  "description":"One-line summary of user reviews (from user_reviews enrichment)"
-               },
-               "user_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Summary",
-                  "description":"One-line summary of user reviews - alternate field (from user_reviews enrichment)"
-               },
-               "approx_review_count":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Approx Review Count",
-                  "description":"Legacy field - use review_count instead"
-               },
-               "approx_average_rating":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Approx Average Rating",
-                  "description":"Legacy field - use average_rating instead"
-               },
-               "approx_review_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Approx Review Summary",
-                  "description":"Legacy field - use review_summary instead"
-               },
-               "user_reviews_reasoning":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"User Reviews Reasoning",
-                  "description":"Reasoning for user reviews enrichment"
-               },
-               "approximate_user_reviews_reasoning":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Approximate User Reviews Reasoning",
-                  "description":"Legacy reasoning field for approximate user reviews"
-               },
-               "recent_review_count":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Recent Review Count"
-               },
-               "instagram_profile":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Instagram Profile"
-               },
-               "owner_phone":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Owner Phone"
-               },
-               "owner_email":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Owner Email"
-               },
-               "building_footprint":{
-                  "anyOf":[
-                     {
-                        
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Building Footprint"
-               },
-               "parcel":{
-                  "anyOf":[
-                     {
-                        
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parcel"
-               },
-               "foursquare_place_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Id"
-               },
-               "foursquare_place_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Name"
-               },
-               "foursquare_place_match_confidence":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Match Confidence"
-               },
-               "foursquare_place_phone":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Phone"
-               },
-               "foursquare_place_website":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Website"
-               },
-               "foursquare_place_latitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Latitude"
-               },
-               "foursquare_place_longitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Longitude"
-               },
-               "foursquare_place_address":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Address"
-               },
-               "foursquare_place_category_labels":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Category Labels"
-               },
-               "foursquare_place_category_ids":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Category Ids"
-               },
-               "foursquare_place_date_refreshed":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Date Refreshed"
-               },
-               "foursquare_place_date_created":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Date Created"
-               },
-               "foursquare_place_original":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Foursquare Place Original"
-               },
-               "overture_place_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Id"
-               },
-               "overture_place_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Name"
-               },
-               "overture_place_match_confidence":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Match Confidence"
-               },
-               "overture_place_phone":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Phone"
-               },
-               "overture_place_website":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Website"
-               },
-               "overture_place_latitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Latitude"
-               },
-               "overture_place_longitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Longitude"
-               },
-               "overture_place_address":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Address"
-               },
-               "overture_place_category":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Category"
-               },
-               "overture_place_original":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Overture Place Original"
-               },
-               "entity_type":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Entity Type"
-               },
-               "digital_footprint":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Digital Footprint"
-               },
-               "place_definition":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Place Definition"
-               },
-               "place_reality":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Place Reality"
-               },
-               "website_traffic_monthly_visits":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Monthly Visits",
-                  "description":"Monthly website visits from SimilarWeb"
-               },
-               "website_traffic_source_social_percentage":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Source Social Percentage",
-                  "description":"Percentage of website traffic from social media sources"
-               },
-               "website_traffic_source_paid_referrals_percentage":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Source Paid Referrals Percentage",
-                  "description":"Percentage of website traffic from paid referrals"
-               },
-               "website_traffic_source_mail_percentage":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Source Mail Percentage",
-                  "description":"Percentage of website traffic from email/mail sources"
-               },
-               "website_traffic_source_referrals_percentage":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Source Referrals Percentage",
-                  "description":"Percentage of website traffic from referral sources"
-               },
-               "website_traffic_source_search_percentage":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Source Search Percentage",
-                  "description":"Percentage of website traffic from search engines"
-               },
-               "website_traffic_source_direct_percentage":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Source Direct Percentage",
-                  "description":"Percentage of website traffic from direct visits"
-               },
-               "website_traffic_top_keywords":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Website Traffic Top Keywords",
-                  "description":"Top keywords driving traffic to the website"
-               },
-               "parking_spaces_total":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parking Spaces Total",
-                  "description":"Total number of parking spaces available for customers"
-               },
-               "parking_spaces_street":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parking Spaces Street",
-                  "description":"Number of street parking spaces available"
-               },
-               "parking_spaces_shared":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parking Spaces Shared",
-                  "description":"Number of shared parking spaces available"
-               },
-               "parking_spaces_dedicated":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parking Spaces Dedicated",
-                  "description":"Number of dedicated parking spaces available"
-               },
-               "parking_spaces_image_url":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parking Spaces Image Url",
-                  "description":"URL of the satellite/aerial image used for analysis"
-               },
-               "traffic_control":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Traffic Control",
-                  "description":"Whether traffic control manages traffic ingress/egress to the location"
-               },
-               "one_line_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"One Line Summary",
-                  "description":"A brief, descriptive phrase capturing the essence and atmosphere of the place"
-               },
-               "geofence_mask":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Geofence Mask",
-                  "description":"S3 URL of the geofence visualization image showing school boundaries"
-               },
-               "geofence_geojson":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Geofence Geojson",
-                  "description":"GeoJSON polygon coordinates defining the school geofence boundary"
-               },
-               "vision_open_closed_status":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Vision Open Closed Status",
-                  "description":"Status of the place (open, closed, replaced, uncertain)"
-               },
-               "vision_open_closed_confidence":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Vision Open Closed Confidence",
-                  "description":"Confidence level (high, medium, low)"
-               },
-               "vision_open_closed_confirmation_date":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Vision Open Closed Confirmation Date",
-                  "description":"Date when status was confirmed from image timestamp, or null if unsure"
-               },
-               "vision_open_closed_photos":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "additionalProperties":true,
-                           "type":"object"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Vision Open Closed Photos",
-                  "description":"Array of photo evidence with URLs, timestamps, and Mapillary app URLs"
-               },
-               "buildings_geojson":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Buildings Geojson",
-                  "description":"GeoJSON FeatureCollection of building footprints within the property"
-               },
-               "parking_geojson":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parking Geojson",
-                  "description":"GeoJSON FeatureCollection of identified parking areas"
-               },
-               "parcels_geojson":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Parcels Geojson",
-                  "description":"GeoJSON FeatureCollection of property parcels/geofence boundaries"
-               },
-               "visualization_image_url":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Visualization Image Url",
-                  "description":"URL to the satellite image visualization showing all geometry overlays"
-               },
-               "analysis_metadata":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Analysis Metadata",
-                  "description":"Metadata about the geometry analysis including counts and parameters"
-               },
-               "site_quality_score":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Site Quality Score",
-                  "description":"Overall site quality assessment (excellent, good, fair, poor, unknown)"
-               },
-               "accessibility_rating":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Accessibility Rating",
-                  "description":"How accessible the site is from major roads (excellent, good, fair, poor, unknown)"
-               },
-               "accessibility_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Accessibility Summary",
-                  "description":"Summary of route accessibility from cardinal directions"
-               },
-               "primary_turns_required":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Primary Turns Required",
-                  "description":"Number of turns required from primary access route"
-               },
-               "min_turns":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Min Turns",
-                  "description":"The minimum number of turns required to reach the destination from the primary access route"
-               },
-               "primary_turns":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Primary Turns",
-                  "description":"The number of turns required from the primary access route"
-               },
-               "primary_turns_route_matrix_visualization":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Primary Turns Route Matrix Visualization",
-                  "description":"Route matrix visualization data for map rendering"
-               },
-               "visibility_rating":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Visibility Rating",
-                  "description":"How visible the business is from the street (high, medium, low, none, unknown)"
-               },
-               "signage_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Signage Summary",
-                  "description":"Summary of available signage (pylon, monument)"
-               },
-               "has_brand_signage":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Has Brand Signage",
-                  "description":"Whether the business has identifiable brand signage"
-               },
-               "pylon_sign_exists":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Sign Exists",
-                  "description":"Whether a pylon sign exists at the location"
-               },
-               "pylon_coordinates":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"number"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Coordinates",
-                  "description":"Pylon sign coordinates as [latitude, longitude]"
-               },
-               "pylon_latitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Latitude",
-                  "description":"Latitude of the pylon sign"
-               },
-               "pylon_longitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Longitude",
-                  "description":"Longitude of the pylon sign"
-               },
-               "pylon_number_of_brands":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Number Of Brands",
-                  "description":"Number of brands on pylon sign (single, multiple, uncertain, none)"
-               },
-               "pylon_reasoning":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Reasoning",
-                  "description":"Reasoning for pylon sign analysis"
-               },
-               "pylon_includes_brand_sign":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Pylon Includes Brand Sign",
-                  "description":"Whether pylon sign includes the target brand"
-               },
-               "monument_sign_exists":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Sign Exists",
-                  "description":"Whether a monument sign exists at the location"
-               },
-               "monument_coordinates":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"number"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Coordinates",
-                  "description":"Monument sign coordinates as [latitude, longitude]"
-               },
-               "monument_latitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Latitude",
-                  "description":"Latitude of the monument sign"
-               },
-               "monument_longitude":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Longitude",
-                  "description":"Longitude of the monument sign"
-               },
-               "monument_number_of_brands":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Number Of Brands",
-                  "description":"Number of brands on monument sign (single, multiple, uncertain, none)"
-               },
-               "monument_reasoning":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Reasoning",
-                  "description":"Reasoning for monument sign analysis"
-               },
-               "monument_includes_brand_sign":{
-                  "anyOf":[
-                     {
-                        "type":"boolean"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Monument Includes Brand Sign",
-                  "description":"Whether monument sign includes the target brand"
-               },
-               "sign_locations":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "additionalProperties":true,
-                           "type":"object"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Sign Locations",
-                  "description":"List of all detected sign locations with coordinates and details"
-               },
-               "location_type":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Location Type",
-                  "description":"Type of location (shopping_center, standalone_building, mixed_use_building, unknown)"
-               },
-               "building_condition":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Building Condition",
-                  "description":"Detailed description of building condition and maintenance"
-               },
-               "building_condition_score":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Building Condition Score",
-                  "description":"Building condition quality score (above_average, average, below_average, none)"
-               },
-               "shopping_center_condition":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Shopping Center Condition",
-                  "description":"Condition of shopping center if applicable, null otherwise"
-               },
-               "shopping_center_condition_score":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Shopping Center Condition Score",
-                  "description":"Shopping center condition quality score (above_average, average, below_average, none)"
-               },
-               "location_category":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Location Category",
-                  "description":"Type of location (shopping_center, standalone_building, mixed_use_building, unknown)"
-               },
-               "building_condition_summary":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Building Condition Summary",
-                  "description":"Summary of building and property condition"
-               },
-               "building_condition_rating":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Building Condition Rating",
-                  "description":"Building condition score (excellent, good, fair, poor)"
-               },
-               "key_strengths":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Key Strengths",
-                  "description":"Key strengths of the location"
-               },
-               "potential_concerns":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Potential Concerns",
-                  "description":"Potential concerns or weaknesses"
-               },
-               "route_matrix_visualization":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Route Matrix Visualization",
-                  "description":"Consolidated route matrix data for map visualization including routes, candidate points, and center coordinates"
-               },
-               "prominence":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Prominence",
-                  "description":"Overall prominence level (excellent, average, not visible)"
-               },
-               "entrance_views":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "additionalProperties":true,
-                           "type":"object"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Entrance Views",
-                  "description":"Street view images showing entrance visibility"
-               },
-               "search_aliases":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"string"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Search Aliases",
-                  "description":"Array of search queries that refer to this place"
-               },
-               "located_within_name":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Located Within Name"
-               },
-               "located_within_type":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Located Within Type"
-               },
-               "located_within_floor_or_level":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Located Within Floor Or Level"
-               },
-               "test_attribute_test_value":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Test Attribute Test Value"
-               },
-               "test_attribute_processing_time_seconds":{
-                  "anyOf":[
-                     {
-                        "type":"number"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Test Attribute Processing Time Seconds"
-               },
-               "test_attribute_random_number":{
-                  "anyOf":[
-                     {
-                        "type":"integer"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Test Attribute Random Number"
-               },
-               "grab_categories":{
-                  "anyOf":[
-                     {
-                        "items":{
-                           "type":"object"
-                        },
-                        "type":"array"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Grab Categories"
+                  "title":"Thinking Budget",
+                  "description":"Thinking budget for Gemini model",
+                  "default":1024
                }
             },
-            "additionalProperties":false,
             "type":"object",
-            "title":"GrabJobOutputs"
+            "required":[
+               "feature_query"
+            ],
+            "title":"GeofenceRequest",
+            "description":"Request model for geofencing operations"
+         },
+         "GeofenceResponse":{
+            "properties":{
+               "geojson":{
+                  "additionalProperties":true,
+                  "type":"object",
+                  "title":"Geojson",
+                  "description":"GeoJSON FeatureCollection with detected features"
+               },
+               "metadata":{
+                  "additionalProperties":true,
+                  "type":"object",
+                  "title":"Metadata",
+                  "description":"Additional metadata about the operation"
+               }
+            },
+            "type":"object",
+            "required":[
+               "geojson"
+            ],
+            "title":"GeofenceResponse",
+            "description":"Response model for geofencing operations"
          },
          "JobConfidenceScores":{
             "properties":{
@@ -4157,12 +2391,6 @@
                   "title":"Kick Off Jobs Now",
                   "description":"Flag to determine if jobs should be kicked off immediately. Only for internal use.",
                   "default":true
-               },
-               "eval":{
-                  "type":"boolean",
-                  "title":"Eval",
-                  "description":"When true, enables evaluation mode with 100% LangSmith tracing sampling rate.",
-                  "default":false
                }
             },
             "type":"object",
@@ -4227,37 +2455,6 @@
                   "title":"Refresh",
                   "description":"If true, will force a refresh of the place even if it has already been enriched.",
                   "default":false
-               },
-               "eval":{
-                  "type":"boolean",
-                  "title":"Eval",
-                  "description":"When true, enables evaluation mode with 100% LangSmith tracing sampling rate.",
-                  "default":false
-               },
-               "eval_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Eval Id",
-                  "description":"UUID identifier for evaluation session. All places in same batch share the same eval_id when enable_eval=True."
-               },
-               "prefilled_data":{
-                  "anyOf":[
-                     {
-                        "additionalProperties":true,
-                        "type":"object"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Prefilled Data",
-                  "description":"Dictionary of prefilled attribute data to insert directly into the database. Keys should match attribute names (e.g., 'phoneNumbers', 'websites'). Data will be validated against the enrichment's response model schema."
                }
             },
             "type":"object",
@@ -4296,12 +2493,7 @@
                   }
                },
                "outputs":{
-                  "oneOf":[
-                     {
-                        "$ref":"#/components/schemas/GrabJobOutputs"
-                     }
-                  ],
-                  "title":"Outputs"
+                  "type":"object"
                },
                "reasoning":{
                   "type":"object"
@@ -4368,42 +2560,6 @@
                   ],
                   "title":"Attribute Set",
                   "description":"Predefined group of attributes to enrich: 'core', 'all', or 'open_closed'"
-               },
-               "use_mega_agent":{
-                  "type":"boolean",
-                  "title":"Use Mega Agent",
-                  "description":"When true, use the mega agent for core attribute enrichment. Only works with core attributes.",
-                  "default":false
-               },
-               "mega_agent_model":{
-                  "type":"string",
-                  "title":"Mega Agent Model",
-                  "description":"Model to use for mega agent processing. Defaults to gpt-4.1.",
-                  "default":"gpt-4.1"
-               },
-               "enable_eval":{
-                  "type":"boolean",
-                  "title":"Enable Eval",
-                  "description":"When true, enable evaluation mode with full LangSmith tracing (sampling rate = 1.0)",
-                  "default":false
-               },
-               "eval_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Eval Id",
-                  "description":"Optional evaluation session ID for tracking evaluation batches"
-               },
-               "use_turbo":{
-                  "type":"boolean",
-                  "title":"Use Turbo",
-                  "description":"When true, use the turbo queue for faster processing, bypassing normal queue limits",
-                  "default":false
                }
             },
             "type":"object",
@@ -4447,29 +2603,6 @@
                   "type":"boolean",
                   "title":"Refresh",
                   "default":false
-               },
-               "send_pusher_updates":{
-                  "type":"boolean",
-                  "title":"Send Pusher Updates",
-                  "default":false
-               },
-               "enable_eval":{
-                  "type":"boolean",
-                  "title":"Enable Eval",
-                  "description":"When true, enable evaluation mode with full LangSmith tracing (sampling rate = 1.0)",
-                  "default":false
-               },
-               "eval_id":{
-                  "anyOf":[
-                     {
-                        "type":"string"
-                     },
-                     {
-                        "type":"null"
-                     }
-                  ],
-                  "title":"Eval Id",
-                  "description":"Optional evaluation session ID for tracking evaluation batches"
                }
             },
             "type":"object",
