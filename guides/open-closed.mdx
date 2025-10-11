@@ -1,114 +1,56 @@
 ---
-title: "POI Status - Open Closed"
-description: "This page explains how Reprompt determines whether a place (POI) is open, permanently closed, or has no discernible internet presence."
+title: "Place Status - Open/Closed"
+description: "Enrich whether a place is open, permanently closed, or has no discernible internet presence."
 ---
 
-## What this attribute represents
+## Overview
 
-Reprompt returns a status with supporting evidence and confidence. The core fields you’ll see are:
+Reprompt determines business status and returns:
 
-- `is_permanently_closed` (boolean): whether the business is determined to be permanently closed.
-- `cannot_find_business` (boolean): whether we could not find any credible internet presence for the business at all.
-- `reasoning` (string): concise, user‑readable explanation with referenced sources.
-- `confidence` (enum): one of `VERY_HIGH`, `HIGH`, `MEDIUM`, `LOW`.
+- `is_permanently_closed` (boolean): whether the business is permanently closed
+- `cannot_find_business` (boolean): whether we found no credible internet presence
+- `reasoning` (string): explanation with referenced sources
+- `confidence` (enum): `VERY_HIGH`, `HIGH`, `MEDIUM`, `LOW`
 
-We also expose a derived display state:
-- `Open`
-- `Closed` (i.e., permanently closed)
-- `No Internet Presence` (cannot find the business online)
+## Status Definitions
 
-### Definitions at a glance
+**Open**: Recent, credible evidence the business is operating or has relocated nearby under the same name.
 
-- Open: Recent, credible evidence the exact business name is operating (or has relocated nearby under the same name).
-- Closed: Explicit closure signals from credible sources, or replacement by a different business name at the same address. US-only nuance may rely on trusted aggregate business data.
-- No Internet Presence: No credible reference tying the exact name to a plausible location match; we skip open/closed classification.
+**Permanently Closed**: Explicit closure signals from credible sources, or replacement by a different business at the same address.
+
+**No Internet Presence**: No credible reference for the exact name with plausible location context.
 
 <Info>
-We do not surface a “Temporarily Closed” state. When the only signal is “temporary closure” or general inactivity, we normalize to `is_permanently_closed = true` with `confidence = LOW` for downstream simplicity. See [Normalization behavior](### Normalization behavior) below.
+"Temporarily closed" or inactive signals are normalized to `is_permanently_closed = true` with `confidence = LOW` for downstream simplicity.
 </Info>
 
-### How Reprompt decides
+## How We Decide
 
-1) Internet presence check
-    - We first search for credible evidence that the business exists online using exact name checks plus reasonable address/location context.
-    - If nothing credible is found, we return `cannot_find_business = true`
+1. **Internet presence check**: Search for credible evidence the business exists online
+2. **Status classification**: If found, assess operating status using source reliability policy
 
-2) Open vs Permanently Closed classification
-    - If internet presence exists, we assess operating status using country‑aware rules and a strict source reliability policy.
+### Source Trust Policy
 
-### Source trust policy
+**Unreliable** (never used): Google Maps/Places, Waze, MapQuest
 
-- Unreliable (never used as proof): Google Maps/Places, Waze, MapQuest, and any org‑specific excluded domains.
-- Generally credible:
-  - Official websites and first‑party channels (brand’s site, official social media).
-  - Government/registries and recognized business datasets.
-  - Established review platforms (e.g., Yelp, TripAdvisor, Foursquare).
-  - Listings and tours:
-    - First‑party/official listings (e.g., a builder’s own inventory/model pages) are strong signals.
-    - Third‑party tours (e.g., YouTube/realtor/influencer) are usable when corroborated by at least one additional credible source (review, listing, or official channel).
+**Credible sources**:
+- Official websites and first-party channels
+- Government registries and business datasets  
+- Established review platforms (Yelp, TripAdvisor, Foursquare)
+- First-party listings (builder inventory, model pages)
+- Third-party content when corroborated by credible sources
 
-- Recency guidance used in practice:
-  - “Recent activity” typically means within the last 24 months.
-  - Activity older than ~36 months is considered stale; on its own it is not strong evidence of being open.
-  - For US businesses, trusted aggregate data can increase confidence even with fewer recent public signals.
+**Recency**: Recent activity = last 24 months. Activity older than ~36 months is considered stale.
 
-<Note>
-Reasoning cites only credible sources and omits excluded/unreliable domains. Third‑party media is treated as supporting evidence and is stronger with corroboration.
-</Note>
+## Confidence Levels
 
-## Definitions and conditions
-
-### Open
-  - Exact business name plus plausible address/location context is found, with recent activity (site updates, reviews, delivery listings, working phone, or recent official/first‑party social posts).
-  - If the exact business name is active at a different nearby address (relocation), we treat it as Open and explain the move.
-  - Ambiguous cases without contradictory evidence generally bias to Open with lower confidence, especially outside the US.
-
-### Permanently Closed
-  - Explicit permanent closure evidence from credible sources (e.g., “permanently closed/out of business,” official announcements, bankruptcy/liquidation, demolition/redevelopment).
-  - A different business name is operating at the same address with no current evidence for the original brand → original is Permanently Closed.
-  - US nuance: trusted aggregate US business data indicating closure can be sufficient; confidence reflects how directly verifiable the evidence is in public sources.
-
-### No Internet Presence
-  - No credible reference for the exact name with any plausible location match.
-  - We set `cannot_find_business = true` and skip open/closed classification.
-
-### Normalization behavior 
-
-- “Temporarily closed,” “inactive,” or ambiguous inactivity signals are normalized to:
-  - `is_permanently_closed = true`
-  - `confidence = LOW`
-- Rationale: many downstream systems require a binary closed flag. The low confidence communicates that the signal is weak or non‑final.
+- **VERY_HIGH/HIGH**: Strong, recent evidence or trusted US aggregate data
+- **MEDIUM**: Reasonable evidence with some uncertainty or older sources  
+- **LOW**: Ambiguous, conflicting, or "temporary closure" signals
 
 <Warning>
-Do not treat `LOW` confidence Closed as an authoritative permanent closure. Use it as a “soft closure”/review queue. See usage guidance below.
+Do not treat `LOW` confidence Closed as authoritative permanent closure. Use as "soft closure" for review.
 </Warning>
-
-
-
-## When Reprompt cannot determine
-
-- Lack of evidence: Without explicit closure evidence, we prefer Open (with lower confidence) rather than inferring closure from silence.
-- Conflicting signals: We still return a decision, but confidence drops.
-- The practical “cannot determine” you’ll see is “No Internet Presence” when we cannot verify the business exists online.
-
-
-
-### Industry nuances
-
-- New construction / model homes (builders/developments)
-  - First‑party builder listings tying a specific address to a model home, plus recent tours/reviews, indicate Open (active sales/marketing counts as operational activity).
-  - Third‑party videos alone are insufficient; corroborate with first‑party listings, official pages, or credible reviews.
-
-- Healthcare and regulated entities
-  - Registry entries (e.g., NPI) with very old update dates are weak by themselves. Treat as supporting context, not closure proof, unless combined with stronger signals.
-
-
-
-## Confidence scoring (how to use it)
-
-- VERY_HIGH / HIGH: Strong, specific, recent evidence, or trusted US aggregate data without contradictions.
-- MEDIUM: Reasonable evidence with some uncertainty or older sources.
-- LOW: Ambiguous, conflicting, inactive, or “temporary closure” signals; normalization may apply.
 
 
 ## Examples

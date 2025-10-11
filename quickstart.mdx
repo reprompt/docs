@@ -1,0 +1,181 @@
+---
+title: "Quickstart"
+description: "Get started with the Reprompt Place Enrichment API in minutes"
+---
+
+## Welcome to Reprompt
+
+The Reprompt Place Enrichment API helps you enrich business location data with verified information like websites, phone numbers, social media profiles, operating status, and more.
+
+## 1. Get Your API Key
+
+First, you'll need an API key to authenticate your requests:
+
+1. Sign up or log into your dashboard at [app.repromptai.com](https://app.repromptai.com)
+2. Navigate to **Settings** → **API Keys**
+3. Copy your organization-specific API key
+4. Store it securely in your environment variables
+
+<Warning>
+Never expose your API key in client-side code or public repositories. Always use environment variables.
+</Warning>
+
+## 2. Your First API Call
+
+Let's enrich a single place with basic information. Here's a simple example:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST \
+  'https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{your_org_slug}/place_enrichment/enrich' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "inputs": {
+      "name": "Joe'\''s Pizza",
+      "latitude": 40.7359,
+      "longitude": -73.9911,
+      "full_address": "7 Carmine St, New York, NY 10014"
+    },
+    "attribute_set": "core"
+  }'
+```
+
+```python Python
+import requests
+
+url = "https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{your_org_slug}/place_enrichment/enrich"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+data = {
+    "inputs": {
+        "name": "Joe's Pizza",
+        "latitude": 40.7359,
+        "longitude": -73.9911,
+        "full_address": "7 Carmine St, New York, NY 10014"
+    },
+    "attribute_set": "core"
+}
+
+response = requests.post(url, headers=headers, json=data)
+result = response.json()
+print(result)
+```
+
+```javascript JavaScript
+const response = await fetch('https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{your_org_slug}/place_enrichment/enrich', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    inputs: {
+      name: "Joe's Pizza",
+      latitude: 40.7359,
+      longitude: -73.9911,
+      full_address: "7 Carmine St, New York, NY 10014"
+    },
+    attribute_set: "core"
+  })
+});
+
+const result = await response.json();
+console.log(result);
+```
+
+</CodeGroup>
+
+Replace `{your_org_slug}` with your actual organization slug and `YOUR_API_KEY` with your API key.
+
+## 3. Understanding the Response
+
+The API will return enriched data about the place:
+
+```json
+{
+  "outputs": {
+    "website": "https://www.joespizzanyc.com",
+    "phone": "+12122555803",
+    "social_profiles": {
+      "instagram": "joespizzanyc",
+      "facebook": "joespizzanyc"
+    },
+    "is_permanently_closed": false,
+    "price_tier": "$$"
+  },
+  "job_metadata": {
+    "attribute_status": {
+      "website": "RUN",
+      "phone": "RUN",
+      "address": "RUN",
+      "name": "RUN"
+    }
+  }
+}
+```
+
+## 4. Attribute Sets
+
+Choose the right attribute set for your needs:
+
+| Attribute Set | Description | Use Case |
+|---------------|-------------|----------|
+| `core` | Essential business info (website, phone, social media) | General business enrichment |
+| `all` | Comprehensive data including amenities and detailed analysis | Complete business profiles |
+| `open_closed` | Only checks if business is permanently closed | Quick status verification |
+
+## 5. Batch Processing
+
+For multiple places, use batch processing for better efficiency:
+
+```json
+{
+  "batch_name": "NYC Restaurants Batch",
+  "attribute_set": "core",
+  "jobs": [
+    {
+      "place_id": "place_1",
+      "inputs": {
+        "name": "Joe's Pizza",
+        "latitude": 40.7359,
+        "longitude": -73.9911,
+        "full_address": "7 Carmine St, New York, NY 10014"
+      }
+    },
+    {
+      "place_id": "place_2", 
+      "inputs": {
+        "name": "Tony's Deli",
+        "latitude": 40.7505,
+        "longitude": -73.9934,
+        "full_address": "123 Main St, New York, NY 10001"
+      }
+    }
+  ]
+}
+```
+
+Submit this to the `/place_enrichment/batches` endpoint, then track progress and retrieve results using the returned batch ID.
+
+## 6. Next Steps
+
+Now that you've made your first API call, explore more:
+
+- **[Authentication](/authentication)** - Learn about secure API key management
+- **[Batch Processing](/guides/batch-processing)** - Process multiple places efficiently  
+- **[API Reference](/api-reference)** - Complete endpoint documentation
+
+## Need Help?
+
+- Check out our comprehensive guides in the documentation
+- Visit your dashboard at [app.repromptai.com](https://app.repromptai.com) for usage analytics
+- Contact support if you run into any issues
+
+<Info>
+**Pro Tip**: Start with the `core` attribute set to get familiar with the API, then upgrade to `all` when you need comprehensive business data.
+</Info>

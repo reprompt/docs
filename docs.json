@@ -3,19 +3,49 @@
   "theme": "mint",
   "name": "Reprompt",
   "colors": {
-    "primary": "#6366f1",
-    "light": "#6366f1",
+    "primary": "#5046e5",
+    "light": "#5046e5",
     "dark": "#4f46e5"
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "tabs": [
+    "versions": [
       {
-        "tab": "API Reference",
-        "icon": "square-terminal",
-        "versions": [
+        "version": "v1",
+        "tabs": [
           {
-            "version": "2.0.0",
+            "tab": "API Reference",
+            "icon": "square-terminal",
+            "groups": [
+              {
+                "group": "V1 API Reference",
+                "openapi": "openapi-v1.json"
+              }
+            ]
+          },
+          {
+            "tab": "Docs",
+            "icon": "book",
+            "groups": [
+              {
+                "group": "Guides",
+                "icon": "file-text",
+                "pages": [
+                  "guides/open-closed",
+                  "guides/trip-category",
+                  "guides/placematch"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "version": "v2 Experimental",
+        "tabs": [
+          {
+            "tab": "API Reference",
+            "icon": "square-terminal",
             "groups": [
               {
                 "group": "V2 API Reference",
@@ -24,27 +54,18 @@
             ]
           },
           {
-            "version": "1.0.0",
+            "tab": "Docs",
+            "icon": "book",
             "groups": [
               {
-                "group": "V1 API Reference",
-                "openapi": "openapi-v1.json"
+                "group": "Guides",
+                "icon": "file-text",
+                "pages": [
+                  "guides/open-closed",
+                  "guides/trip-category",
+                  "guides/placematch"
+                ]
               }
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Docs",
-        "icon": "book",
-        "groups": [
-          {
-            "group": "Guides",
-            "icon": "file-text",
-            "pages": [
-              "guides/open-closed",
-              "guides/trip-category",
-              "guides/placematch"
             ]
           }
         ]
