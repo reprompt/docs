@@ -59,8 +59,13 @@
 },
 "api": {
   "playground": {
-    "mode": "show"
-  }
+     "display": "interactive"
+   },
+   "examples": {
+     "languages": ["curl", "python", "javascript"],
+     "defaults": "required",
+     "prefill": true
+   }
 },
 "background": {
   "color": {
