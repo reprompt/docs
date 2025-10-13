@@ -2132,7 +2132,7 @@
    },
    "servers":[
       {
-         "url":"https://api.reprompt.io/v1/{org}",
+         "url":"https://api.repromptai.com/v1/{org}",
          "variables":{
             "org":{
                "default":"reprompt",
