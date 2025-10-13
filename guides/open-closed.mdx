@@ -5,92 +5,63 @@ description: "Enrich whether a place is open, permanently closed, or has no disc
 
 ## Overview
 
-Reprompt determines business status and returns:
+Reprompt determines business status and returns a structured `open_closed_status` with:
 
-- `is_permanently_closed` (boolean): whether the business is permanently closed
-- `cannot_find_business` (boolean): whether we found no credible internet presence
-- `reasoning` (string): explanation with referenced sources
-- `confidence` (enum): `VERY_HIGH`, `HIGH`, `MEDIUM`, `LOW`
+- `status` (enum): One of `"Open"`, `"Closed"`, `"Temporarily Closed"`, or `"No Internet Presence"`
+- `reasoning` (string): Explanation with referenced sources
+- `confidence` (enum): `VERY_HIGH`, `HIGH`, `MEDIUM`, `LOW`, or `NONE`
 
-## Status Definitions
+## Status Values
+
+```python
+class OpenClosedStatus(str, Enum):
+    NO_INTERNET_PRESENCE = "No Internet Presence"
+    OPEN = "Open"
+    CLOSED = "Closed"
+    TEMPORARILY_CLOSED = "Temporarily Closed"
+```
+
+### Status Definitions
 
 **Open**: Recent, credible evidence the business is operating or has relocated nearby under the same name.
 
-**Permanently Closed**: Explicit closure signals from credible sources, or replacement by a different business at the same address.
+**Closed**: Explicit closure signals from credible sources, or replacement by a different business at the same address.
+
+**Temporarily Closed**: Business appears temporarily closed but may reopen (COVID closures, renovations, etc.).
 
 **No Internet Presence**: No credible reference for the exact name with plausible location context.
 
-<Info>
-"Temporarily closed" or inactive signals are normalized to `is_permanently_closed = true` with `confidence = LOW` for downstream simplicity.
-</Info>
+## Usage Example
 
-## How We Decide
+To enrich a place with open/closed status information:
 
-1. **Internet presence check**: Search for credible evidence the business exists online
-2. **Status classification**: If found, assess operating status using source reliability policy
-
-### Source Trust Policy
-
-**Unreliable** (never used): Google Maps/Places, Waze, MapQuest
-
-**Credible sources**:
-- Official websites and first-party channels
-- Government registries and business datasets  
-- Established review platforms (Yelp, TripAdvisor, Foursquare)
-- First-party listings (builder inventory, model pages)
-- Third-party content when corroborated by credible sources
-
-**Recency**: Recent activity = last 24 months. Activity older than ~36 months is considered stale.
-
-## Confidence Levels
-
-- **VERY_HIGH/HIGH**: Strong, recent evidence or trusted US aggregate data
-- **MEDIUM**: Reasonable evidence with some uncertainty or older sources  
-- **LOW**: Ambiguous, conflicting, or "temporary closure" signals
-
-<Warning>
-Do not treat `LOW` confidence Closed as authoritative permanent closure. Use as "soft closure" for review.
-</Warning>
-
-
-## Examples
-
-Open (relocation or active marketing)
-```json
-{
-  "is_permanently_closed": false,
-  "cannot_find_business": false,
-  "confidence": "HIGH",
-  "reasoning": "Corroborated recent activity from credible sources; active operations or sales/marketing are present."
-}
+```bash cURL
+curl -X POST \
+  'https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{your_org_slug}/place_enrichment/enrich' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "inputs": {
+      "place_id": "my_place_123",
+      "name": "Joe'\''s Pizza",
+      "latitude": 40.7359,
+      "longitude": -73.9911,
+      "full_address": "7 Carmine St, New York, NY 10014"
+    },
+    "attributes": ["closed_permanently"]
+  }'
 ```
 
-Permanently Closed (replacement at same address)
+**Response:**
 ```json
 {
-  "is_permanently_closed": true,
-  "cannot_find_business": false,
-  "confidence": "HIGH",
-  "reasoning": "Different business name currently operates at the same address; no current evidence for the original brand."
-}
-```
-
-No Internet Presence
-```json
-{
-  "is_permanently_closed": false,
-  "cannot_find_business": true,
-  "confidence": "MEDIUM",
-  "reasoning": "No credible references for the exact name with plausible location context."
-}
-```
-
-Closed (normalized from temporary/inactivity)
-```json
-{
-  "is_permanently_closed": true,
-  "cannot_find_business": false,
-  "confidence": "LOW",
-  "reasoning": "Signals suggest temporary closure or general inactivity; normalized to Closed with LOW confidence."
+  "place_id": "my_place_123",
+  "outputs": {
+    "closed_permanently": {
+      "status": "Open",
+      "confidence": "HIGH",
+      "reasoning": "Recent activity confirmed from multiple credible sources; business appears to be operating normally."
+    }
+  }
 }
 ```

@@ -1,7 +1,8 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "aspen",
   "name": "Reprompt",
+  "title": "Reprompt",
   "colors": {
     "primary": "#5046e5",
     "light": "#5046e5",
@@ -14,17 +15,23 @@
         "version": "v1",
         "groups": [
           {
-            "group": "Getting started",
-            "icon": "rocket",
+            "group": " ",
             "pages": [
-              "guides/open-closed",
-              "guides/trip-category",
-              "guides/placematch"
+              "guides/quickstart"
             ]
           },
           {
-            "group": "V1 API Reference",
+            "group": "API Reference",
             "openapi": "openapi-v1.json"
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/open-closed",
+              "guides/trip-category",
+              "guides/batch-processing",
+              "schemas/schemas"
+            ]
           }
          
         ]
@@ -33,11 +40,8 @@
         "version": "v2 experimental",
         "groups": [
           {
-            "group": "Getting started",
-            "icon": "rocket",
+            "group": " ",
             "pages": [
-              "guides/open-closed",
-              "guides/trip-category",
               "guides/placematch"
             ]
           },
@@ -50,8 +54,8 @@
     ]
   },
 "logo": {
-  "light": "/logo/dark.webp",
-  "dark": "/logo/dark.webp"
+  "light": "/logo/light.svg",
+  "dark": "/logo/dark.svg"
 },
 "api": {
   "playground": {
