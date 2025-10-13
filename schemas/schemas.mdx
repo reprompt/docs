@@ -1,0 +1,163 @@
+---
+title: "Schemas"
+description: "Data structures and enums used in the Reprompt API"
+---
+
+## Input Place Schema
+
+```python
+{
+  # Required
+  "name": str,  # Business name in local language
+
+  "latitude": float,  # -90 to 90
+  "longitude": float,  # -180 to 180
+  # OR
+  "full_address": str,  # Complete address including city/country/postal code
+  
+  # Tracking (optional but encouraged)
+  place_id: str, # Your internal stable identifier for the place to be used to join on later
+
+  # Optional but increase accuracy
+  "type": str,  # Primary category of the place
+
+  # Address subparts
+  "street": str,
+  "house": str,  # Building number
+  "city": str,
+  "state": str,
+  "postalCode": str,
+  
+  # Location metadata
+  "wkt_geometry": str,  # Alternative to lat/lon, uses (lon, lat) order
+  "country": str,
+  "country_code": str,  # ISO 3166-1 alpha-2 (e.g., "US", "GB")
+  
+  # Enrichment hints
+  "website": str,  # Will be validated/corrected. Better to provide even if wrong
+  "phone": str,  # International format preferred
+  "type": str,  # Primary category (helps disambiguation)
+  "opening_hours": dict,
+}
+```
+
+## Provide a stable identifier with place_id
+We encourage you to provide a stable identifier for the place with the `place_id` field. A place_id is returned with every API call as the place's primary key.
+
+If you don't provide a `place_id`, we will automatically generate a UUID for you.
+
+
+## Field Priority
+
+**Critical for accuracy:**
+1. `name` (required)
+2. `latitude` + `longitude` OR `full_address`
+3. `full_address` (when combined with coordinates)
+
+**Helpful for disambiguation:**
+- `type` - Essential for places like "Hotel Bar" vs "Hotel"
+- `website` - Preferred source even if incorrect
+- `country_code` - Inferred from coordinates if not provided
+
+## Examples
+
+### Minimal (Name + Coordinates)
+```json
+{
+  "name": "Joe's Pizza",
+  "latitude": 40.7359,
+  "longitude": -73.9911
+}
+```
+
+### Minimal (Name + Address)
+```json
+{
+  "name": "Joe's Pizza",
+  "full_address": "7 Carmine St, New York, NY 10014"
+}
+```
+
+### Recommended (All key fields)
+```json
+{
+  "name": "Joe's Pizza",
+  "latitude": 40.7359,
+  "longitude": -73.9911,
+  "full_address": "7 Carmine St, New York, NY 10014",
+  "type": "restaurant",
+  "country_code": "US"
+}
+```
+
+### Complete (Maximum accuracy)
+```json
+{
+  "id": "place_123",
+  "name": "Joe's Pizza",
+  "latitude": 40.7359,
+  "longitude": -73.9911,
+  "full_address": "7 Carmine St, New York, NY 10014",
+  "street": "Carmine St",
+  "house": "7",
+  "city": "New York",
+  "state": "NY",
+  "postalCode": "10014",
+  "country": "United States",
+  "country_code": "US",
+  "type": "restaurant",
+  "website": "http://www.joespizzanyc.com",
+  "phone": "+12122555803"
+}
+```
+
+---
+
+## Confidence Scores
+
+Confidence scores indicate how reliable an enrichment result is based on the quality and quantity of sources found.
+
+```python
+class ConfidenceScore(str, Enum):
+    VERY_HIGH = "VERY_HIGH"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    NONE = "NONE"
+```
+
+### Confidence Levels
+
+| Level | Description | When Used |
+|-------|-------------|-----------|
+| `VERY_HIGH` | Extremely reliable | Multiple authoritative sources, recent data, high source quality |
+| `HIGH` | Very reliable | Strong evidence from credible sources, good recency |
+| `MEDIUM` | Moderately reliable | Reasonable evidence with some uncertainty or older sources |
+| `LOW` | Less reliable | Ambiguous, conflicting, or weak signals |
+| `NONE` | No confidence | No reliable sources found or unable to determine |
+
+### Best Practices
+
+- **VERY_HIGH/HIGH**: Safe to use directly in production
+- **MEDIUM**: Generally reliable, consider validation for critical use cases
+- **LOW**: Use with caution, may require manual review
+- **NONE**: No reliable data found, consider alternative sources
+
+---
+
+## Open/Closed Status
+
+```python
+class OpenClosedStatus(str, Enum):
+    NO_INTERNET_PRESENCE = "No Internet Presence"
+    OPEN = "Open"
+    CLOSED = "Closed"
+    TEMPORARILY_CLOSED = "Temporarily Closed"
+```
+
+### Status Definitions
+
+- **Open**: Recent, credible evidence the business is operating
+- **Closed**: Explicit closure signals from credible sources
+- **Temporarily Closed**: Business appears temporarily closed but may reopen
+- **No Internet Presence**: No credible reference for the exact name with plausible location context
