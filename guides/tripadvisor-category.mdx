@@ -1,0 +1,78 @@
+---
+title: "Tripadvisor Category Enrichment"
+description: "This page explains what the Tripadvisor Category enrichment is, what it returns, how it decides its results, what sources it relies on, and how to safely consume the output."
+groups: ["org:tripadvisor"]
+---
+
+## Place Type Classification
+
+The `placetype` field categorizes the business into one of four primary types: `accommodation`, `restaurant`, `attraction`, or `CANT_VERIFY`. This high-level classification determines the fundamental nature of the business and drives the overall user experience.
+
+### Fallback Behavior
+
+When sufficient evidence is unavailable or inconsistent, the enrichment returns placetype `CANT_VERIFY` with `subtype_id` 0 and `subtype` "CANT_VERIFY".
+
+## Output schema
+
+<ResponseField name="reasoning" type="string" required>
+  Short narrative explaining the classification and key evidence used for the decision.
+  
+  Useful for transparency and QA, not intended as machine-parsable logic.
+</ResponseField>
+
+<ResponseField name="placetype" type="enum" required>
+  Primary classification of the business type.
+  
+  **Values:**
+  - `accommodation` - Lodging establishments
+  - `restaurant` - Food service establishments  
+  - `attraction` - Tourist attractions and activities
+  - `CANT_VERIFY` - Unable to determine classification
+</ResponseField>
+
+<ResponseField name="subtype" type="object" required>
+  Granular classification within the place type using Tripadvisor-style taxonomy.
+  
+  <Expandable title="subtype properties">
+    <ResponseField name="subtype_id" type="integer" required>
+      Stable numeric identifier within the placetype's taxonomy. Use this for programmatic logic.
+      
+      On failure, returns `0`.
+    </ResponseField>
+    
+    <ResponseField name="subtype" type="string" required>
+      Display-friendly category label corresponding to the subtype_id.
+      
+      On failure, returns `"CANT_VERIFY"`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Accommodation (hotel)
+```json
+{
+  "reasoning": "Multi-unit property with explicit 24-hour front desk, daily housekeeping included, and private bathrooms in all rooms. Standard hotel services without resort or boutique specialization.",
+  "placetype": "accommodation",
+  "subtype": { "subtype_id": 1, "subtype": "hotel" }
+}
+```
+
+### Accommodation (small hotel)
+```json
+{
+  "reasoning": "Multi-unit property with included daily housekeeping and private bathrooms, but no explicit 24-hour front desk. Classified as B&B/Inn family, small hotel subtype.",
+  "placetype": "accommodation",
+  "subtype": { "subtype_id": 32, "subtype": "small hotel" }
+}
+```
+
+### Can’t verify
+```json
+{
+  "reasoning": "Search results were inconclusive; no matching sources with sufficient detail.",
+  "placetype": "CANT_VERIFY",
+  "subtype": { "subtype_id": 0, "subtype": "CANT_VERIFY" }
+}
+```

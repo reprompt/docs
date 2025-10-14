@@ -28,7 +28,7 @@
             "group": "Guides",
             "pages": [
               "guides/open-closed",
-              "guides/trip-category",
+              "guides/tripadvisor-category",
               "schemas/schemas"
             ]
           }
