@@ -49,7 +49,7 @@ headers = {
 data = {
     "inputs": {
         "place_id": "my_place_123",
-        "name": "Joe's Pizza",
+        "name": "Joes Pizza",
         "latitude": 40.7359,
         "longitude": -73.9911,
         "full_address": "7 Carmine St, New York, NY 10014"
@@ -72,7 +72,7 @@ const response = await fetch('https://reprompt--reprompt-fastapi-fastapi-app.us-
   body: JSON.stringify({
     inputs: {
       place_id: "my_place_123",
-      name: "Joe's Pizza",
+      name: "Joes Pizza",
       latitude: 40.7359,
       longitude: -73.9911,
       full_address: "7 Carmine St, New York, NY 10014"
@@ -101,7 +101,7 @@ The `inputs` object accepts different combinations:
 ```json
 {
   "place_id": "my_place_123",
-  "name": "Joe's Pizza",
+  "name": "Joes Pizza",
   "latitude": 40.7359,
   "longitude": -73.9911
 }
@@ -111,7 +111,7 @@ The `inputs` object accepts different combinations:
 ```json
 {
   "place_id": "my_place_123",
-  "name": "Joe's Pizza",
+  "name": "Joes Pizza",
   "full_address": "7 Carmine St, New York, NY 10014"
 }
 ```
@@ -120,7 +120,7 @@ The `inputs` object accepts different combinations:
 ```json
 {
   "place_id": "my_place_123",
-  "name": "Joe's Pizza",
+  "name": "Joes Pizza",
   "latitude": 40.7359,
   "longitude": -73.9911,
   "full_address": "7 Carmine St, New York, NY 10014"
@@ -190,7 +190,7 @@ For multiple places, use batch processing for asynchronous enrichment:
     {
       "place_id": "my_db_id_456",
       "inputs": {
-        "name": "Joe's Pizza",
+        "name": "Joes Pizza",
         "latitude": 40.7359,
         "longitude": -73.9911,
         "full_address": "7 Carmine St, New York, NY 10014"
