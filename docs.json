@@ -29,7 +29,6 @@
             "pages": [
               "guides/open-closed",
               "guides/trip-category",
-              "guides/batch-processing",
               "schemas/schemas"
             ]
           }
@@ -39,12 +38,6 @@
       {
         "version": "v2 experimental",
         "groups": [
-          {
-            "group": " ",
-            "pages": [
-              "guides/placematch"
-            ]
-          },
           {
             "group": "V2 API Reference",
             "openapi": "https://api.reprompt.io/v2/openapi.json"
@@ -59,7 +52,7 @@
 },
 "api": {
   "playground": {
-     "display": "interactive"
+     "display": "simple"
    },
    "examples": {
      "languages": ["curl", "python", "javascript"],
@@ -85,5 +78,10 @@
     "github": "https://github.com/reprompt",
     "linkedin": "https://www.linkedin.com/company/reprompt"
   }
-}
+},
+"contextual": {
+   "options": [
+     "copy"
+   ]
+ }
 }
