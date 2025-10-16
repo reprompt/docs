@@ -111,9 +111,14 @@ curl -X POST \
 ```
 
 ```python Python
+import requests
+
 response = requests.post(
     "https://api.reprompt.io/v2/find-places",
-    headers={"Authorization": "Bearer {YOUR_API_KEY}"},
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json"
+    },
     json={
         "location_filter": {
             "latitude": 40.7128,
@@ -123,6 +128,8 @@ response = requests.post(
         "categories": ["restaurant", "cafe", "bar"]
     }
 )
+
+places = response.json()
 ```
 </CodeGroup>
 

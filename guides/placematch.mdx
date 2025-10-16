@@ -1,136 +1,95 @@
 ---
 title: "PlaceMatch"
-description: "This guide covers Reprompt's place matching API"
+description: "Match places across multiple geospatial data sources using AI-powered entity resolution"
+mode: "wide"
 ---
 
-## What is place matching?
+import { PlacematchPlayground } from "/snippets/PlacematchPlayground.jsx"
 
-Reprompt’s place matching conflates an input place against one or more sources (e.g., Reprompt, Overture, Foursquare, or your own data). The engine combines traditional similarity (name, location, category) with LLM verification to produce high-confidence matches.
+## Overview
 
-- Output format: GeoJSON `FeatureCollection` 
-- Each `Feature.properties` includes:
-  - **`source`**: where the match came from
-  - **`confidence_score`**: overall confidence (0–1)
-  - **`is_match`**: boolean match flag
-  - **`match_explanation`**: optional human-readable explanation
-  - Optional per-dimension scores/weights (name/location/category)
+The [`/placematch`](/api-reference/places/placematch) endpoint helps you match a place against multiple geospatial data sources using AI-powered entity resolution. Given information about a place (name, address, coordinates), we find the right match across sources like Reprompt, Overture, Foursquare, or your own data.
 
+Under the hood, we use a combination of:
+- Name similarity
+- Geographic proximity and distance
+- Category alignment
+- Address component matching
+- Fine-tuned LLM verification
 
+Each match includes a confidence score, source attribution, and optional explanation.
 
-## Input modes and constraints
+## Interactive Demo
 
-- **Coordinates-only**
-  - Provide `latitude` and `longitude`.
-  - Best when device or map interactions are available.
-  - The engine applies geographic proximity and contextual cues.
+**Try it:** Enter place information below, select data sources, and click 'Find Matches' to see real-time matching results.
 
-- **Name + Address (+ optional coordinates)**
-  - Provide `name` and `address`; coordinates improve precision.
-  - Address should include postal code when possible for maximal accuracy.
+<PlacematchPlayground />
 
-- **Name-only**
-  - Not supported without either coordinates or a full address; such requests will return `501 Not Implemented`.
+## Basic Matching
 
-Validation requirements:
-- Provide at least a name OR coordinates.
-- If `address` is provided, `name` is required.
-- Provide both `latitude` and `longitude` together (no partial coordinates).
-- BYOD candidates (below) are only valid when `match_sources` includes `byod`.
+### Name + Address + Coordinates
 
+The most precise matching mode uses all available place information.
 
-
-## Sources and configuration
-
-- **`match_sources`**: choose one or more of `reprompt`, `overture`, `foursquare`, `byod`.
-- **`max_matches`**: maximum results per source (maps to the engine’s `k`).
-- **`radius`**: search radius in meters. Returned in metadata; the engine may use its own internal heuristics.
-
-<Note>
-Per-source results are not merged (`merge_matches = false`). Evaluate per-feature `source` when reconciling across providers.
-</Note>
-
-
-
-## Bring Your Own Data (BYOD)
-
-Include your own candidate places to match against.
-
-- Enable by adding `"byod"` to `match_sources`.
-- Provide up to 50 `match_byod_candidates` with any combination of:
-  - `name` (recommended),
-  - `address`,
-  - `latitude` + `longitude` (preferred for strong results).
-- Output features will include `source: "byod"` when your candidates match.
-
-
-
-## Error handling and resiliency
-
-You may encounter:
-
-- **Validation errors (400/422)**: input shape issues (e.g., partial coordinates, address without name).
-- **Not implemented (501)**: name-only without either coordinates or a full address/postal code.
-- **Upstream/network errors (502)**: external matching service unavailable.
-- **Internal errors (500)**: unexpected server conditions.
-
-Recommended client behavior:
-- Treat 4xx as fixable input errors; surface to calling service with actionable messages.
-- Backoff and retry 5xx with jitter. Log correlation IDs if available.
-- On empty `features`, avoid repeated immediate retries; enqueue for alternate workflows or human review.
-
-
-
-## Example requests
-
-Coordinates-only (Foursquare + Overture):
-```json
-{
-  "place": { "latitude": 40.7829, "longitude": -73.9654 },
-  "match_sources": ["foursquare", "overture"],
-  "max_matches": 3
-}
+<CodeGroup>
+```bash cURL
+curl -X POST \
+  'https://api.reprompt.io/v2/placematch' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "place": {
+      "name": "Starbucks",
+      "full_address": "1585 Broadway, New York, NY 10036",
+      "latitude": 40.7614327,
+      "longitude": -73.9776216
+    },
+    "match_sources": ["reprompt", "overture"],
+    "max_matches": 3
+  }'
 ```
 
-Name+Address (+coords) (Reprompt + Overture):
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.reprompt.io/v2/placematch',
+    headers={
+        'Authorization': 'Bearer {YOUR_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'place': {
+            'name': 'Starbucks',
+            'full_address': '1585 Broadway, New York, NY 10036',
+            'latitude': 40.7614327,
+            'longitude': -73.9776216
+        },
+        'match_sources': ['reprompt', 'overture'],
+        'max_matches': 3
+    }
+)
+
+matches = response.json()
+```
+</CodeGroup>
+
+**Response:**
+
 ```json
 {
-  "place": {
-    "name": "Starbucks",
-    "address": "1585 Broadway, New York, NY 10036",
-    "latitude": 40.7614327,
-    "longitude": -73.9776216
-  },
-  "match_sources": ["reprompt", "overture"],
-  "max_matches": 3
+  "results": [
+    {
+      "place_id": "08f2ad12e5c47fff-40a52237fd0e5df0-242ac11b-1e8480-08f2ad12e5c45fff",
+      "name": "Starbucks",
+      "full_address": "1585 Broadway, New York, NY 10036",
+      "latitude": 40.7614327,
+      "longitude": -73.9776216,
+      "source": "reprompt",
+      "confidence_score": 0.98,
+      "is_match": true,
+      "match_explanation": "Exact name and address match with precise coordinates"
+    }
+  ]
 }
 ```
-
-BYOD candidates:
-```json
-{
-  "place": { "latitude": 37.7749, "longitude": -122.4194 },
-  "match_sources": ["byod"],
-  "match_byod_candidates": [
-    { "name": "Blue Bottle Coffee", "latitude": 37.7750, "longitude": -122.4195 },
-    { "name": "Ritual Coffee Roasters", "latitude": 37.7748, "longitude": -122.4193 }
-  ],
-  "radius": 100,
-  "max_matches": 3
-}
-```
-
-
-
-### Using results effectively
-
-- Prefer the top feature by `confidence_score` across all returned features.
-- Auto-link to the top feature when `confidence_score >= 0.90`.
-- For `0.80–0.90`, auto-link when corroborated by external signals (e.g., category agreement) or send to a light-weight review queue.
-- Keep a review queue for `0.60–0.80`.
-- Track result distributions by source to calibrate thresholds.
-
-<Note>
-Because responses only include matches, “no match” is represented as an empty `features` array.
-</Note>
-
-
