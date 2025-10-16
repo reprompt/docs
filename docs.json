@@ -46,7 +46,8 @@
           {
             "group": "Guides",
             "pages": [
-              "guides/finding-places"
+              "guides/finding-places",
+              "guides/placematch"
             ]
           }
         ]

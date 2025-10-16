@@ -1,0 +1,94 @@
+name: Claude Auto Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'guides/**/*.mdx'
+      - 'openapi-v*.json'
+      - '.github/workflows/claude-auto-review.yml'
+
+jobs:
+  auto-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history to detect changed files
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests aiohttp pandas backoff
+
+      - name: Automatic PR Review
+        uses: anthropics/claude-code-action@beta
+        env:
+          REPROMPT_API_KEY: ${{ secrets.REPROMPT_API_KEY }}
+          REPROMPT_ORG_SLUG: ${{ secrets.REPROMPT_ORG_SLUG }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          timeout_minutes: "10"
+          direct_prompt: |
+            Review this documentation PR. Keep feedback concise (2-4 lines).
+
+            Assessment: DO_NOT_SHIP, FURTHER_REVIEW_REQUESTED, PROBABLY_FINE, DEFINITELY_FINE
+
+            ## Your Tasks
+            1. **Identify changed guide files** (guides/*.mdx) in this PR
+            2. **Extract code examples** from changed files (bash/curl, Python, JavaScript blocks)
+            3. **Test API examples** by executing them:
+               - Use Bash tool for curl examples
+               - Write temp Python scripts and execute for Python examples
+               - Substitute {YOUR_API_KEY} with $REPROMPT_API_KEY env var
+               - Substitute {org_slug}/{your_org_slug} with $REPROMPT_ORG_SLUG env var
+               - Skip: JSON response examples, CSV parsing, async functions, class definitions
+            4. **Report test results** in your review (✅ pass, ❌ fail, ⏭️ skip)
+            5. **Review documentation quality**
+
+            ## Focus Areas
+            - **Example Accuracy**: Do the code examples execute successfully?
+            - **API Correctness**: Are endpoint URLs and request formats correct?
+            - **Placeholder Consistency**: Check {YOUR_API_KEY}, {org_slug} format
+            - **Response Examples**: Do response examples match current API format?
+            - **OpenAPI Changes**: If openapi-v*.json changed, verify breaking changes
+            - **Documentation Quality (NO AI SLOP)**:
+              * Flag verbose/repetitive content
+              * Flag obvious explanations (e.g., "this endpoint returns data about places")
+              * Flag unnecessary filler phrases ("it's important to note", "please keep in mind")
+              * Require concise, technical, high-signal writing
+              * Good: Direct, specific, actionable
+              * Bad: Wordy, redundant, stating the obvious
+
+            ## High Risk (careful review)
+            - Examples that fail when you execute them (❌)
+            - Changed endpoint URLs or request formats
+            - Outdated response field names or structures
+            - Missing required parameters in examples
+            - AI slop: verbose, repetitive, or obvious content
+
+            ## What to Approve
+            - All testable examples execute successfully (✅)
+            - Documentation is concise, technical, high-signal
+            - Minor documentation improvements
+            - Added new working examples
+
+            ## Assessment Guide
+            - DO_NOT_SHIP: Critical API examples broken or major AI slop
+            - FURTHER_REVIEW_REQUESTED: Some examples fail or quality issues
+            - PROBABLY_FINE: Minor issues, examples work
+            - DEFINITELY_FINE: All examples work, high-quality docs
