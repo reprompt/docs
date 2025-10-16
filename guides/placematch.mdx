@@ -1,5 +1,5 @@
 ---
-title: "PlaceMatch"
+title: "Placematch"
 description: "Match places across multiple geospatial data sources using AI-powered entity resolution"
 mode: "wide"
 ---
@@ -17,7 +17,7 @@ Under the hood, we use a combination of:
 - Address component matching
 - Fine-tuned LLM verification
 
-Each match includes a confidence score, source attribution, and optional explanation.
+Each match includes a [`confidence`](/api-reference/places/placematch#response-fields) score, source attribution, and reasoning explanation.
 
 ## Interactive Demo
 
@@ -27,25 +27,23 @@ Each match includes a confidence score, source attribution, and optional explana
 
 ## Basic Matching
 
-### Name + Address + Coordinates
+### Name + Coordinates
 
-The most precise matching mode uses all available place information.
+Match a place using just its name and coordinates. This is useful when you don't have a full address.
 
 <CodeGroup>
 ```bash cURL
-curl -X POST \
-  'https://api.reprompt.io/v2/placematch' \
-  -H 'Authorization: Bearer {YOUR_API_KEY}' \
-  -H 'Content-Type: application/json' \
-  -d '{
+curl --request POST \
+  --url https://api.reprompt.io/v2/placematch \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
     "place": {
       "name": "Starbucks",
-      "full_address": "1585 Broadway, New York, NY 10036",
       "latitude": 40.7614327,
       "longitude": -73.9776216
     },
-    "match_sources": ["reprompt", "overture"],
-    "max_matches": 3
+    "match_sources": ["reprompt"]
   }'
 ```
 
@@ -61,12 +59,10 @@ response = requests.post(
     json={
         'place': {
             'name': 'Starbucks',
-            'full_address': '1585 Broadway, New York, NY 10036',
             'latitude': 40.7614327,
             'longitude': -73.9776216
         },
-        'match_sources': ['reprompt', 'overture'],
-        'max_matches': 3
+        'match_sources': ['reprompt']
     }
 )
 
@@ -80,16 +76,394 @@ matches = response.json()
 {
   "results": [
     {
-      "place_id": "08f2ad12e5c47fff-40a52237fd0e5df0-242ac11b-1e8480-08f2ad12e5c45fff",
+      "place_id": "288a25a3-6584-510e-82da-7ebafc328358",
       "name": "Starbucks",
-      "full_address": "1585 Broadway, New York, NY 10036",
-      "latitude": 40.7614327,
-      "longitude": -73.9776216,
+      "full_address": "1290 6th ave, new york, ny 10104",
+      "latitude": 40.76075,
+      "longitude": -73.97885,
+      "category_primary": "coffee_shop",
+      "phone": "+1 212-977-4861",
+      "website": "https://www.starbucks.com/store-locator/store/88886/",
       "source": "reprompt",
-      "confidence_score": 0.98,
+      "distance_m": 128.322674,
       "is_match": true,
-      "match_explanation": "Exact name and address match with precise coordinates"
+      "confidence": "VERY_HIGH",
+      "reasoning": "The input POI name is exactly 'Starbucks' and the found POI name is the same. The distance between POIs is 128 meters — slightly above the 100m threshold but still very close and within a reasonable margin for the same store."
     }
   ]
 }
+```
+
+## GERS Matching with Overture
+
+The [Global Entity Reference System (GERS)](https://docs.overturemaps.org/gers/) provides stable UUID identifiers for places in Overture's 64M+ place dataset. Use placematch to get GERS IDs for your places, enabling data joins and stable references across Overture releases.
+
+### Getting GERS IDs
+
+Match a place against Overture to get its GERS ID and enriched attributes:
+
+<CodeGroup>
+```bash cURL
+curl --request POST \
+  --url https://api.reprompt.io/v2/placematch \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "place": {
+      "name": "Blue Bottle Coffee",
+      "full_address": "66 Mint St, San Francisco, CA 94103",
+      "latitude": 37.7814,
+      "longitude": -122.4071
+    },
+    "match_sources": ["overture"],
+    "max_matches": 1
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.reprompt.io/v2/placematch',
+    headers={
+        'Authorization': 'Bearer {YOUR_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'place': {
+            'name': 'Blue Bottle Coffee',
+            'full_address': '66 Mint St, San Francisco, CA 94103',
+            'latitude': 37.7814,
+            'longitude': -122.4071
+        },
+        'match_sources': ['overture'],
+        'max_matches': 1
+    }
+)
+
+# Extract GERS ID from response
+if response.ok and response.json()['results']:
+    match = response.json()['results'][0]
+    gers_id = match['place_id']  # This is the Overture GERS ID
+    print(f"GERS ID: {gers_id}")
+    print(f"Confidence: {match['confidence']}")
+```
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "place_id": "d724e74f-017a-4902-9031-bc784ffc1789",
+      "name": "Blue Bottle Coffee",
+      "full_address": "66 Mint St, San Francisco, CA 94103",
+      "latitude": 37.7814,
+      "longitude": -122.4071,
+      "category_primary": "coffee_shop",
+      "source": "overture",
+      "confidence": "VERY_HIGH",
+      "reasoning": "Exact name and address match with precise coordinates matching Overture Places data"
+    }
+  ]
+}
+```
+
+The [`place_id`](/api-reference/places/placematch#response-fields) field contains the GERS ID when matching against Overture.
+
+### Enriching CSV Data with GERS
+
+Match places from a CSV file against Overture to get GERS IDs:
+
+**Input CSV** (`stores.csv`):
+```csv
+company,address,latitude,longitude
+Blue Bottle Coffee,"66 Mint St, San Francisco, CA 94103",37.7814,-122.4071
+Philz Coffee,"3101 24th St, San Francisco, CA 94110",37.7529,-122.4141
+```
+
+**Python Script:**
+```python
+import pandas as pd
+import requests
+
+df = pd.read_csv('stores.csv')
+
+# Match each store against Overture to get GERS IDs and enriched data
+matches = []
+for _, row in df.iterrows():
+    response = requests.post(
+        'https://api.reprompt.io/v2/placematch',
+        headers={'Authorization': 'Bearer {YOUR_API_KEY}'},
+        json={
+            'place': {
+                'name': row['company'],
+                'full_address': row['address'],
+                'latitude': row['latitude'],
+                'longitude': row['longitude']
+            },
+            'match_sources': ['overture']
+        }
+    )
+
+    if response.ok and response.json()['results']:
+        match = response.json()['results'][0]
+        matches.append({
+            'company': row['company'],
+            'address': row['address'],
+            'latitude': row['latitude'],
+            'longitude': row['longitude'],
+            'category': match.get('category_primary', ''),
+            'phone': match.get('phone', ''),
+            'website': match.get('website', ''),
+            'gers_id': match['place_id']
+        })
+
+# Save enriched data back to CSV
+enriched_df = pd.DataFrame(matches)
+enriched_df.to_csv('stores_with_gers.csv', index=False)
+```
+
+**Output CSV** (`stores_with_gers.csv`):
+
+The output includes the original data plus enriched attributes from Overture (category, phone, website) and GERS ID:
+
+```csv
+company,address,latitude,longitude,category,phone,website,gers_id
+Blue Bottle Coffee,"66 Mint St, San Francisco, CA 94103",37.7814,-122.4071,coffee_shop,(510) 653-3394,http://www.bluebottlecoffee.com/cafes/mint-plaza,55d8c5f4-7b23-4713-ab5e-135445190e2d
+Philz Coffee,"3101 24th St, San Francisco, CA 94110",37.7529,-122.4141,coffee_shop,(415) 875-9370,http://www.philzcoffee.com/,35be680b-81f3-434d-a423-e3631af6c279
+```
+
+## Foursquare OS Places Matching
+
+Match places against [Foursquare OS Places](https://docs.foursquare.com/data-products/docs/places-os-places) to get FSQ IDs:
+
+<CodeGroup>
+```bash cURL
+curl --request POST \
+  --url https://api.reprompt.io/v2/placematch \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "place": {
+      "name": "Blue Bottle Coffee",
+      "full_address": "66 Mint St, San Francisco, CA 94103",
+      "latitude": 37.7814,
+      "longitude": -122.4071
+    },
+    "match_sources": ["foursquare"]
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.reprompt.io/v2/placematch',
+    headers={
+        'Authorization': 'Bearer {YOUR_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'place': {
+            'name': 'Blue Bottle Coffee',
+            'full_address': '66 Mint St, San Francisco, CA 94103',
+            'latitude': 37.7814,
+            'longitude': -122.4071
+        },
+        'match_sources': ['foursquare']
+    }
+)
+
+# Extract FSQ ID from response
+if response.ok and response.json()['results']:
+    match = response.json()['results'][0]
+    fsq_id = match['place_id']  # This is the Foursquare FSQ ID
+    print(f"FSQ ID: {fsq_id}")
+```
+
+```json Response
+{
+  "results": [
+    {
+      "place_id": "49ca8f4df964a520b9581fe3",
+      "name": "Blue Bottle Coffee",
+      "full_address": "66 Mint Plaza",
+      "latitude": 37.782584,
+      "longitude": -122.407743,
+      "category_primary": "Dining and Drinking > Cafe, Coffee, and Tea House > Coffee Shop",
+      "phone": "(510) 653-3394",
+      "website": "http://www.bluebottlecoffee.com/cafes/mint-plaza",
+      "source": "foursquare",
+      "distance_m": 143.26,
+      "is_match": true,
+      "confidence": "VERY_HIGH",
+      "reasoning": "The names are identical and the found POI has the same cafe type and official Blue Bottle website..."
+    }
+  ]
+}
+```
+</CodeGroup>
+
+The [`place_id`](/api-reference/places/placematch#response-fields) field contains the FSQ ID when matching against Foursquare. Once you have FSQ IDs, you can use the [Foursquare Places Feedback API](https://docs.foursquare.com/developer/reference/places-feedback) to flag data errors (closed venues, duplicates, incorrect locations) and help maintain data quality in Foursquare OS Places.
+
+## Combined Matching: Check Multiple Data Sources
+
+Match against both Overture (open data) and Foursquare simultaneously using the [`match_sources`](/api-reference/places/placematch#request-parameters) parameter to see if your place exists in open datasets.
+
+**Use cases:**
+- **Data quality checks**: Verify if your places are represented in authoritative open datasets
+- **Coverage analysis**: Understand which places are missing from public data sources
+- **Multi-source enrichment**: Get both GERS IDs and FSQ IDs in one API call
+
+<CodeGroup>
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.reprompt.io/v2/placematch',
+    headers={'Authorization': 'Bearer {YOUR_API_KEY}'},
+    json={
+        'place': {
+            'name': 'Blue Bottle Coffee',
+            'full_address': '66 Mint St, San Francisco, CA 94103',
+            'latitude': 37.7814,
+            'longitude': -122.4071
+        },
+        'match_sources': ['overture', 'foursquare']  # Check both sources
+    }
+)
+
+results = response.json()['results']
+
+for result in results:
+    if result['source'] == 'overture':
+        print(f"✓ Found in Overture - GERS ID: {result['place_id']}")
+    elif result['source'] == 'foursquare':
+        print(f"✓ Found in Foursquare - FSQ ID: {result['place_id']}")
+```
+
+```json Response
+{
+  "results": [
+    {
+      "place_id": "55d8c5f4-7b23-4713-ab5e-135445190e2d",
+      "name": "Blue Bottle Coffee",
+      "full_address": "66 Mint Plaza",
+      "latitude": 37.782584,
+      "longitude": -122.407743,
+      "category_primary": "coffee_shop",
+      "phone": "(510) 653-3394",
+      "website": "http://www.bluebottlecoffee.com/cafes/mint-plaza",
+      "source": "overture",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "place_id": "49ca8f4df964a520b9581fe3",
+      "name": "Blue Bottle Coffee",
+      "full_address": "66 Mint Plaza",
+      "latitude": 37.782584,
+      "longitude": -122.407743,
+      "category_primary": "Dining and Drinking > Cafe, Coffee, and Tea House > Coffee Shop",
+      "phone": "(510) 653-3394",
+      "website": "http://www.bluebottlecoffee.com/cafes/mint-plaza",
+      "source": "foursquare",
+      "confidence": "VERY_HIGH"
+    }
+  ],
+  "metadata": {
+    "total_results": 2,
+    "sources_searched": ["overture", "foursquare"],
+    "search_radius_meters": 1000.0
+  }
+}
+```
+</CodeGroup>
+
+## Batch Processing: Matching Open Datasets
+
+Match 1000+ places from an open dataset against Overture and Foursquare using async requests with automatic retry.
+
+### Dataset: SF Restaurant Inspections
+
+Download SF restaurant data from [DataSF](https://data.sfgov.org/):
+
+```bash
+curl -o restaurants.csv 'https://data.sfgov.org/resource/pyih-qa8i.csv?$limit=1000'
+```
+
+### Async Script with Retry
+
+Install dependencies: `pip install pandas aiohttp backoff`
+
+```python
+import asyncio, os, pandas as pd, aiohttp, backoff
+
+API_URL = "https://api.reprompt.io/v2/placematch"
+API_KEY = os.getenv("REPROMPT_API_KEY")
+
+@backoff.on_exception(
+    backoff.expo, aiohttp.ClientError, max_tries=5,
+    giveup=lambda e: isinstance(e, aiohttp.ClientResponseError) and e.status not in [429, 500, 502, 503]
+)
+async def match_place(session, name, address, lat=None, lon=None):
+    place = {"name": name, "full_address": address}
+    if lat and lon:
+        place.update({"latitude": float(lat), "longitude": float(lon)})
+
+    async with session.post(API_URL, json={
+        "place": place,
+        "match_sources": ["overture", "foursquare"]
+    }) as resp:
+        resp.raise_for_status()
+        return await resp.json()
+
+async def match_dataset(csv_file):
+    df = pd.read_csv(csv_file).head(1000)
+    semaphore = asyncio.Semaphore(10)  # 10 concurrent requests
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+
+    async def match_row(row):
+        async with semaphore:
+            try:
+                resp = await match_place(
+                    session,
+                    row['business_name'],
+                    f"{row['business_address']}, {row['business_city']}, {row['business_state']}",
+                    row.get('business_latitude'),
+                    row.get('business_longitude')
+                )
+
+                # Organize by source (UUID = Overture, 24-hex = Foursquare)
+                by_source = {}
+                for m in resp.get('results', []):
+                    pid = m.get('place_id', '')
+                    if '-' in pid: by_source.setdefault('overture', []).append(m)
+                    elif len(pid) == 24: by_source.setdefault('foursquare', []).append(m)
+
+                return {
+                    'name': row['business_name'],
+                    'overture_id': by_source.get('overture', [{}])[0].get('place_id'),
+                    'foursquare_id': by_source.get('foursquare', [{}])[0].get('place_id')
+                }
+            except Exception as e:
+                print(f"Error: {row['business_name']}: {e}")
+                return None
+
+    async with aiohttp.ClientSession(headers=headers) as session:
+        tasks = [match_row(row) for _, row in df.iterrows()]
+        results = [r for r in await asyncio.gather(*tasks) if r]
+
+    pd.DataFrame(results).to_csv('matched.csv', index=False)
+    print(f"Matched {len(results)} places")
+
+asyncio.run(match_dataset('restaurants.csv'))
+```
+
+**Output:**
+```csv
+name,overture_id,foursquare_id
+5A5 Steak Lounge,0fcbf3e8-b44f-4632-8afa-39568a2fc16b,4a011045f964a520d5701fe3
+Blue Bottle Coffee,55d8c5f4-7b23-4713-ab5e-135445190e2d,49ca8f4df964a520b9581fe3
 ```

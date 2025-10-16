@@ -6,3 +6,4 @@ __pycache__
 .env.production.local
 */orgs.json
 env/
+.DS_Store

@@ -162,3 +162,180 @@ places = response.json()
   ]
 }
 ```
+
+### Compare Coffee Chain Coverage
+
+Find multiple chains to compare their coverage in an area:
+
+<CodeGroup>
+```python Python
+import requests
+from collections import Counter
+
+response = requests.post(
+    "https://api.reprompt.io/v2/find-places",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "location_filter": {
+            "locality": "San Francisco",
+            "country_code": "US"
+        },
+        "names": ["Starbucks", "Philz Coffee"],
+        "categories": ["coffee_shop", "cafe"]
+    }
+)
+
+places = response.json()
+
+# Count locations by chain
+chain_counts = Counter(place['name'] for place in places['results'])
+for chain, count in chain_counts.items():
+    print(f"{chain}: {count} locations")
+```
+
+```json Response
+{
+  "results": [
+    {
+      "place_id": "sb001",
+      "name": "Starbucks",
+      "full_address": "4094 18th St, San Francisco, CA 94114",
+      "latitude": 37.7609,
+      "longitude": -122.4353,
+      "category_primary": "coffee_shop"
+    },
+    {
+      "place_id": "philz001",
+      "name": "Philz Coffee",
+      "full_address": "3101 24th St, San Francisco, CA 94110",
+      "latitude": 37.7529,
+      "longitude": -122.4141,
+      "category_primary": "coffee_shop"
+    }
+    // ... more results
+  ],
+  "metadata": {
+    "total_results": 89
+  }
+}
+```
+</CodeGroup>
+
+## Advanced Search
+
+### Search Entire Cities
+
+Search all places within a city boundary - no need for multiple radius searches.
+
+<CodeGroup>
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.reprompt.io/v2/find-places",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "location_filter": {
+            "locality": "San Francisco",
+            "country_code": "US"
+        },
+        "categories": ["restaurant"]
+    }
+)
+
+places = response.json()
+print(f"Found {places['metadata']['total_results']} restaurants")
+```
+
+```json Response
+{
+  "results": [
+    {
+      "place_id": "rst001",
+      "name": "Gary Danko",
+      "full_address": "800 North Point St, San Francisco, CA 94109",
+      "latitude": 37.8055,
+      "longitude": -122.4209,
+      "category_primary": "restaurant",
+      "phone": "+1 415-749-2060",
+      "website": "https://www.garydanko.com",
+      "operating_status": "Open"
+    }
+    // ... up to 500 results
+  ],
+  "metadata": {
+    "total_results": 5847
+  }
+}
+```
+</CodeGroup>
+
+<Note>
+Returns first 500 results immediately. For complete datasets with >500 places, results include information about accessing the full dataset.
+</Note>
+
+### Search Within Custom Boundaries
+
+Use GeoJSON polygons to search specific neighborhoods or custom areas.
+
+<CodeGroup>
+```python Python
+import requests
+
+# Mission District boundary (San Francisco postal code 94110)
+mission_boundary = {
+    "type": "Polygon",
+    "coordinates": [[[-122.405115, 37.764635], [-122.405212, 37.763469], [-122.405832, 37.762199], [-122.406365, 37.761199], [-122.40645, 37.760114], [-122.406167, 37.759315], [-122.40405, 37.757619], [-122.403428, 37.756871], [-122.403328, 37.756082], [-122.40315, 37.754488], [-122.403437, 37.753199], [-122.403364, 37.752366], [-122.405091, 37.745281], [-122.405614, 37.7442], [-122.406652, 37.741241], [-122.407045, 37.739587], [-122.408136, 37.73964], [-122.408009, 37.737734], [-122.408284, 37.736846], [-122.409287, 37.735258], [-122.410052, 37.734675], [-122.411978, 37.733732], [-122.414554, 37.732371], [-122.416255, 37.732034], [-122.419881, 37.732016], [-122.423718, 37.73155], [-122.425944, 37.731698], [-122.422274, 37.732383], [-122.421787, 37.732774], [-122.422472, 37.733967], [-122.422901, 37.734388], [-122.426983, 37.735455], [-122.427849, 37.734718], [-122.428578, 37.735082], [-122.428454, 37.735882], [-122.42551, 37.737774], [-122.42452, 37.739868], [-122.424394, 37.740405], [-122.424168, 37.740805], [-122.426453, 37.764634], [-122.421885, 37.764908], [-122.42173, 37.763304], [-122.421248, 37.764947], [-122.407553, 37.765798], [-122.407431, 37.764497], [-122.405115, 37.764635]]]
+}
+
+response = requests.post(
+    "https://api.reprompt.io/v2/find-places",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "location_filter": {"geometry": mission_boundary},
+        "categories": ["restaurant"]
+    }
+)
+
+places = response.json()
+print(f"Found {len(places['results'])} restaurants in Mission District")
+```
+
+```json Response
+{
+  "results": [
+    {
+      "place_id": "mission001",
+      "name": "La Taqueria",
+      "full_address": "2889 Mission St, San Francisco, CA 94110",
+      "latitude": 37.7516,
+      "longitude": -122.4181,
+      "category_primary": "restaurant",
+      "phone": "+1 415-285-7117",
+      "operating_status": "Open"
+    },
+    {
+      "place_id": "mission002",
+      "name": "Tartine Bakery",
+      "full_address": "600 Guerrero St, San Francisco, CA 94110",
+      "latitude": 37.7612,
+      "longitude": -122.4244,
+      "category_primary": "restaurant",
+      "operating_status": "Open"
+    }
+  ],
+  "metadata": {
+    "total_results": 342
+  }
+}
+```
+</CodeGroup>
