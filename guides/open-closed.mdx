@@ -21,16 +21,6 @@ class OpenClosedStatus(str, Enum):
     TEMPORARILY_CLOSED = "Temporarily Closed"
 ```
 
-### Status Definitions
-
-**Open**: Recent, credible evidence the business is operating or has relocated nearby under the same name.
-
-**Closed**: Explicit closure signals from credible sources, or replacement by a different business at the same address.
-
-**Temporarily Closed**: Business appears temporarily closed but may reopen (COVID closures, renovations, etc.).
-
-**No Internet Presence**: No credible reference for the exact name with plausible location context.
-
 ## Usage Example
 
 To enrich a place with open/closed status information:
@@ -65,3 +55,25 @@ curl -X POST \
   }
 }
 ```
+
+### Determining Status
+
+#### No Internet Presence
+- **Places are defined as having no internet presence if**:
+  - Web sources have no exact business name match and
+  - Web sources have no plausible partial address match tied to the business name
+
+#### Permanently Closed vs Temporarily Closed vs Open
+
+- **Permanently closed**: Reprompt will return Closed if there is evidence of:
+  - Explicit closure signals from first-party web or social
+  - Explicit closure signals from multiple corroborated 3rd party sources
+  - Specifically for businesses with a customer-facing storefront: Lack of first-party web or social presence and lack of corroborated 3rd party sources will mark the business as permanently closed. For instance, a Joe's Pizza in New York City that has no first-party presence and is only listed on MapQuest and Better Business Bureau from 2009 will be marked as permanently closed without an explicit signal, based on absense of information from up to date sources.
+
+- **Temporarily Closed**: Requires official temporary closure signals from first-party sources (First party web or social)
+
+- **Bias**: There is a high bar for marking a business as permanently closed. The agent will bias towards Open if there is sufficient evidence of existence and operation from up to date web sources.
+
+Specific cases:
+  - **Minor name variations**: Slight variations in the name will be treated as the same place. For example, "Joe's Pizza" and "Joseph Hot Wings and Pizza" at the same address will be treated as the same place. A closure announcement of "Joe's Pizza" will impact "Joseph Hot Wings and Pizza"
+  - **Significant name variations**: If the name is significantly different, the agent will treat the business as a different place. For example, "Joe's Pizza" and "Mystic Pizza" at the same address will be treated as different places. A closure announcement of "Joe's Pizza" will not impact "Mystic Pizza"

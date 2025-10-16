@@ -29,6 +29,7 @@
             "pages": [
               "guides/open-closed",
               "guides/tripadvisor-category",
+              "guides/place-job-results",
               "schemas/schemas"
             ]
           }
@@ -40,7 +41,7 @@
         "groups": [
           {
             "group": "V2 API Reference",
-            "openapi": "https://api.reprompt.io/v2/openapi.json"
+            "openapi": "https://reprompt-rob--reprompt-fastapi-fastapi-app-dev.modal.run/v2/openapi.json"
           }
         ]
       }
