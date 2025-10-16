@@ -1,0 +1,280 @@
+---
+title: "Place Job Results"
+description: "Understand the structure of job results returned by batch endpoints"
+---
+
+## Overview
+
+When you retrieve jobs from the batch endpoints, each job includes inputs, outputs, reasoning, and confidence scores. This guide explains those sections and provides a clean example.
+
+- **Batch docs**: [Batch Processing](/guides/batch-processing)
+- **API reference**: See the Place Enrichment Batch endpoints in the API reference for your version.
+
+## Sections
+
+- **Inputs**: What you submitted for a place. These are the fields we use to locate and enrich the place (e.g., name, coordinates, address, country).
+- **Outputs**: The enriched attributes we found, such as website, phone, opening_hours, categories, ratings, and review counts.
+- **Reasoning**: Brief, structured notes explaining how each attribute was determined (when available).
+- **Confidence scores**: A per-attribute confidence level reflecting the reliability of the result.
+
+## Example Response
+
+The example below removes internal processing metadata and focuses on what your application will typically use.
+
+```json
+{
+  "jobs": [
+    {
+      "place_id": "place_123",
+      "status": "completed",
+      "job_metadata": {
+        "last_enriched": "2025-03-10T15:35:00Z",
+        "country_code": "US",
+        "attribute_status": {
+          "website": "RUN",
+          "phoneNumbers": "RUN",
+          "openingHours": "RUN",
+          "categories": "RUN"
+        }
+      },
+      "inputs": {
+        "id": "place_123",
+        "name": "Joe's Pizza",
+        "latitude": 40.7359,
+        "longitude": -73.9911,
+        "full_address": "7 Carmine St, New York, NY 10014",
+        "country_code": "US"
+      },
+      "outputs": {
+        "website": "https://www.joespizzanyc.com",
+        "phone": null,
+        "opening_hours": { "Monday": "11:00-23:00", "Tuesday": "11:00-23:00" },
+        "categories": ["restaurant", "pizza"],
+        "average_rating": 4.5,
+        "review_count": 1200
+      },
+      "reasoning": {
+        "websites": "Structured reasoning…",
+        "phone": "No phone found on official site.",
+        "opening_hours": "Structured reasoning…",
+        "categories": "Structured reasoning…"
+      },
+      "confidence_scores": {
+        "website": "HIGH",
+        "phone": "LOW",
+        "opening_hours": "MEDIUM",
+        "categories": "HIGH"
+      }
+    }
+  ],
+  "total": 1,
+  "limit": 10000,
+  "offset": 0
+}
+```
+
+## Schemas
+
+### Confidence Scores
+
+Confidence levels indicate how reliable a given attribute is:
+
+```python
+class ConfidenceScore(str, Enum):
+    VERY_HIGH = "VERY_HIGH"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    NONE = "NONE"
+```
+
+- **VERY_HIGH/HIGH**: Safe to use directly
+- **MEDIUM**: Generally reliable; consider validation for critical use cases
+- **LOW**: Use with caution; may require manual review
+- **NONE**: No reliable data found
+
+### Attribute Statuses
+
+Each attribute can include a processing status in `job_metadata.attribute_status` to indicate how enrichment proceeded:
+
+```ts
+export type AttributeStatus = 'RUN' | 'RUN_CONDITION_FAILED' | 'NOT_RUN' | 'ERROR'
+```
+
+- **RUN**: Enrichment was attempted (and completed); the attribute value may be present or null.
+- **RUN_CONDITION_FAILED**: Skipped because preconditions were not met (e.g., missing inputs or failing filters).
+- **NOT_RUN**: Not attempted (e.g., disabled, out of scope, or limits).
+- **ERROR**: Attempted but failed due to an error.
+
+Attributes that commonly include a status entry include `website`, `phoneNumbers`, `openingHours`, and `categories`.
+
+## Next Steps
+
+- Submit a batch following the [Batch Processing](/guides/batch-processing) guide, then poll for completion and retrieve results.
+- Use the `confidence_scores` and `attribute_status` to drive QA workflows or manual review where needed.
+
+
+## Attribute Outputs
+
+Types: `string` | `number` | `list of strings`
+
+- websites
+  - website: string
+
+- email_address
+  - email: string
+
+- phoneNumbers
+  - phone: string
+  - phone_additional: list of strings
+
+- openingHours
+  - opening_hours: list of strings
+  - opening_hours_grouped_by_hours: list of strings
+  - is_open_24h: string
+
+- menu
+  - menu_urls: list of strings
+  - menu_url_official: string
+  - menu_content: string
+  - menu_images: list of strings
+
+- price_tier
+  - price_tier: string
+  - average_price: number
+  - currency: string
+
+- cuisine
+  - cuisines: list of strings
+
+- user_reviews
+  - user_review_count: number
+  - user_average_rating: number
+  - user_wilson_score: number
+  - user_popularity: number
+  - user_review_summary: string
+  - user_summary: string
+
+- approximate_user_reviews
+  - approximate_review_count: number
+  - approximate_average_rating: number
+
+- closed_permanently
+  - open_closed_status: string
+  - open_closed_status_confidence_score: string
+  - date_closed: string
+  - date_opened: string
+
+- chain
+  - chain_id: string
+  - chain_name: string
+  - chain_domains: list of strings
+  - alternative_names: list of strings
+  - chain_wikipedia_url: string
+  - number_of_locations: number
+  - logo_url: string
+
+- reprompt_id
+  - reprompt_id: string
+
+- names
+  - name: string
+  - multilingual_names: list of strings
+  - alt_name: string
+  - official_name: string
+  - brand_name: string
+
+- name_translations
+  - name_translations: list of strings
+
+- socialHandles
+  - instagram: string
+  - facebook: string
+  - tiktok: string
+
+- tiktok
+  - tiktok: string
+  - tiktok_followers: number
+  - tiktok_video_count: number
+  - tiktok_bio: string
+
+- address
+  - address: string
+  - address_localized: string
+
+- categories
+  - categories: list of strings
+
+- naics
+  - naics_code: string
+  - naics_description: string
+
+- merchant
+  - merchant_category_code: string
+  - mcc_description: string
+  - merchant_category_group: string
+  - merchant_super_industry: string
+
+- coordinates
+  - coordinates: string
+  - coordinates_distance: number
+
+- social_media_profile
+  - facebook_followers: number
+  - facebook_likes: number
+  - facebook_page_id: string
+  - facebook_bio: string
+  - instagram_followers: number
+  - instagram_media_count: number
+  - instagram_profile_pic_url: string
+  - instagram_bio: string
+
+- instagram_statistics
+  - instagram_monthly_user_counts: list of strings
+  - instagram_monthly_like_counts: list of strings
+  - instagram_monthly_interaction_counts: list of strings
+
+- website_traffic
+  - website_traffic_monthly_visits: number
+  - website_traffic_source_social_percentage: number
+  - website_traffic_source_paid_referrals_percentage: number
+  - website_traffic_source_mail_percentage: number
+  - website_traffic_source_referrals_percentage: number
+  - website_traffic_source_search_percentage: number
+  - website_traffic_source_direct_percentage: number
+  - website_traffic_top_keywords: list of strings
+
+- parking_spaces
+  - parking_spaces_total: number
+  - parking_spaces_street: number
+  - parking_spaces_shared: number
+  - parking_spaces_dedicated: number
+  - parking_spaces_image_url: string
+
+- traffic_control
+  - traffic_control: string
+
+- one_line_summary
+  - one_line_summary: string
+
+- geometry
+  - buildings_geojson: string
+  - parking_geojson: string
+  - parcels_geojson: string
+  - visualization_image_url: string
+  - analysis_metadata: string
+
+
+- located_within
+  - located_within_name: string
+  - located_within_type: string
+  - located_within_floor_or_level: string
+
+- storefrontImages
+  - storefront_images: list of strings
+
+- place_existence
+  - entity_type: string
+  - digital_footprint: string
+  - place_definition: string
+  - place_reality: string
