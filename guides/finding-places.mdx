@@ -90,14 +90,6 @@ places = response.json()
 - `radius` (optional): Search radius in meters. Default: 500m, Maximum: 10,000m (10km)
 - `categories` (optional): Array of place categories to filter results
 
-<Info>
-The default search radius is 500 meters if not specified. The maximum allowed radius is 10,000 meters (10km).
-</Info>
-
-<Tip>
-Use smaller radius values (100-500m) for dense urban areas and larger values (1000-5000m) for suburban or rural locations to get optimal results.
-</Tip>
-
 ### Multiple Categories
 
 Search for multiple types of places simultaneously:
@@ -159,74 +151,6 @@ response = requests.post(
       "full_address": "30 water st, new york, ny 10004",
       "category_primary": "bar",
       "distance_m": 892.789
-    }
-  ]
-}
-```
-
-## Simple Radius Search
-
-Find all places within a radius without filtering by category:
-
-<CodeGroup>
-```bash cURL
-curl -X POST \
-  'https://api.reprompt.io/v2/find-places' \
-  -H 'Authorization: Bearer {YOUR_API_KEY}' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "location_filter": {
-      "latitude": 37.7749,
-      "longitude": -122.4194,
-      "radius": 500
-    }
-  }'
-```
-
-```python Python
-import requests
-
-response = requests.post(
-    "https://api.reprompt.io/v2/find-places",
-    headers={
-        "Authorization": "Bearer {YOUR_API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={
-        "location_filter": {
-            "latitude": 37.7749,
-            "longitude": -122.4194,
-            "radius": 500
-        }
-    }
-)
-
-places = response.json()
-```
-</CodeGroup>
-
-**Response:**
-
-```json
-{
-  "results": [
-    {
-      "place_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "name": "City Hall",
-      "full_address": "1 dr carlton b goodlett pl, san francisco, ca 94102",
-      "latitude": 37.7793,
-      "longitude": -122.4193,
-      "category_primary": "government_office",
-      "distance_m": 478.234
-    },
-    {
-      "place_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-      "name": "Asian Art Museum",
-      "full_address": "200 larkin st, san francisco, ca 94102",
-      "latitude": 37.7803,
-      "longitude": -122.4165,
-      "category_primary": "museum",
-      "distance_m": 612.891
     }
   ]
 }
