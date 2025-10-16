@@ -1,0 +1,157 @@
+---
+title: "Finding Places"
+description: "Search and discover places using geographic filters"
+mode: "wide"
+---
+
+import { FindPlacesInteractive } from "/snippets/FindPlacesInteractive.jsx"
+
+## Overview
+
+The [`/find-places`](/api-reference/places/find-places) endpoint lets you search for a large number of places over 3 different data sources: Overture, Foursquare and Reprompt.
+
+The most use cases is to find places near a given coordinate with a radius.
+
+## Interactive Demo
+
+**Try it:** Click anywhere on the map to set a search location, adjust the parameters, then click "Find Places"
+
+<FindPlacesInteractive />
+
+## Basic Search
+
+The simplest way to find places is by searching within a radius of a specific coordinate.
+
+### Search by Coordinates and Radius
+
+<CodeGroup>
+```bash cURL
+curl -X POST \
+  'https://api.reprompt.io/v2/find-places' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "location_filter": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "radius": 1000
+    },
+    "categories": ["cafe"]
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.reprompt.io/v2/find-places",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "location_filter": {
+            "latitude": 37.7749,
+            "longitude": -122.4194,
+            "radius": 1000
+        },
+        "categories": ["cafe"]
+    }
+)
+
+places = response.json()
+```
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "place_id": "9d7de33e-5d98-57af-9307-02481c03b7ad",
+      "name": "Blue Bottle Coffee",
+      "full_address": "55 s van ness ave, san francisco, ca 94103",
+      "latitude": 37.773909,
+      "longitude": -122.418616,
+      "category_primary": "coffee_shop",
+      "phone": "+1 510-661-3510",
+      "website": "https://bluebottlecoffee.com/",
+      "operating_status": "Open",
+      "distance_m": 129.965146
+    }
+  ]
+}
+```
+
+**Key Parameters:**
+- `latitude` (required): Latitude coordinate in decimal degrees
+- `longitude` (required): Longitude coordinate in decimal degrees
+- `radius` (optional): Search radius in meters. Default: 500m, Maximum: 10,000m (10km)
+- `categories` (optional): Array of place categories to filter results
+
+### Multiple Categories
+
+Search for multiple types of places simultaneously:
+
+<CodeGroup>
+```bash cURL
+curl -X POST \
+  'https://api.reprompt.io/v2/find-places' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "location_filter": {
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "radius": 2000
+    },
+    "categories": ["restaurant", "cafe", "bar"]
+  }'
+```
+
+```python Python
+response = requests.post(
+    "https://api.reprompt.io/v2/find-places",
+    headers={"Authorization": "Bearer {YOUR_API_KEY}"},
+    json={
+        "location_filter": {
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "radius": 2000
+        },
+        "categories": ["restaurant", "cafe", "bar"]
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "place_id": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+      "name": "The Modern",
+      "full_address": "9 w 53rd st, new york, ny 10019",
+      "category_primary": "restaurant",
+      "distance_m": 450.123
+    },
+    {
+      "place_id": "2b3c4d5e-6f7g-8h9i-0j1k-l2m3n4o5p6q7",
+      "name": "Stumptown Coffee Roasters",
+      "full_address": "18 w 29th st, new york, ny 10001",
+      "category_primary": "cafe",
+      "distance_m": 678.456
+    },
+    {
+      "place_id": "3c4d5e6f-7g8h-9i0j-1k2l-m3n4o5p6q7r8",
+      "name": "The Dead Rabbit",
+      "full_address": "30 water st, new york, ny 10004",
+      "category_primary": "bar",
+      "distance_m": 892.789
+    }
+  ]
+}
+```

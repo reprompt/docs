@@ -41,7 +41,13 @@
         "groups": [
           {
             "group": "V2 API Reference",
-            "openapi": "https://reprompt-rob--reprompt-fastapi-fastapi-app-dev.modal.run/v2/openapi.json"
+            "openapi": "https://api.reprompt.io/v2/openapi.json"
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/finding-places"
+            ]
           }
         ]
       }
