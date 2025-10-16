@@ -532,7 +532,7 @@ export const FindPlacesInteractive = () => {
       {/* Response Example */}
       {results && results.results && results.results.length > 0 && (
         <div style={{ marginTop: '20px' }}>
-          <CodeBlock language="json" expandable={true}>
+          <CodeBlock language="json">
             <code>
               {JSON.stringify({ results: results.results.slice(0, 3) }, null, 2)}
             </code>
