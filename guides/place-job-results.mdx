@@ -118,163 +118,143 @@ Attributes that commonly include a status entry include `website`, `phoneNumbers
 
 Types: `string` | `number` | `list of strings`
 
-- websites
-  - website: string
 
-- email_address
-  - email: string
+**Core Attributes**
 
-- phoneNumbers
-  - phone: string
-  - phone_additional: list of strings
+`closed_permanently` attribute returns:
+  - open_closed_status `string`
+  - open_closed_status_confidence_score `string`
 
-- openingHours
-  - opening_hours: list of strings
-  - opening_hours_grouped_by_hours: list of strings
-  - is_open_24h: string
+`address` attribute returns:
+  - `address` `string`
+  - `address_localized` `string`
 
-- menu
-  - menu_urls: list of strings
-  - menu_url_official: string
-  - menu_content: string
-  - menu_images: list of strings
+`categories` attribute returns:
+  - `categories` `list of strings`
 
-- price_tier
-  - price_tier: string
-  - average_price: number
-  - currency: string
+`coordinates` attribute returns:
+  - coordinates `string`
+  - coordinates_distance `number`
 
-- cuisine
-  - cuisines: list of strings
+`websites` attribute returns:
+  - website `string`
 
-- user_reviews
-  - user_review_count: number
-  - user_average_rating: number
-  - user_wilson_score: number
-  - user_popularity: number
-  - user_review_summary: string
-  - user_summary: string
+`email_address` attribute returns:
+  - email `string`
 
-- approximate_user_reviews
-  - approximate_review_count: number
-  - approximate_average_rating: number
+`phoneNumbers` attribute returns:
+  - phone `string`
+  - phone_additional `list of strings`
 
-- closed_permanently
-  - open_closed_status: string
-  - open_closed_status_confidence_score: string
-  - date_closed: string
-  - date_opened: string
+`openingHours` attribute returns:
+  - opening_hours `list of strings`
+  - opening_hours_grouped_by_hours `list of strings`
+  - is_open_24h `string`
 
-- chain
-  - chain_id: string
-  - chain_name: string
-  - chain_domains: list of strings
-  - alternative_names: list of strings
-  - chain_wikipedia_url: string
-  - number_of_locations: number
-  - logo_url: string
+`names` attribute returns:
+  - name `string`
+  - multilingual_names `list of strings`
+  - alt_name `string`
+  - official_name `string`
+  - brand_name `string`
 
-- reprompt_id
-  - reprompt_id: string
+**Rich Attributes**
+{(user && Object.keys(user).length > 0) ? (
+  <pre><code>{`
+`menu` attribute returns:
+  - menu_urls `list of strings`
+  - menu_url_official `string`
+  - menu_content `string`
+  - menu_images `list of strings`
 
-- names
-  - name: string
-  - multilingual_names: list of strings
-  - alt_name: string
-  - official_name: string
-  - brand_name: string
+`price_tier` attribute returns:
+  - price_tier `string`
+  - average_price `number`
+  - currency `string`
 
-- name_translations
-  - name_translations: list of strings
+`user_reviews` attribute returns:
+  - user_review_count `number`
+  - user_average_rating `number`
+  - user_wilson_score `number`
+  - user_popularity `number`
+  - user_review_summary `string`
+  - user_summary `string`
 
-- socialHandles
-  - instagram: string
-  - facebook: string
+`approximate_user_reviews` attribute returns:
+  - approximate_review_count `number`
+  - approximate_average_rating `number`
+
+`chain` attribute returns:
+  - chain_id `string`
+  - chain_name `string`
+  - chain_domains `list of strings`
+  - alternative_names `list of strings`
+  - chain_wikipedia_url `string`
+  - number_of_locations `number`
+  - logo_url `string`
+
+`reprompt_id` attribute returns:
+  - reprompt_id `string`
+
+`naics` attribute returns:
+  - naics_code `string`
+  - naics_description `string`
+
+`merchant` attribute returns:
+  - merchant_category_code `string`
+  - mcc_description `string`
+  - merchant_category_group `string`
+  - merchant_super_industry `string`
+
+
+`name_translations` attribute returns:
+  - name_translations `list of strings`
+
+`socialHandles` attribute returns:
+  - instagram `string`
+  - facebook `string`
+  - tiktok `string`
+
+`tiktok` attribute returns:
   - tiktok: string
-
-- tiktok
-  - tiktok: string
-  - tiktok_followers: number
-  - tiktok_video_count: number
-  - tiktok_bio: string
-
-- address
-  - address: string
-  - address_localized: string
-
-- categories
-  - categories: list of strings
-
-- naics
-  - naics_code: string
-  - naics_description: string
-
-- merchant
-  - merchant_category_code: string
-  - mcc_description: string
-  - merchant_category_group: string
-  - merchant_super_industry: string
-
-- coordinates
-  - coordinates: string
-  - coordinates_distance: number
-
-- social_media_profile
+ 
+`social_media_profile` attribute returns:
   - facebook_followers: number
-  - facebook_likes: number
-  - facebook_page_id: string
-  - facebook_bio: string
-  - instagram_followers: number
-  - instagram_media_count: number
-  - instagram_profile_pic_url: string
-  - instagram_bio: string
+  - facebook_likes `number`
+  - facebook_page_id `string`
+  - facebook_bio `string`
+ 
+`website_traffic` attribute returns:
+  - website_traffic_monthly_visits `number`
+ 
+`parking_spaces` attribute returns:
+  - parking_spaces_total `number`
+  - parking_spaces_street `number`
+  - parking_spaces_shared `number`
+  - parking_spaces_dedicated `number`
+  - parking_spaces_image_url `string`
 
-- instagram_statistics
-  - instagram_monthly_user_counts: list of strings
-  - instagram_monthly_like_counts: list of strings
-  - instagram_monthly_interaction_counts: list of strings
+`one_line_summary` attribute returns:
+  - one_line_summary `string`
 
-- website_traffic
-  - website_traffic_monthly_visits: number
-  - website_traffic_source_social_percentage: number
-  - website_traffic_source_paid_referrals_percentage: number
-  - website_traffic_source_mail_percentage: number
-  - website_traffic_source_referrals_percentage: number
-  - website_traffic_source_search_percentage: number
-  - website_traffic_source_direct_percentage: number
-  - website_traffic_top_keywords: list of strings
-
-- parking_spaces
-  - parking_spaces_total: number
-  - parking_spaces_street: number
-  - parking_spaces_shared: number
-  - parking_spaces_dedicated: number
-  - parking_spaces_image_url: string
-
-- traffic_control
-  - traffic_control: string
-
-- one_line_summary
-  - one_line_summary: string
-
-- geometry
-  - buildings_geojson: string
-  - parking_geojson: string
-  - parcels_geojson: string
-  - visualization_image_url: string
-  - analysis_metadata: string
+`geometry` attribute returns:
+  - buildings_geojson `string`
 
 
-- located_within
-  - located_within_name: string
-  - located_within_type: string
-  - located_within_floor_or_level: string
+`located_within` attribute returns:
+  - located_within_name `string`
+  - located_within_type `string`
+  - located_within_floor_or_level `string`
 
-- storefrontImages
-  - storefront_images: list of strings
+`storefrontImages` attribute returns:
+  - storefront_images `list of strings`
 
-- place_existence
-  - entity_type: string
-  - digital_footprint: string
-  - place_definition: string
-  - place_reality: string
+`place_existence` attribute returns:
+  - entity_type `string`
+  - digital_footprint `string`
+  - place_definition `string`
+  - place_reality `string`
+  `}</code></pre>
+) : (
+  <p><a href="mailto:lukas@repromptai.com">Contact us to learn about 50+ rich attributes</a></p>
+)}
