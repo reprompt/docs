@@ -1,0 +1,119 @@
+name: Claude Auto Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'guides/**/*.mdx'
+      - 'openapi-v*.json'
+      - '.github/workflows/claude-auto-review.yml'
+
+jobs:
+  auto-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history to detect changed files
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests aiohttp pandas backoff
+
+      - name: Get changed guide files
+        id: changed-files
+        run: |
+          echo "Detecting changed guide files..."
+          CHANGED_GUIDES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep 'guides/.*\.mdx$' || echo "")
+          if [ -z "$CHANGED_GUIDES" ]; then
+            echo "No guide files changed"
+            echo "changed_guides=" >> $GITHUB_OUTPUT
+          else
+            echo "Changed guides:"
+            echo "$CHANGED_GUIDES"
+            echo "changed_guides<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGED_GUIDES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Test Documentation Examples
+        id: test-examples
+        if: steps.changed-files.outputs.changed_guides != ''
+        env:
+          REPROMPT_API_KEY: ${{ secrets.REPROMPT_API_KEY }}
+          REPROMPT_ORG_SLUG: ${{ secrets.REPROMPT_ORG_SLUG }}
+        run: |
+          echo "## Documentation Example Tests" >> $GITHUB_STEP_SUMMARY
+          python .github/workflows/test-examples.py "${{ steps.changed-files.outputs.changed_guides }}" >> test_results.txt
+
+          # Output results to step summary
+          if [ -f test_results.txt ]; then
+            cat test_results.txt >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Save results for Claude review
+          if [ -f test_results.txt ]; then
+            echo "test_results<<EOF" >> $GITHUB_OUTPUT
+            cat test_results.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "test_results=No tests were executed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Automatic PR Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          timeout_minutes: "5"
+          direct_prompt: |
+            Review this documentation PR. Keep feedback concise (2-4 lines).
+
+            Assessment: DO_NOT_SHIP, FURTHER_REVIEW_REQUESTED, PROBABLY_FINE, DEFINITELY_FINE
+
+            ## Test Results
+            ${{ steps.test-examples.outputs.test_results }}
+
+            ## Focus Areas
+            - **Example Accuracy**: Do the code examples execute successfully?
+            - **API Correctness**: Are endpoint URLs and request formats correct?
+            - **Placeholder Consistency**: Check {YOUR_API_KEY}, {org_slug} format
+            - **Response Examples**: Do response examples match current API format?
+            - **OpenAPI Changes**: If openapi-v*.json changed, verify breaking changes
+            - **Documentation Quality (NO AI SLOP)**:
+              * Flag verbose/repetitive content
+              * Flag obvious explanations (e.g., "this endpoint returns data about places")
+              * Flag unnecessary filler phrases ("it's important to note", "please keep in mind")
+              * Require concise, technical, high-signal writing
+              * Good: Direct, specific, actionable
+              * Bad: Wordy, redundant, stating the obvious
+
+            ## High Risk (careful review)
+            - Examples that failed to execute (❌)
+            - Changed endpoint URLs or request formats
+            - Outdated response field names or structures
+            - Missing required parameters in examples
+
+            ## What to Approve
+            - All examples pass (✅)
+            - Minor documentation improvements
+            - Updated examples that match test results
+            - Added new working examples
+
+            If examples fail:
+            - DO_NOT_SHIP: Critical API examples broken
+            - FURTHER_REVIEW_REQUESTED: Check if API changed or example needs update
