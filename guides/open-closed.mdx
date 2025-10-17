@@ -78,22 +78,12 @@ Specific cases:
   - **Minor name variations**: Slight variations in the name will be treated as the same place. For example, "Joe's Pizza" and "Joseph Hot Wings and Pizza" at the same address will be treated as the same place. A closure announcement of "Joe's Pizza" will impact "Joseph Hot Wings and Pizza"
   - **Significant name variations**: If the name is significantly different, the agent will treat the business as a different place. For example, "Joe's Pizza" and "Mystic Pizza" at the same address will be treated as different places. A closure announcement of "Joe's Pizza" will not impact "Mystic Pizza"
 
-
-Example cases:
-- Place: Joe's Pizza, 7 carmine st, new york, ny
-- Status: Open
-- Reasoning: Joe's Pizza has a significant digital presence with an official first-party website (joespizzanyc.com) and official social media with posts in the last 6 months. They are mentioned by multiple news articles and listed on multiple review aggregator websites. The agent finds no evidence of closure or temporary closure.
+#### Example cases
 
 
-- Place: Iza Ramen, 237 Fillmore St, San Francisco, CA
-- Status: Closed
-- Reasoning: Iza Ramen has news articles mentioned closure of the business during COVID. The business has official social media with no mention of the closure. There is no evidence of reopening or that the closure is temporary. The agent marks the business as permanently closed.
-
-
-- Place: Terry's Donuts, 712 steiner st, Seattle, WA
-- Status: Closed
-- Reasoning: Terry's Donuts has no official web or social presence. It is not listed on review aggregator websites. It's only listed on Better Business Bureau from 2009. The agent marks the business as permanently closed without an explicit signal, based on absense of information from up to date sources. Note that this is a special case where the business has a customer-facing storefront but no recent official web or social presence.
-
-- Place: Robertson Commercial Construction, 701 Power Line Rd, Winter Haven, FL
-- Status: Open
-- Reasoning: Robertson Commercial Construction has an official website which lists its office address as 701 Power Line Rd, Winter Haven, FL, and a county filing from 2021. It has very little internet presence otherwise. The agent marks the business as open with medium confidence since this is not a customer-facing business.
+| Place                                    | Status  | Reasoning                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Joe's Pizza, 7 carmine st, new york, ny  | Open    | Joe's Pizza has a significant digital presence with an official first-party website (joespizzanyc.com) and official social media with posts in the last 6 months. They are mentioned by multiple news articles and listed on multiple review aggregator websites. The agent finds no evidence of closure or temporary closure.                |
+| Iza Ramen, 237 Fillmore St, San Francisco, CA | Closed  | Iza Ramen has news articles mentioning closure of the business during COVID. The business has official social media with no mention of the closure. There is no evidence of reopening or that the closure is temporary. The agent marks the business as permanently closed.                                                               |
+| Terry's Donuts, 712 steiner st, Seattle, WA   | Closed  | Terry's Donuts has no official web or social presence. It is not listed on review aggregator websites. It's only listed on Better Business Bureau from 2009. The agent marks the business as permanently closed without an explicit signal, based on absence of information from up to date sources. Special case: no recent digital presence. |
+| Robertson Commercial Construction, 701 Power Line Rd, Winter Haven, FL | Open | Robertson Commercial Construction has an official website which lists its office address as 701 Power Line Rd, Winter Haven, FL, and a county filing from 2021. It has very little internet presence otherwise. The agent marks the business as open with medium confidence since this is not a customer-facing business.                        |
