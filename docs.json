@@ -41,7 +41,7 @@
         "groups": [
           {
             "group": "V2 API Reference",
-            "openapi": "https://api.reprompt.io/v2/openapi.json"
+            "openapi": "https://reprompt-mikhail--reprompt-fastapi-fastapi-app-dev.modal.run/v2/openapi.json"
           },
           {
             "group": "Guides",
