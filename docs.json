@@ -29,6 +29,7 @@
             "pages": [
               "guides/open-closed",
               "guides/tripadvisor-category",
+              "guides/monthly-refresh",
               "guides/place-job-results",
               "schemas/schemas"
             ]
