@@ -31,6 +31,7 @@ To see updates, list your refresh batches, then inspect the jobs inside each bat
 ### List recent batches
 
 Use this to find the batch IDs you want to review (especially the batches you marked for refresh).
+Expect `batches[]` with `id`, `status`, `status_counts`, and `refresh` so you can pick the batch IDs to inspect.
 
 [List batches API reference](https://docs.repromptai.com/api-reference/batches/list-batches)
 
@@ -43,6 +44,7 @@ curl --request GET \
 ### Fetch a batch to get its place IDs
 
 Use this to see which place IDs are included in a specific batch.
+Expect a `jobs` object with arrays by status; `jobs.completed` can be large, so you’ll typically sample or page through.
 
 [Get batch status API reference](https://docs.repromptai.com/api-reference/batches/get-batch-status)
 
@@ -55,6 +57,7 @@ curl --request GET \
 ### Fetch a job by place ID
 
 Use this to inspect the updated enrichment results for each place so you can scan for changes.
+Expect `job_metadata.last_enriched` (timestamp with microseconds) plus `attribute_status` and `outputs` for validation.
 
 [Get a single enrichment job API reference](https://docs.repromptai.com/api-reference/jobs/get-a-single-enrichment-job)
 
