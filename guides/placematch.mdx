@@ -9,19 +9,9 @@ import { PlacematchPlayground } from "/snippets/PlacematchPlayground.jsx"
 ## Overview
 
 The [`/placematch`](/api-reference/places/placematch) endpoint helps you match a place against multiple geospatial data sources using AI-powered entity resolution. Given information about a place (name, address, coordinates), we find the right match across sources like Reprompt, Overture, Foursquare, or your own data.
+Each match includes a [confidence score](/api-reference/places/placematch#response-fields), source attribution, and reasoning explanation.
 
-Under the hood, we use a combination of:
-- Name similarity
-- Geographic proximity and distance
-- Category alignment
-- Address component matching
-- Fine-tuned LLM verification
-
-Each match includes a [`confidence`](/api-reference/places/placematch#response-fields) score, source attribution, and reasoning explanation.
-
-## Interactive Demo
-
-**Try it:** Enter place information below, select data sources, and click 'Find Matches' to see real-time matching results.
+## Try It
 
 <PlacematchPlayground />
 
