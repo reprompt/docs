@@ -1,0 +1,106 @@
+---
+title: "Use Workbook Agents in the API"
+description: "Create an agent in a workbook, enable it for API use, and manage versions"
+---
+
+## Overview
+
+This guide walks through creating a workbook agent called **Attraction Rating** (rates attractions on a 1-10 scale), enabling it for API use, and managing versions.
+
+## 1) Create the agent in a workbook
+
+Open the agent pane and create a new agent.
+
+<img src="/images/api_agents/image1.png" alt="Create a new agent from the agent pane" />
+
+Add the prompt, then scroll down and click **Add column**.
+
+<img src="/images/api_agents/image2.png" alt="Enter the prompt and click Add column" />
+
+## 2) Edit the agent settings
+
+After the column is added to the table, click the column header and select **Edit agent**.
+
+<img src="/images/api_agents/image3.png" alt="Open the column menu and choose Edit agent" />
+
+## 3) Enable API usage
+
+In the agent editor, click **Advanced** and then click **Use in API**.
+
+<img src="/images/api_agents/image4.png" alt="Advanced settings with the Use in API button" />
+
+This opens the API enablement panel. You can add a description and optionally rename the API attribute. This is a preview of the agent you are adding.
+
+<img src="/images/api_agents/image5.png" alt="Enable API usage panel with name and description" />
+
+Scroll down and click **Enable API usage**.
+
+<img src="/images/api_agents/image6.png" alt="Enable API usage button" />
+
+Once enabled, you will see a confirmation that it is ready to use.
+
+<img src="/images/api_agents/image7.png" alt="API usage enabled confirmation" />
+
+## 4) Call the agent from the API
+
+Use the `attribute_key` shown in the UI with the `/enrich` endpoint.
+
+<CodeGroup>
+```bash cURL
+# Use the default version (no version param)
+curl --request POST \
+  --url https://api.reprompt.io/v2/enrich \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "attribute_key": "attraction_rating",
+    "inputs": {
+      "name": "Golden Gate Bridge",
+      "full_address": "Golden Gate Bridge, San Francisco, CA"
+    }
+  }'
+```
+
+```bash cURL
+# Call a specific version
+curl --request POST \
+  --url 'https://api.reprompt.io/v2/enrich?version=1' \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "attribute_key": "attraction_rating",
+    "inputs": {
+      "name": "Golden Gate Bridge",
+      "full_address": "Golden Gate Bridge, San Francisco, CA"
+    }
+  }'
+```
+</CodeGroup>
+
+## 5) Edit the agent and create a new version
+
+To make changes, return to the agent editor, update the prompt, and click **Use in API** again. The text below will show which version you are about to create (for example, “will save as version 2 of Attraction Rating”).
+
+<img src="/images/api_agents/image8.png" alt="Edit agent prompt and see the next version number" />
+
+Click **Save**. The confirmation will show which version will be saved.
+
+<img src="/images/api_agents/image9.png" alt="Save new version confirmation" />
+
+After saving, the agent is ready to use. Any API callers **without** a version parameter will now use the **default** version.
+
+<img src="/images/api_agents/image10.png" alt="Agent ready to use with default version behavior" />
+
+## 6) Manage default versions
+
+Click **Saved enrichments** to view all versions. The default version is labeled and shows **API enabled**.
+
+<img src="/images/api_agents/image11.png" alt="Saved enrichments showing default version and API enabled status" />
+
+To change the default, find the version you want and click **Set as default**.
+
+<img src="/images/api_agents/image12.png" alt="Set a different version as default" />
+
+The header updates to show the new default. Calls without a version parameter will now use this version.
+
+<img src="/images/api_agents/image13.png" alt="Default version updated in the header" />

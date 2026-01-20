@@ -48,7 +48,8 @@
             "group": "Guides",
             "pages": [
               "guides/finding-places",
-              "guides/placematch"
+              "guides/placematch",
+              "guides/agents-in-api"
             ]
           }
         ]
