@@ -12,13 +12,13 @@ This guide helps you troubleshoot common authentication and request errors when 
 Your **organization slug** is a unique identifier that appears in V1 API endpoint URLs:
 
 ```
-https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{your_org_slug}/place_enrichment/enrich
+https://api.repromptai.com/v1/{your_org_slug}/place_enrichment/enrich
 ```
 
 For example, if your organization slug is `acme-corp`, your endpoint would be:
 
 ```
-https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/acme-corp/place_enrichment/enrich
+https://api.repromptai.com/v1/acme-corp/place_enrichment/enrich
 ```
 
 <Tip>
@@ -137,10 +137,10 @@ A `404` error means the API endpoint doesn't exist, usually due to an incorrect 
     
     ```bash
     # ❌ Wrong
-    https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/wrong-slug/place_enrichment/enrich
+    https://api.repromptai.com/v1/wrong-slug/place_enrichment/enrich
     
     # ✅ Correct (replace with your actual org slug)
-    https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/your-org-slug/place_enrichment/enrich
+    https://api.repromptai.com/v1/your-org-slug/place_enrichment/enrich
     ```
     
     Find your org slug in the [Dashboard URL](https://app.repromptai.com/organization) when logged in.
@@ -175,7 +175,7 @@ A `404` error means the API endpoint doesn't exist, usually due to an incorrect 
     
     ```bash
     curl -X POST \
-      'https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/YOUR_ORG_SLUG/place_enrichment/enrich' \
+      'https://api.repromptai.com/v1/YOUR_ORG_SLUG/place_enrichment/enrich' \
       -H 'Authorization: Bearer YOUR_API_KEY' \
       -H 'Content-Type: application/json' \
       -d '{
