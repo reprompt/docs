@@ -150,15 +150,15 @@ A `404` error means the API endpoint doesn't exist, usually due to an incorrect 
     Ensure you're using the correct endpoint path. Common endpoints include:
     
     **V1 Endpoints (with org slug):**
-    - `/place_enrichment/enrich` - Single place enrichment
-    - `/place_enrichment/batches` - Create/list batches
-    - `/place_enrichment/batches/{batch_id}` - Get batch status
-    - `/place_enrichment/jobs` - Get job results
+    - `https://api.repromptai.com/v1/{org_slug}/place_enrichment/enrich` - Single place enrichment
+    - `https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches` - Create/list batches
+    - `https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches/{batch_id}` - Get batch status
+    - `https://api.repromptai.com/v1/{org_slug}/place_enrichment/jobs` - Get job results
     
     **V2 Endpoints (no org slug):**
-    - `/v2/enrich` - Single place enrichment
-    - `/v2/placematch` - Place matching
-    - `/v2/attributes` - List available attributes
+    - `https://api.reprompt.io/v2/enrich` - Single place enrichment
+    - `https://api.reprompt.io/v2/placematch` - Place matching
+    - `https://api.reprompt.io/v2/attributes` - List available attributes
   </Step>
 
   <Step title="Validate against the API docs">
