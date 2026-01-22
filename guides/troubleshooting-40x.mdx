@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting Authentication & 40x Errors"
-description: "How to diagnose and fix 401, 402, and 404 errors in your API requests"
+description: "How to diagnose and fix 401 and 404 errors in your API requests"
 ---
 
 ## Overview
@@ -74,45 +74,6 @@ A `401` error means your API key is invalid, missing, or revoked.
     3. Click **"Create new API key"**
     4. Copy the new key immediately (it won't be shown again)
     5. Update your application with the new key
-  </Step>
-</Steps>
-
----
-
-## 402 Payment Required / Forbidden
-
-A `402` error means you don't have access to the specific enrichment attribute or feature you're trying to use.
-
-### Common Causes
-
-1. **Requesting premium attributes** not included in your plan
-2. **Custom agent attributes** that haven't been enabled for API use
-3. **Attribute limits** exceeded for your billing tier
-
-### How to Fix
-
-<Steps>
-  <Step title="Check your plan's included attributes">
-    Review which attributes are available on your current plan:
-    
-    1. Go to [Organization Settings](https://app.repromptai.com/organization)
-    2. Check your subscription details and included features
-    3. Compare against the attributes you're requesting
-  </Step>
-
-  <Step title="Verify custom agent API access">
-    If you're using custom agents created in Workbooks:
-    
-    1. Ensure the agent is **enabled for API use**
-    2. Follow the [Agents in API guide](/guides/agents-in-api) to properly enable custom attributes
-    3. Use the correct `attribute_key` shown in the agent settings
-  </Step>
-
-  <Step title="Upgrade or contact support">
-    If you need access to additional attributes:
-    
-    - **Upgrade your plan** through the dashboard
-    - **Contact support** at [app.repromptai.com/organization](https://app.repromptai.com/organization) to discuss custom plans
   </Step>
 </Steps>
 
@@ -197,7 +158,6 @@ A `404` error means the API endpoint doesn't exist, usually due to an incorrect 
 | Error Code | Meaning | Primary Cause | Quick Fix |
 |------------|---------|---------------|-----------|
 | **401** | Unauthorized | Invalid/revoked API key | [Check API key status →](https://app.repromptai.com/organization) |
-| **402** | Payment Required | Missing access to attribute | Verify plan includes requested attributes |
 | **404** | Not Found | Wrong URL or org slug | Verify org slug and endpoint path |
 
 ---
