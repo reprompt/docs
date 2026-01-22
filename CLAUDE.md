@@ -23,15 +23,20 @@ mintlify dev --groups org:reprompt
 The docs will be available at `http://localhost:3000`.
 
 ### Updating OpenAPI Spec
+
+**V2 Spec (auto-fetch from production):**
 ```bash
-# Pull latest spec from production
+# Pull latest V2 spec from production
 curl "https://api.repromptai.com/v2/openapi.json" > openapi-v2.json
 
 # Commit and push (Mintlify auto-deploys on push to main)
 git add openapi-v2.json
-git commit -m "Update OpenAPI spec from production"
+git commit -m "Update V2 OpenAPI spec from production"
 git push
 ```
+
+**V1 Spec (maintained locally):**
+The V1 OpenAPI spec (`openapi-v1.json`) is maintained manually in this repository. Unlike V2, there is no public endpoint to fetch the V1 spec automatically. Updates to V1 spec must be made directly to the `openapi-v1.json` file.
 
 ## Repository Structure
 
