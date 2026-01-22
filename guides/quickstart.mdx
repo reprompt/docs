@@ -22,7 +22,7 @@ Let's enrich a single place with basic information. The `inputs` object requires
 
 ```bash cURL
 curl -X POST \
-  'https://api.repromptai.com/v1/{your_org_slug}/place_enrichment/enrich' \
+  'https://api.repromptai.com/v1/{org_slug}/place_enrichment/enrich' \
   -H 'Authorization: Bearer {YOUR_API_KEY}' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -40,7 +40,7 @@ curl -X POST \
 ```python Python
 import requests
 
-url = "https://api.repromptai.com/v1/{your_org_slug}/place_enrichment/enrich"
+url = "https://api.repromptai.com/v1/{org_slug}/place_enrichment/enrich"
 headers = {
     "Authorization": "Bearer {YOUR_API_KEY}",
     "Content-Type": "application/json"
@@ -63,7 +63,7 @@ print(result)
 ```
 
 ```javascript JavaScript
-const response = await fetch('https://api.repromptai.com/v1/{your_org_slug}/place_enrichment/enrich', {
+const response = await fetch('https://api.repromptai.com/v1/{org_slug}/place_enrichment/enrich', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer {YOUR_API_KEY}',
@@ -87,7 +87,7 @@ console.log(result);
 
 </CodeGroup>
 
-Replace `{your_org_slug}` with your actual organization slug. The API key variable will be automatically populated.
+Replace `{org_slug}` with your actual organization slug. The API key variable will be automatically populated.
 
 <Tip>
 **Include a `place_id`**: We recommend providing your own stable identifier (like your database ID) as `place_id`. This makes it easy to join enriched results back to your data. If not provided, we'll auto-generate a UUID for you.

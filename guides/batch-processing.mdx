@@ -29,7 +29,7 @@ The Batch Processing API allows you to enrich hundreds or thousands of places in
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer YOUR_API_KEY',
+          'Authorization': 'Bearer {YOUR_API_KEY}',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -66,7 +66,7 @@ The Batch Processing API allows you to enrich hundreds or thousands of places in
     response = requests.post(
         'https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches',
         headers={
-            'Authorization': 'Bearer YOUR_API_KEY',
+            'Authorization': 'Bearer {YOUR_API_KEY}',
             'Content-Type': 'application/json'
         },
         json={
@@ -107,7 +107,7 @@ The Batch Processing API allows you to enrich hundreds or thousands of places in
       `https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches/${batch.batch_id}`,
       {
         headers: {
-          'Authorization': 'Bearer YOUR_API_KEY'
+          'Authorization': 'Bearer {YOUR_API_KEY}'
         }
       }
     );
@@ -167,7 +167,7 @@ async function waitForBatchCompletion(batchId) {
     const response = await fetch(
       `https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches/${batchId}`,
       {
-        headers: { 'Authorization': 'Bearer YOUR_API_KEY' }
+        headers: { 'Authorization': 'Bearer {YOUR_API_KEY}' }
       }
     );
     
@@ -243,7 +243,7 @@ const response = await fetch(
   {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer YOUR_API_KEY',
+      'Authorization': 'Bearer {YOUR_API_KEY}',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -257,7 +257,7 @@ const response = await fetch(
 response = requests.post(
     f'https://api.repromptai.com/v1/{{org_slug}}/place_enrichment/batches/{batch_id}/reprocess',
     headers={
-        'Authorization': 'Bearer YOUR_API_KEY',
+        'Authorization': 'Bearer {YOUR_API_KEY}',
         'Content-Type': 'application/json'
     },
     json={
@@ -277,7 +277,7 @@ const response = await fetch(
   'https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches',
   {
     headers: {
-      'Authorization': 'Bearer YOUR_API_KEY'
+      'Authorization': 'Bearer {YOUR_API_KEY}'
     }
   }
 );
@@ -357,7 +357,7 @@ async function downloadResults(batchId) {
     const response = await fetch(
       `https://api.repromptai.com/v1/{org_slug}/place_enrichment/batches/${batchId}?offset=${offset}&limit=${limit}`,
       {
-        headers: { 'Authorization': 'Bearer YOUR_API_KEY' }
+        headers: { 'Authorization': 'Bearer {YOUR_API_KEY}' }
       }
     );
     
