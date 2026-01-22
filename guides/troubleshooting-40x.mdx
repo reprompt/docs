@@ -1,0 +1,222 @@
+---
+title: "Troubleshooting Authentication & 40x Errors"
+description: "How to diagnose and fix 401, 402, and 404 errors in your API requests"
+---
+
+## Overview
+
+This guide helps you troubleshoot common authentication and request errors when using the Reprompt API. Most 40x errors are related to API keys, organization slugs, or request formatting.
+
+## Understanding Organization Slugs
+
+Your **organization slug** is a unique identifier that appears in V1 API endpoint URLs:
+
+```
+https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/{your_org_slug}/place_enrichment/enrich
+```
+
+For example, if your organization slug is `acme-corp`, your endpoint would be:
+
+```
+https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/acme-corp/place_enrichment/enrich
+```
+
+<Tip>
+**Finding Your Org Slug**: Your organization slug is visible in the URL when you're logged into the [Reprompt Dashboard](https://app.repromptai.com/organization). It's typically your organization name in lowercase with hyphens.
+</Tip>
+
+<Note>
+**V2 API**: The experimental V2 API uses a different base URL (`https://api.reprompt.io/v2/`) and does **not** require an org slug in the path.
+</Note>
+
+---
+
+## 401 Unauthorized
+
+A `401` error means your API key is invalid, missing, or revoked.
+
+### Common Causes
+
+1. **Missing or malformed Authorization header**
+2. **Revoked API key**
+3. **Expired API key**
+4. **Copy-paste errors** (extra spaces, truncated key)
+
+### How to Fix
+
+<Steps>
+  <Step title="Check your Authorization header">
+    Ensure you're including the header in the correct format:
+    
+    ```bash
+    Authorization: Bearer YOUR_API_KEY_HERE
+    ```
+    
+    **Common mistakes:**
+    - Missing the word `Bearer`
+    - Extra spaces before/after the key
+    - Using single quotes instead of the actual key value
+  </Step>
+
+  <Step title="Verify your API key is active">
+    Check if your key has been revoked:
+    
+    1. Go to [Organization Settings → API Keys](https://app.repromptai.com/organization)
+    2. Click **"Show revoked keys"** to see if your key was disabled
+    3. If revoked, generate a new API key
+  </Step>
+
+  <Step title="Generate a new API key">
+    If your key is revoked or you suspect it's compromised:
+    
+    1. Navigate to [Organization Settings](https://app.repromptai.com/organization)
+    2. Go to the **API Keys** section
+    3. Click **"Create new API key"**
+    4. Copy the new key immediately (it won't be shown again)
+    5. Update your application with the new key
+  </Step>
+</Steps>
+
+---
+
+## 402 Payment Required / Forbidden
+
+A `402` error means you don't have access to the specific enrichment attribute or feature you're trying to use.
+
+### Common Causes
+
+1. **Requesting premium attributes** not included in your plan
+2. **Custom agent attributes** that haven't been enabled for API use
+3. **Attribute limits** exceeded for your billing tier
+
+### How to Fix
+
+<Steps>
+  <Step title="Check your plan's included attributes">
+    Review which attributes are available on your current plan:
+    
+    1. Go to [Organization Settings](https://app.repromptai.com/organization)
+    2. Check your subscription details and included features
+    3. Compare against the attributes you're requesting
+  </Step>
+
+  <Step title="Verify custom agent API access">
+    If you're using custom agents created in Workbooks:
+    
+    1. Ensure the agent is **enabled for API use**
+    2. Follow the [Agents in API guide](/guides/agents-in-api) to properly enable custom attributes
+    3. Use the correct `attribute_key` shown in the agent settings
+  </Step>
+
+  <Step title="Upgrade or contact support">
+    If you need access to additional attributes:
+    
+    - **Upgrade your plan** through the dashboard
+    - **Contact support** at [app.repromptai.com/organization](https://app.repromptai.com/organization) to discuss custom plans
+  </Step>
+</Steps>
+
+---
+
+## 404 Not Found
+
+A `404` error means the API endpoint doesn't exist, usually due to an incorrect URL or org slug.
+
+### Common Causes
+
+1. **Incorrect organization slug** in the URL
+2. **Typo in the endpoint path**
+3. **Wrong API version** (using V1 endpoint format with V2 base URL or vice versa)
+4. **Invalid batch ID or resource ID** in the path
+
+### How to Fix
+
+<Steps>
+  <Step title="Verify your organization slug">
+    Double-check your org slug is correct:
+    
+    ```bash
+    # ❌ Wrong
+    https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/wrong-slug/place_enrichment/enrich
+    
+    # ✅ Correct (replace with your actual org slug)
+    https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/your-org-slug/place_enrichment/enrich
+    ```
+    
+    Find your org slug in the [Dashboard URL](https://app.repromptai.com/organization) when logged in.
+  </Step>
+
+  <Step title="Check your endpoint path">
+    Ensure you're using the correct endpoint path. Common endpoints include:
+    
+    **V1 Endpoints (with org slug):**
+    - `/place_enrichment/enrich` - Single place enrichment
+    - `/place_enrichment/batches` - Create/list batches
+    - `/place_enrichment/batches/{batch_id}` - Get batch status
+    - `/place_enrichment/jobs` - Get job results
+    
+    **V2 Endpoints (no org slug):**
+    - `/v2/enrich` - Single place enrichment
+    - `/v2/placematch` - Place matching
+    - `/v2/attributes` - List available attributes
+  </Step>
+
+  <Step title="Validate against the API docs">
+    Cross-reference your request with the [API Reference](https://docs.repromptai.com/):
+    
+    1. Check the correct HTTP method (GET, POST, etc.)
+    2. Verify the endpoint path matches the documentation
+    3. Ensure required path parameters (like `{batch_id}`) are valid
+    4. Confirm you're using the right API version
+  </Step>
+
+  <Step title="Test with a minimal example">
+    Try the basic example from the [Quickstart guide](/guides/quickstart) to verify your configuration:
+    
+    ```bash
+    curl -X POST \
+      'https://reprompt--reprompt-fastapi-fastapi-app.us-west.modal.run/YOUR_ORG_SLUG/place_enrichment/enrich' \
+      -H 'Authorization: Bearer YOUR_API_KEY' \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "inputs": {
+          "name": "Joe'\''s Pizza",
+          "latitude": 40.7359,
+          "longitude": -73.9911
+        },
+        "attributes": ["websites"]
+      }'
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Quick Reference Table
+
+| Error Code | Meaning | Primary Cause | Quick Fix |
+|------------|---------|---------------|-----------|
+| **401** | Unauthorized | Invalid/revoked API key | [Check API key status →](https://app.repromptai.com/organization) |
+| **402** | Payment Required | Missing access to attribute | Verify plan includes requested attributes |
+| **404** | Not Found | Wrong URL or org slug | Verify org slug and endpoint path |
+
+---
+
+## Still Having Issues?
+
+If you've followed these steps and are still experiencing errors:
+
+1. **Check the API response body** for specific error messages
+2. **Review recent code changes** that might have introduced issues
+3. **Test with the interactive playground** in the [API Reference](https://docs.repromptai.com/)
+4. **Contact support** through the [Dashboard](https://app.repromptai.com/organization)
+
+<Tip>
+**Debug Tip**: Use `curl -v` or enable verbose logging in your HTTP client to see the full request and response, including headers. This often reveals issues with formatting or missing parameters.
+</Tip>
+
+## Related Guides
+
+- [Quickstart](/guides/quickstart) - Basic API usage
+- [Batch Processing](/guides/batch-processing) - Batch endpoint details
+- [Agents in API](/guides/agents-in-api) - Using custom agents via API
