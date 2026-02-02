@@ -62,7 +62,7 @@ git push
 - **snippets/PlacematchPlayground.tsx**: Interactive React component for testing Placematch API
   - Uses Mapbox GL JS for map visualization
   - Displays match results, confidence scores, and API request/response
-  - Sample scenarios: name-only search, international addresses, BYOD matching
+  - Sample scenarios: name-only search, international addresses
   - Hardcoded Mapbox token (public read-only): `pk.eyJ1IjoicmVwcm9tcHQiLCJhIjoiY20yMWdseDYzMDB4djJrczF5dXZycjdlaiJ9.lCIzH2Ol77ODbvOpyXmJOA`
 - **snippets/PlacematchPlayground.jsx**: JavaScript version of the same component
 
@@ -112,7 +112,6 @@ The PlacematchPlayground component in `/snippets`:
 - Uses Mapbox GL JS for GeoJSON visualization on interactive maps
 - Includes multiple sample scenarios and input modes
 - Displays confidence scores (VERY_HIGH, HIGH, MEDIUM, LOW) with reasoning
-- Supports BYOD (bring-your-own-data) matching with candidate arrays
 - Built with React 18 and TypeScript, styled with Tailwind CSS
 
 ## Development Notes
