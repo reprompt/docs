@@ -63,14 +63,24 @@
   "dark": "/logo/dark.svg"
 },
 "api": {
+  "baseUrl": [
+    "https://api.repromptai.com/v1",
+    "https://api.reprompt.io/v2"
+  ],
+  "auth": {
+    "method": "bearer",
+    "name": "Authorization",
+    "inputPrefix": "Bearer "
+  },
   "playground": {
-     "display": "interactive"
-   },
-   "examples": {
-     "languages": ["curl", "python", "javascript"],
-     "defaults": "required",
-     "prefill": true
-   }
+    "display": "interactive",
+    "proxy": true
+  },
+  "examples": {
+    "languages": ["curl", "python", "javascript"],
+    "defaults": "all",
+    "prefill": true
+  }
 },
 "background": {
   "color": {
