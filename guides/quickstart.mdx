@@ -1,20 +1,20 @@
 ---
 title: "Quickstart"
-description: "Supercharge your place data with Reprompt"
+description: "Supercharge place data with Reprompt"
 ---
-## 1. Enrich your place data
+## 1. Enrich place data
 If you already have place data, you can enrich it with over 40 attributes using Reprompt
 
-- [Live Enrichment API](#2-your-first-live-enrichment)
+- [Live Enrichment API](#2-live-enrichment)
 - [Batch Processing API](#5-batch-processing)
 
 <Note>
-**Don't have place data yet?** You can generate your own dataset using our [Find Places tool](https://app.repromptai.com/find-places-v2) or experiment with csv data and custom AI attributes in our [Workbooks](https://app.repromptai.com/workbooks).
+**Don't have place data yet?** You can generate your own dataset using our [Find Places tool](/guides/finding-places) or experiment with csv data and custom AI attributes in our [Workbooks](https://app.repromptai.com/workbooks).
 </Note>
 
 ---
 
-## 2. Your First Live Enrichment
+## 2. Live Enrichment
 
 Let's enrich a single place with basic information. The `inputs` object requires a place **name** along with either **coordinates (latitude/longitude)** or an **address**.
 
@@ -126,6 +126,8 @@ The `inputs` object accepts different combinations:
   "full_address": "7 Carmine St, New York, NY 10014"
 }
 ```
+
+Providing more input fields (e.g. `full_address` together with coordinates, or `type`, `country_code`, `website`) helps our systems resolve and enrich the place more accurately. For the full list of supported fields and guidance, see [Input Place Schema](/schemas/schemas#input-place-schema).
 
 ---
 
