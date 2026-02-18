@@ -182,7 +182,6 @@ Set `failed_only: false` and `incomplete_only: false` to reprocess all jobs in t
 - **Descriptive batch names** — Use names that identify the dataset or run so you can find them in the list.
 - **Chunk large datasets** — Stay under 50K jobs per request; split into multiple batches or append via repeated requests with the same `batch_id`.
 - **Handle failures** — Check `jobs.failed` after completion; use the reprocess endpoint to retry with `failed_only: true`.
-- **Archive results** — Download and store results; retention is limited.
 
 
 ## Next Steps
