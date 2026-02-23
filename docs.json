@@ -52,6 +52,7 @@
               "guides/troubleshooting-40x",
               "guides/finding-places",
               "guides/placematch",
+              "guides/validate-place",
               "guides/agents-in-api"
             ]
           }

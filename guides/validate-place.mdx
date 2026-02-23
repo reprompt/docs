@@ -1,0 +1,240 @@
+---
+title: "Validate Place"
+description: "Verify if a place exists and assess its commercial legitimacy using AI-powered web analysis"
+---
+
+## Overview
+
+The [`/validate`](/api-reference/places/validate-place) endpoint checks whether a place exists and has a real digital footprint. Given a name and/or address, it performs AI-powered web search and analysis to determine:
+
+- **Digital footprint** — web presence strength (HIGH, MEDIUM, LOW, NONE)
+- **Entity type** — whether the query is a place, address, person name, geographic area, etc.
+- **Place definition** — physical storefront, residential, temporary event, digital-only business (ghost kitchens, eCommerce), etc.
+- **Location match granularity** — how precisely the place was matched to a location
+- **Reprompt validation score** (1–9) — an immediate assessment of commercial legitimacy
+
+## Use Cases
+
+- **Filter out fraudulent places** — reject places with low scores before spending credits on deeper enrichments
+- **Identify non-commercial locations** — distinguish businesses from parks, landmarks, or residential addresses
+- **Verify commercial legitimacy** — confirm a business is real before adding it to your database
+- **Ghost kitchen detection** — identify digital-only businesses operating without a physical storefront
+
+## Basic Validation
+
+### Name + Address
+
+<CodeGroup>
+```bash cURL
+curl --request POST \
+  --url https://api.reprompt.io/v2/validate \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "name": "Tartine Bakery",
+    "address": "600 Guerrero St, San Francisco, CA 94110"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.reprompt.io/v2/validate',
+    headers={
+        'Authorization': 'Bearer {YOUR_API_KEY}',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'name': 'Tartine Bakery',
+        'address': '600 Guerrero St, San Francisco, CA 94110'
+    }
+)
+
+result = response.json()
+print(f"Score: {result['reprompt_validation_score']}/9")
+print(f"Digital footprint: {result['digital_footprint']}")
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.reprompt.io/v2/validate', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer {YOUR_API_KEY}',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Tartine Bakery',
+    address: '600 Guerrero St, San Francisco, CA 94110'
+  })
+});
+
+const result = await response.json();
+console.log(`Score: ${result.reprompt_validation_score}/9`);
+```
+</CodeGroup>
+
+### Address Only
+
+You can validate with just an address to check if a location is residential, commercial, or something else:
+
+```bash
+curl --request POST \
+  --url https://api.reprompt.io/v2/validate \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "address": "123 Main St, San Francisco, CA"
+  }'
+```
+
+## Validation Score Rubric
+
+The `reprompt_validation_score` (1–9) provides a quick assessment of commercial legitimacy:
+
+| Score | Category | Description | Example |
+|-------|----------|-------------|---------|
+| **9** | Walk-in commercial | Retail stores, restaurants, cafes with strong multi-source verification | Tartine Bakery, 600 Guerrero St, SF |
+| **8** | Membership/appointment-based | Gyms, salons, spas requiring membership or appointments | 24 Hour Fitness, 1200 Van Ness Ave, SF |
+| **7** | Scheduled service business | HVAC, plumbers, electricians operating by appointment | One Source Plumbing, 350 Bay St, SF |
+| **6** | Corporate offices | Business headquarters, not customer-facing | Salesforce Tower, 415 Mission St, SF |
+| **5** | Landmarks/parks | Verified public places, maximum score for non-businesses | Golden Gate Park, SF |
+| **4** | Non-commercial infrastructure | Parking lots, garages, utility structures | Sutter Stockton Garage, 444 Stockton St, SF |
+| **3** | Residential | Verified homes, apartments, residential properties | 81 Noe St, SF |
+| **2** | Minimal presence | Found only on unreliable aggregator sites | — |
+| **1** | Does not exist / fake | Name + address combination not found anywhere | LA Fitness at 5000 Westheimer Rd, Houston (no location there) |
+
+## Location Match Granularity
+
+The `location_match_granularity` field indicates how precisely the place was matched:
+
+- **`house_number`** — evidence found at the exact address including street number (e.g., "123 Main St")
+- **`nearby`** — evidence found on the same street but without exact house number match
+- **`broad`** — evidence found in the general area/city but at a different street
+- **`none`** — unable to match the place to any specific location
+
+The achievable granularity depends on input specificity:
+
+<CodeGroup>
+```json Nearby Match
+// Input: name + full address
+// Starbucks exists on this street, but at a different number
+{
+  "name": "Starbucks",
+  "address": "123 Main St, San Francisco"
+}
+// → location_match_granularity: "nearby"
+// Web sources resolve to an actual Starbucks at "5075 Main St, San Francisco"
+```
+
+```json Broad Match
+// Input: name + city only (no street)
+{
+  "name": "Starbucks",
+  "address": "San Francisco"
+}
+// → location_match_granularity: "broad"
+// Brand confirmed in city, but no specific street to match against
+```
+</CodeGroup>
+
+## Examples
+
+### Ghost Kitchen Detection
+
+Ghost kitchens operate as delivery-only restaurants without a physical storefront. Validate can identify these:
+
+```bash
+curl --request POST \
+  --url https://api.reprompt.io/v2/validate \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "name": "Burger Den",
+    "address": "12405 Westheimer Rd, Houston, TX 77077"
+  }'
+```
+
+### Fictional or Non-Existent Places
+
+```bash
+curl --request POST \
+  --url https://api.reprompt.io/v2/validate \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "name": "Hogwarts School of Witchcraft and Wizardry",
+    "address": "Highlands, Scotland, Great Britain"
+  }'
+```
+
+### Batch Validation
+
+Validate a list of places from a CSV file using async requests:
+
+```python
+import asyncio, os, pandas as pd, aiohttp, backoff
+
+API_URL = "https://api.reprompt.io/v2/validate"
+API_KEY = os.getenv("REPROMPT_API_KEY")
+
+@backoff.on_exception(
+    backoff.expo, aiohttp.ClientError, max_tries=5,
+    giveup=lambda e: isinstance(e, aiohttp.ClientResponseError) and e.status not in [429, 500, 502, 503]
+)
+async def validate_place(session, name=None, address=None):
+    payload = {}
+    if name:
+        payload["name"] = name
+    if address:
+        payload["address"] = address
+
+    async with session.post(API_URL, json=payload) as resp:
+        resp.raise_for_status()
+        return await resp.json()
+
+async def validate_dataset(csv_file):
+    df = pd.read_csv(csv_file)
+    semaphore = asyncio.Semaphore(10)  # 10 concurrent requests
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+
+    async def validate_row(row):
+        async with semaphore:
+            try:
+                result = await validate_place(
+                    session,
+                    name=row.get('name'),
+                    address=row.get('address')
+                )
+                return {
+                    'name': row.get('name', ''),
+                    'address': row.get('address', ''),
+                    'score': result.get('reprompt_validation_score'),
+                    'digital_footprint': result.get('digital_footprint'),
+                    'entity_type': result.get('entity_type'),
+                    'location_match': result.get('location_match_granularity')
+                }
+            except Exception as e:
+                print(f"Error: {row.get('name', 'unknown')}: {e}")
+                return None
+
+    async with aiohttp.ClientSession(headers=headers) as session:
+        tasks = [validate_row(row) for _, row in df.iterrows()]
+        results = [r for r in await asyncio.gather(*tasks) if r]
+
+    pd.DataFrame(results).to_csv('validated.csv', index=False)
+    print(f"Validated {len(results)} places")
+
+asyncio.run(validate_dataset('places.csv'))
+```
+
+## Validate vs. Enrich
+
+| Feature | `/validate` | `/enrich` |
+|---------|------------|-----------|
+| Purpose | Check if a place exists and assess legitimacy | Get specific attributes for a known place |
+| Input | Name and/or address | Name, coordinates, address + attribute key |
+| Output | Validation score, digital footprint, entity type | Attribute-specific enrichment data |
+| Use as | First-pass filter before enrichment | Deep enrichment after validation |
+
+**Tip:** Use `/validate` as a pre-filter to avoid spending enrichment credits on non-existent or non-commercial places. For open/closed status, use the `closed_permanently` attribute via `/enrich` instead.
