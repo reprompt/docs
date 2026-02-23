@@ -1,0 +1,139 @@
+---
+title: "KYB Agent API"
+description: "Automated Know Your Business (KYB) verification reports via API."
+hidden: true
+---
+
+## Overview
+
+The KYB Agent API runs automated business verification. Submit a business name and address, and the agent researches and compiles a KYB report — including entity verification, address confirmation, and more.
+
+**Base URL:** `https://api.reprompt.io`
+
+**Authentication:** Bearer token via `Authorization` header.
+
+---
+
+## POST /kyb/report/start
+
+Start a new KYB verification report.
+
+### Request
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `business_name` | string | Yes | Legal or trading name of the business |
+| `business_address` | string | Yes | Full address of the business |
+| `person_submitting` | string | No | Name of the person requesting the report |
+| `tax_identification_number` | string | No | EIN or other tax ID |
+
+```bash
+curl -X POST "https://api.reprompt.io/kyb/report/start" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "business_name": "Stripe Inc",
+    "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080"
+  }'
+```
+
+### Response
+
+```json
+{
+  "status": "processing",
+  "report_id": "rpt_7f3a2b1c9d4e",
+  "poll_url": "/kyb/report/rpt_7f3a2b1c9d4e",
+  "stream_id": "rpt_7f3a2b1c9d4e",
+  "channel": "rpt_7f3a2b1c9d4e",
+  "event_name": "kyb:stream:event"
+}
+```
+
+| Field | Description |
+|---|---|
+| `report_id` | Unique identifier. Use with the GET endpoint to poll for results. |
+| `poll_url` | URL path to poll for status. |
+| `stream_id` / `channel` | Pusher channel for real-time streaming. |
+| `event_name` | Pusher event name (`kyb:stream:event`). |
+
+---
+
+## GET /kyb/report/{report_id}
+
+Poll for report status and results.
+
+```bash
+curl "https://api.reprompt.io/kyb/report/rpt_7f3a2b1c9d4e" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+The response shape depends on the `status` field:
+
+### Processing
+
+```json
+{
+  "status": "processing",
+  "report_id": "rpt_7f3a2b1c9d4e",
+  "created_at": "2026-02-23T10:30:00Z",
+  "business_name": "Stripe Inc",
+  "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080"
+}
+```
+
+### Completed
+
+```json
+{
+  "status": "completed",
+  "report_id": "rpt_7f3a2b1c9d4e",
+  "created_at": "2026-02-23T10:30:00Z",
+  "completed_at": "2026-02-23T10:32:45Z",
+  "business_name": "Stripe Inc",
+  "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080",
+  "report": {
+    "entity_verification": {
+      "legal_name": "Stripe, Inc.",
+      "status": "active",
+      "state_of_incorporation": "Delaware",
+      "entity_type": "Corporation",
+      "formation_date": "2010-09-16"
+    },
+    "address_verification": {
+      "match": true,
+      "normalized_address": "354 Oyster Point Blvd, South San Francisco, CA 94080-0000",
+      "property_type": "Commercial"
+    },
+    "web_presence": {
+      "domain": "stripe.com",
+      "domain_registered": "2009-09-03",
+      "ssl_valid": true
+    },
+    "risk_signals": {
+      "overall_risk": "low",
+      "flags": []
+    }
+  },
+  "pdf_url": "https://api.reprompt.io/kyb/reports/rpt_7f3a2b1c9d4e/report.pdf"
+}
+```
+
+| Field | Description |
+|---|---|
+| `report` | Full KYB report JSON with entity verification, address verification, web presence, and risk signals. |
+| `pdf_url` | Permanent URL to the PDF report. |
+
+### Error
+
+```json
+{
+  "status": "error",
+  "report_id": "rpt_9x8c7d6e5f4a",
+  "created_at": "2026-02-23T10:30:00Z",
+  "error_at": "2026-02-23T10:31:12Z",
+  "business_name": "Nonexistent Corp",
+  "business_address": "123 Fake St, Nowhere, XX 00000",
+  "error": "Unable to verify business entity. No matching records found in any data source."
+}
+```

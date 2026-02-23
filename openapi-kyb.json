@@ -1,0 +1,467 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "KYB Agent Service",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.reprompt.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/kyb/report/start": {
+      "post": {
+        "summary": "Start KYB Report",
+        "description": "Submit a business for KYB (Know Your Business) verification. Returns a report ID that can be polled for results.",
+        "operationId": "start_kyb_report_kyb_report_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KybReportStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KybReportStartResponse"
+                },
+                "example": {
+                  "status": "processing",
+                  "report_id": "rpt_7f3a2b1c9d4e",
+                  "poll_url": "/kyb/report/rpt_7f3a2b1c9d4e",
+                  "stream_id": "rpt_7f3a2b1c9d4e",
+                  "channel": "rpt_7f3a2b1c9d4e",
+                  "event_name": "kyb:stream:event"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kyb/report/{report_id}": {
+      "get": {
+        "summary": "Get KYB Report",
+        "description": "Poll for KYB report status and results. Returns different response shapes based on status: processing, completed, or error.",
+        "operationId": "get_kyb_report_kyb_report__report_id__get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/KybReportStatusCompleted"
+                    },
+                    {
+                      "$ref": "#/components/schemas/KybReportStatusError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/KybReportStatusProcessing"
+                    }
+                  ],
+                  "title": "Response Get Kyb Report Kyb Report  Report Id  Get"
+                },
+                "examples": {
+                  "completed": {
+                    "summary": "Completed report",
+                    "value": {
+                      "status": "completed",
+                      "report_id": "rpt_7f3a2b1c9d4e",
+                      "created_at": "2026-02-23T10:30:00Z",
+                      "completed_at": "2026-02-23T10:32:45Z",
+                      "business_name": "Stripe Inc",
+                      "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080",
+                      "report": {
+                        "entity_verification": {
+                          "legal_name": "Stripe, Inc.",
+                          "status": "active",
+                          "state_of_incorporation": "Delaware",
+                          "entity_type": "Corporation",
+                          "formation_date": "2010-09-16"
+                        },
+                        "address_verification": {
+                          "match": true,
+                          "normalized_address": "354 Oyster Point Blvd, South San Francisco, CA 94080-0000",
+                          "property_type": "Commercial"
+                        },
+                        "web_presence": {
+                          "domain": "stripe.com",
+                          "domain_registered": "2009-09-03",
+                          "ssl_valid": true
+                        },
+                        "risk_signals": {
+                          "overall_risk": "low",
+                          "flags": []
+                        }
+                      },
+                      "pdf_url": "https://api.reprompt.io/kyb/reports/rpt_7f3a2b1c9d4e/report.pdf",
+                      "model_name": "gemini-3-flash-preview"
+                    }
+                  },
+                  "processing": {
+                    "summary": "Still processing",
+                    "value": {
+                      "status": "processing",
+                      "report_id": "rpt_7f3a2b1c9d4e",
+                      "created_at": "2026-02-23T10:30:00Z",
+                      "business_name": "Stripe Inc",
+                      "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080"
+                    }
+                  },
+                  "error": {
+                    "summary": "Error response",
+                    "value": {
+                      "status": "error",
+                      "report_id": "rpt_9x8c7d6e5f4a",
+                      "created_at": "2026-02-23T10:30:00Z",
+                      "error_at": "2026-02-23T10:31:12Z",
+                      "business_name": "Nonexistent Corp",
+                      "business_address": "123 Fake St, Nowhere, XX 00000",
+                      "error": "Unable to verify business entity. No matching records found in any data source."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Report not found."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Key"
+      }
+    },
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "KybReportStartRequest": {
+        "properties": {
+          "business_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Business Name",
+            "description": "Legal or trading name of the business to verify."
+          },
+          "business_address": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Business Address",
+            "description": "Full address of the business."
+          },
+          "person_submitting": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Submitting",
+            "description": "Name of the person submitting the verification request."
+          },
+          "tax_identification_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Identification Number",
+            "description": "EIN or other tax identification number for the business."
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name",
+            "default": "gemini-3-flash-preview",
+            "description": "AI model to use for report generation."
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_name",
+          "business_address"
+        ],
+        "title": "KybReportStartRequest"
+      },
+      "KybReportStartResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "processing"
+          },
+          "report_id": {
+            "type": "string",
+            "title": "Report Id",
+            "description": "Unique report identifier. Use with GET /kyb/report/{report_id} to poll for results."
+          },
+          "poll_url": {
+            "type": "string",
+            "title": "Poll Url",
+            "description": "URL path to poll for report status and results."
+          },
+          "stream_id": {
+            "type": "string",
+            "title": "Stream Id",
+            "description": "Pusher channel identifier (same as report_id). For real-time streaming consumers."
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel",
+            "description": "Pusher channel name (same as stream_id)."
+          },
+          "event_name": {
+            "type": "string",
+            "title": "Event Name",
+            "default": "kyb:stream:event"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "poll_url",
+          "stream_id",
+          "channel"
+        ],
+        "title": "KybReportStartResponse"
+      },
+      "KybReportStatusCompleted": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "completed",
+            "title": "Status",
+            "default": "completed"
+          },
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "completed_at": {
+            "type": "string",
+            "title": "Completed At"
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name"
+          },
+          "business_address": {
+            "type": "string",
+            "title": "Business Address"
+          },
+          "report": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Report",
+            "description": "Full KYB report JSON."
+          },
+          "pdf_url": {
+            "type": "string",
+            "title": "Pdf Url",
+            "description": "Permanent URL to the PDF report."
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "created_at",
+          "completed_at",
+          "business_name",
+          "business_address",
+          "report",
+          "pdf_url",
+          "model_name"
+        ],
+        "title": "KybReportStatusCompleted"
+      },
+      "KybReportStatusError": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "error",
+            "title": "Status",
+            "default": "error"
+          },
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "error_at": {
+            "type": "string",
+            "title": "Error At"
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name"
+          },
+          "business_address": {
+            "type": "string",
+            "title": "Business Address"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Human-readable error message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "created_at",
+          "error_at",
+          "business_name",
+          "business_address",
+          "error"
+        ],
+        "title": "KybReportStatusError"
+      },
+      "KybReportStatusProcessing": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "processing",
+            "title": "Status",
+            "default": "processing"
+          },
+          "report_id": {
+            "type": "string",
+            "title": "Report Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name"
+          },
+          "business_address": {
+            "type": "string",
+            "title": "Business Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "created_at",
+          "business_name",
+          "business_address"
+        ],
+        "title": "KybReportStatusProcessing"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
