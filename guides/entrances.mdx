@@ -1,0 +1,291 @@
+---
+title: "Entrances API"
+description: "Get entrances, access points, and building data for any address"
+hidden: true
+---
+
+## Overview
+
+Given an address, the Entrances API returns the exact location of every entrance, what access points you need to pass through, and the building and compound context.
+
+```
+Response
+├── place_name, address, lat/lng
+├── entrances[]         doors to this place
+├── access_points[]     gates / checkpoints to reach it
+├── building {}         type, geofence, floor count
+└── compound {} | null  compound context, if inside one
+```
+
+Most responses have `compound: null` — the address maps to a standalone building. When the building sits inside a compound (mall, campus, gated community), the `compound` field provides the boundary, type, and ID you can use to fetch the full compound view.
+
+---
+
+## Request
+
+```
+POST /v1/entrances
+```
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST \
+  'https://api.repromptai.com/v1/entrances' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "address": "7 Carmine St, New York, NY 10014",
+    "name": "Joes Pizza",
+    "latitude": 40.7359,
+    "longitude": -73.9911
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.repromptai.com/v1/entrances",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "address": "7 Carmine St, New York, NY 10014",
+        "name": "Joes Pizza",
+        "latitude": 40.7359,
+        "longitude": -73.9911,
+    },
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.repromptai.com/v1/entrances", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer {YOUR_API_KEY}",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    address: "7 Carmine St, New York, NY 10014",
+    name: "Joes Pizza",
+    latitude: 40.7359,
+    longitude: -73.9911,
+  }),
+});
+console.log(await response.json());
+```
+
+</CodeGroup>
+
+### Request Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `address` | string | **Yes** | Full street address |
+| `name` | string | No | Place or business name — helps locate the right building within a compound |
+| `latitude` | number | No | Latitude (-90 to 90) — improves geocoding accuracy |
+| `longitude` | number | No | Longitude (-180 to 180) — improves geocoding accuracy |
+
+---
+
+## Response Example
+
+```json
+{
+  "place_name": "Joes Pizza",
+  "address": "7 Carmine St, New York, NY 10014",
+  "latitude": 40.7359,
+  "longitude": -73.9911,
+  "entrances": [
+    {
+      "entrance_id": "ent_main_01",
+      "entrance_type": "MAIN",
+      "entrance_scope": "SHARED",
+      "latitude": 40.7359,
+      "longitude": -73.9911,
+      "name": "Front entrance",
+      "floor": 0,
+      "tags": ["wheelchair_accessible"],
+      "preferred_parking": [],
+      "unit": null
+    },
+    {
+      "entrance_id": "ent_svc_01",
+      "entrance_type": "SERVICE",
+      "entrance_scope": "UNIT",
+      "latitude": 40.7358,
+      "longitude": -73.9913,
+      "name": "Service entrance",
+      "floor": 0,
+      "tags": [],
+      "preferred_parking": [],
+      "unit": "Suite 1A"
+    }
+  ],
+  "access_points": [
+    {
+      "access_point_id": "ap_001",
+      "access_type": "VEHICLE_ENTRY",
+      "access_control": "OPEN",
+      "latitude": 40.7358,
+      "longitude": -73.9912,
+      "name": "Main parking entrance",
+      "operating_hours": { "open": "06:00", "close": "23:00" },
+      "tags": ["parking"]
+    },
+    {
+      "access_point_id": "ap_002",
+      "access_type": "PEDESTRIAN_ENTRY",
+      "access_control": "OPEN",
+      "latitude": 40.7360,
+      "longitude": -73.9910,
+      "name": "Carmine St pedestrian entrance",
+      "operating_hours": null,
+      "tags": []
+    }
+  ],
+  "building": {
+    "building_type": "COMMERCIAL",
+    "building_geofence": {
+      "type": "Polygon",
+      "coordinates": [[[-73.9913, 40.7358], [-73.9909, 40.7358], [-73.9909, 40.7361], [-73.9913, 40.7361], [-73.9913, 40.7358]]]
+    },
+    "floor_count": 2
+  },
+  "compound": {
+    "compound_id": "cmp_abc123",
+    "compound_name": "Carmine Street Plaza",
+    "compound_type": "MIXED_USE_COMPLEX",
+    "compound_geofence": {
+      "type": "Polygon",
+      "coordinates": [[[-73.9915, 40.7356], [-73.9907, 40.7356], [-73.9907, 40.7362], [-73.9915, 40.7362], [-73.9915, 40.7356]]]
+    }
+  }
+}
+```
+
+---
+
+## Compound View
+
+Retrieve all buildings, entrances, and access points within a compound.
+
+```
+GET /v1/compounds/{compound_id}
+```
+
+Returns the full compound hierarchy: every building, entrance, and access point within the compound boundary. The `compound_id` is returned in the entrances response above.
+
+---
+
+## Schema Reference
+
+### Top-Level Response
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `place_name` | string | Resolved place or address name |
+| `address` | string | Full street address |
+| `latitude` | number | Latitude of the place |
+| `longitude` | number | Longitude of the place |
+| `entrances` | Entrance[] | Entrances to this place |
+| `access_points` | AccessPoint[] | Gates and checkpoints to reach this place |
+| `building` | Building | Building metadata |
+| `compound` | Compound \| null | Compound context, if the building is inside one |
+
+### Entrance
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `entrance_id` | string | Unique identifier |
+| `entrance_type` | enum | `MAIN`, `SECONDARY`, `SERVICE`, `EMERGENCY`, `GATE` |
+| `entrance_scope` | enum | `UNIT` (specific unit) or `SHARED` (common entrance) |
+| `latitude` | number | Entrance latitude |
+| `longitude` | number | Entrance longitude |
+| `name` | string \| null | Human-readable label |
+| `floor` | number \| null | Floor level (0 = ground) |
+| `tags` | string[] | Descriptive tags (e.g. `wheelchair_accessible`) |
+| `preferred_parking` | ParkingZone[] | Nearby parking areas |
+| `unit` | string \| null | Unit number (when scope is `UNIT`) |
+
+### Access Point
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `access_point_id` | string | Unique identifier |
+| `access_type` | enum | How you physically enter (see below) |
+| `access_control` | enum | What controls entry (see below) |
+| `latitude` | number | Access point latitude |
+| `longitude` | number | Access point longitude |
+| `name` | string \| null | Human-readable label |
+| `operating_hours` | object \| null | `{ "open": "HH:MM", "close": "HH:MM" }` |
+| `tags` | string[] | Descriptive tags |
+
+#### Access Types
+
+| Value | Description |
+|-------|-------------|
+| `GATE` | Physical gate |
+| `VEHICLE_ENTRY` | Vehicle-only entrance |
+| `PEDESTRIAN_ENTRY` | Pedestrian-only entrance |
+| `SECURITY_CHECKPOINT` | Staffed security checkpoint |
+| `LOADING_DOCK_ENTRY` | Loading dock or service entrance |
+
+#### Access Control
+
+| Value | Description |
+|-------|-------------|
+| `OPEN` | No restriction |
+| `BUZZER` | Buzzer/doorbell system |
+| `KEY_CODE` | Keypad code required |
+| `GUARD` | Security guard |
+| `RFID` | RFID badge or fob |
+| `CALL_BOX` | Call box to contact tenant |
+| `INTERCOM` | Intercom system |
+| `NONE` | No access control present |
+
+### Building
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `building_type` | enum | Category of building (see below) |
+| `building_geofence` | GeoJSON Polygon \| null | Building footprint |
+| `floor_count` | number \| null | Number of floors |
+
+#### Building Types
+
+`RESIDENTIAL` · `COMMERCIAL` · `INDUSTRIAL` · `CIVIC` · `EDUCATION` · `MEDICAL` · `ENTERTAINMENT` · `RELIGIOUS` · `TRANSPORTATION` · `HOSPITALITY` · `MIXED_USE` · `AGRICULTURAL` · `MILITARY` · `UTILITY`
+
+### Compound
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `compound_id` | string | Unique identifier (use with `/v1/compounds/{compound_id}`) |
+| `compound_name` | string | Display name |
+| `compound_type` | enum | Category of compound (see below) |
+| `compound_geofence` | GeoJSON Polygon | Boundary of the compound |
+
+#### Compound Types
+
+| Value | Description |
+|-------|-------------|
+| `APARTMENT_COMPLEX` | Residential apartment complex |
+| `SHOPPING_MALL` | Enclosed shopping mall |
+| `STRIP_MALL` | Open-air strip mall |
+| `OFFICE_PARK` | Office park or business campus |
+| `HOSPITAL_CAMPUS` | Hospital or medical campus |
+| `UNIVERSITY_CAMPUS` | University or college campus |
+| `GATED_COMMUNITY` | Gated residential community |
+| `MIXED_USE_COMPLEX` | Mixed residential/commercial complex |
+| `INDUSTRIAL_PARK` | Industrial or warehouse park |
+
+### Parking Zone
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `parking_id` | string | Unique identifier |
+| `geometry` | GeoJSON Polygon \| LineString | Parking area boundary or curb line |
+| `notes` | string \| null | Additional info (e.g. "2-hour limit") |
