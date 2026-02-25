@@ -1,0 +1,446 @@
+---
+title: "UK KYB API"
+description: "Automated Know Your Business verification for UK companies via the Reprompt KYB Agent API."
+hidden: true
+---
+
+Know Your Business (KYB) is the process of verifying that a company is legitimate and safe to transact with. It is a standard requirement for onboarding in financial services, lending, partnerships, and regulated industries.
+
+KYB typically requires analysts to manually check government registries, verify addresses, review directors and shareholders, screen against sanctions lists, and compile a risk assessment. The Reprompt UK KYB API automates this end-to-end for companies registered in the United Kingdom.
+
+## How It Works
+
+**Inputs:** A company name and address. Optionally, the name of the person requesting the report and a tax identification number.
+
+**Processing:** The agent autonomously researches the business across UK government registries, global sanctions and PEP databases, address verification services, and the open web. Reports typically complete in under 3 minutes.
+
+**Output:** A structured report covering:
+
+- **Identity verification** -- Company registration status, entity type, incorporation date, jurisdiction, and SIC codes
+- **Address verification** -- Registered address validation with precision level and red flags
+- **Officers and directors** -- Current and former directors, secretaries, and other officers
+- **Beneficial owners** -- Persons with Significant Control (PSCs) holding 25%+ ownership or voting rights
+- **Filing health** -- Whether statutory accounts and confirmation statements are current or overdue
+- **Charges** -- Outstanding loans, mortgages, and debentures registered against the company
+- **Sanctions and PEP screening** -- Each entity (company, directors, beneficial owners) screened against global sanctions and politically exposed persons databases
+- **Web intelligence** -- Adverse media and relevant web coverage
+
+Every report includes a **risk score** (0-100) with a clear recommendation (pass, review, enhanced due diligence, or fail), and an **executive summary** of 3 to 5 key findings. The executive summary provides the most critical information at a glance -- designed to support fast decisioning without requiring a full review of the underlying data.
+
+---
+
+## API Reference
+
+**Base URL:** `https://api.reprompt.io`
+
+**Authentication:** Bearer token via `Authorization` header.
+
+---
+
+## Start a Report
+
+### POST /kyb/report/start
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `business_name` | string | Yes | Legal or trading name of the business |
+| `business_address` | string | Yes | Full address of the business |
+| `person_submitting` | string | No | Name of the person requesting the report |
+| `tax_identification_number` | string | No | Company tax ID |
+
+```bash
+curl -X POST "https://api.reprompt.io/kyb/report/start" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "business_name": "Revolut Ltd",
+    "business_address": "7 Westferry Circus, Canary Wharf, London, E14 4HD"
+  }'
+```
+
+```json
+{
+  "status": "processing",
+  "report_id": "rpt_7f3a2b1c9d4e",
+  "poll_url": "/kyb/report/rpt_7f3a2b1c9d4e",
+  "stream_id": "rpt_7f3a2b1c9d4e",
+  "channel": "rpt_7f3a2b1c9d4e",
+  "event_name": "kyb:stream:event"
+}
+```
+
+Use `report_id` to poll for results. For real-time progress, subscribe to the Pusher channel using `stream_id` and `event_name`.
+
+---
+
+## Poll for Results
+
+### GET /kyb/report/{report_id}
+
+```bash
+curl "https://api.reprompt.io/kyb/report/rpt_7f3a2b1c9d4e" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+The response shape depends on the `status` field: `processing`, `completed`, or `error`.
+
+When `status` is `completed`, the response includes the full `report` object and a `pdf_url` linking to a permanent PDF.
+
+---
+
+## What the Report Covers
+
+Each completed report returns a `report` object containing:
+
+| Section | What It Tells You |
+|---|---|
+| `identity_verification` | Registered name, company number, status, entity type, incorporation date, jurisdiction, and SIC codes |
+| `registered_address` | Formatted address, verification status, precision level, and any red flags |
+| `officers` | Current and former directors, secretaries, and other officers with appointment dates |
+| `beneficial_owners` | Persons with Significant Control (PSCs) -- anyone controlling 25%+ of the company |
+| `filing_health` | Whether accounts and confirmation statements are up to date or overdue |
+| `charges` | Outstanding loans, mortgages, and debentures registered against the company |
+| `sanctions_screening` | Per-entity screening against global sanctions lists and PEP databases |
+| `web_intelligence` | Adverse media and web search results |
+| `risk_assessment` | **Computed risk score (0-100) with signal breakdown and action recommendation** |
+| `executive_summary` | **3-5 key findings -- the most important things to know at a glance** |
+
+---
+
+## Risk Assessment
+
+Every report includes a server-computed risk score from 0 to 100. The score is deterministic -- it's calculated from the signals found during verification, not generated by the agent. This means the same underlying data always produces the same score.
+
+### Risk Tiers
+
+| Classification | Score Range | Recommendation |
+|---|---|---|
+| `LOW_RISK` | 0-20 | `PASS` -- low risk, proceed |
+| `MEDIUM_RISK` | 21-45 | `REVIEW` -- manual review recommended |
+| `HIGH_RISK` | 46-70 | `EDD` -- Enhanced Due Diligence required |
+| `VERY_HIGH_RISK` | 71-100 | `FAIL` -- do not proceed |
+
+### Risk Signals
+
+The score is built from individual signals, each with a fixed point value. The `signal_breakdown` array shows exactly which signals fired and why.
+
+| Signal | Points | Trigger Condition |
+|---|---|---|
+| `Company dissolved/liquidation` | 40 | Company status is dissolved, liquidation, or administration |
+| `Sanctions hit` | 50 | Any entity matched on a sanctions list |
+| `PEP hit` | 20 | Any person matched as a Politically Exposed Person |
+| `No active directors` | 20 | Company has zero current directors |
+| `Overdue accounts` | 15 | Annual accounts are past due |
+| `Address not verified` | 15 | Address could not be independently verified |
+| `No PSCs declared` | 15 | No Persons with Significant Control on record |
+| `Overdue confirmation statement` | 10 | Confirmation statement is past due |
+| `Low address precision` | 10 | Address matched to street or city level only |
+| `No web presence` | 10 | Web searches found no meaningful results |
+| `Company age < 1 year` | 10 | Incorporated less than 12 months ago |
+| `Active charges` | 5 each (max 15) | Outstanding charges registered against company |
+| `Single director` | 5 | Company has exactly one director |
+
+The raw total can exceed 100 but the final score is capped at 100.
+
+### Example
+
+```json
+{
+  "score": 55,
+  "classification": "HIGH_RISK",
+  "recommendation": "EDD",
+  "signal_breakdown": [
+    { "signal": "Address not verified", "points": 15, "triggered": true },
+    { "signal": "Sanctions hit", "points": 50, "triggered": true },
+    { "signal": "Overdue accounts", "points": 15, "triggered": false },
+    { "signal": "PEP hit", "points": 20, "triggered": false }
+  ]
+}
+```
+
+In this case, two signals fired (address unverified + sanctions match) for a total score of 65, placing the company in the `HIGH_RISK` tier with an `EDD` recommendation.
+
+---
+
+## Executive Summary
+
+The executive summary is the fastest way to understand a report. It contains 3 to 5 key findings, each with a severity indicator and a plain-language explanation.
+
+Each item has:
+
+| Field | Description |
+|---|---|
+| `icon` | `check`, `warning`, or `critical` |
+| `tone` | `green`, `yellow`, or `red` |
+| `title` | Short finding title |
+| `description` | Plain-language explanation |
+
+### Example
+
+```json
+[
+  {
+    "icon": "critical",
+    "tone": "red",
+    "title": "Sanctions Match",
+    "description": "Director Nikolay Storonsky matched on Ukraine NSDC sanctions list"
+  },
+  {
+    "icon": "check",
+    "tone": "green",
+    "title": "Active & Compliant",
+    "description": "Company is active with filings up to date"
+  },
+  {
+    "icon": "warning",
+    "tone": "yellow",
+    "title": "Address Not Verified",
+    "description": "Registered address could not be independently verified"
+  }
+]
+```
+
+Use the executive summary to power dashboards, notifications, or quick-glance UIs without parsing the full report.
+
+---
+
+## Report Sections in Detail
+
+### Identity Verification
+
+| Field | Type | Description |
+|---|---|---|
+| `business_name` | `string` | Registered company name |
+| `company_number` | `string` | 8-character UK company number |
+| `company_status` | `string` | Current status (e.g. `active`, `dissolved`, `liquidation`) |
+| `company_type` | `string` | Entity type (e.g. `ltd`, `plc`, `llp`) |
+| `incorporation_date` | `string` | Date of incorporation (YYYY-MM-DD) |
+| `jurisdiction` | `string` | Registration jurisdiction (e.g. `england-wales`, `scotland`) |
+| `sic_codes` | `string[]` | SIC industry codes |
+| `source` | `string` | Data source identifier |
+| `source_url` | `string` | URL to the original registry record |
+
+### Registered Address
+
+| Field | Type | Description |
+|---|---|---|
+| `formatted_address` | `string` | Full formatted address |
+| `components` | `object` | Broken-out parts: `address_line_1`, `address_line_2`, `locality`, `region`, `postal_code`, `country` |
+| `verification_status` | `string` | `Verified`, `Partial`, `Ambiguous`, `None`, or `Not Performed` |
+| `address_precision` | `string` | `Premise`, `Thoroughfare`, `Locality`, `AdministrativeArea`, or `Unknown` |
+| `red_flags` | `string[]` | Address-related warnings |
+| `risk_level` | `string` | `low`, `medium`, `high`, or `inconclusive` |
+
+### Officers
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `string` | Full name |
+| `role` | `string` | Officer role (e.g. `director`, `secretary`) |
+| `appointed_on` | `string` | Appointment date (YYYY-MM-DD) |
+| `resigned_on` | `string \| null` | Resignation date, or `null` if still active |
+| `nationality` | `string` | Nationality |
+| `occupation` | `string` | Declared occupation |
+| `is_current` | `boolean` | `true` if the officer has not resigned |
+
+### Beneficial Owners
+
+Persons with Significant Control (PSCs) -- anyone controlling 25%+ of the company through shares, voting rights, or the right to appoint directors.
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `string` | Full name (person) or entity name (corporate) |
+| `kind` | `string` | PSC type identifier |
+| `nature_of_control` | `string[]` | How they control the company (e.g. `ownership-of-shares-25-to-50-percent`) |
+| `notified_on` | `string` | Date of notification (YYYY-MM-DD) |
+| `nationality` | `string` | Nationality (persons only) |
+| `country_of_residence` | `string` | Country of residence (persons only) |
+| `is_person` | `boolean` | `true` for individuals, `false` for corporate entities |
+
+### Filing Health
+
+| Field | Type | Description |
+|---|---|---|
+| `last_accounts_filed` | `string \| null` | Date of last accounts filing |
+| `next_accounts_due` | `string \| null` | Next accounts due date |
+| `accounts_overdue` | `boolean` | `true` if accounts are past due |
+| `last_confirmation_statement` | `string \| null` | Date of last confirmation statement |
+| `next_confirmation_due` | `string \| null` | Next confirmation statement due date |
+| `confirmation_overdue` | `boolean` | `true` if confirmation statement is past due |
+| `recent_filings_count` | `number` | Number of filings in the last 12 months |
+
+### Charges
+
+Outstanding loans, mortgages, and debentures registered against the company.
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `string` | `outstanding`, `fully-satisfied`, or `part-satisfied` |
+| `classification` | `string` | Type of charge (e.g. `floating charge`, `debenture`) |
+| `created_on` | `string` | Date charge was created (YYYY-MM-DD) |
+| `delivered_on` | `string` | Date delivered to the registry |
+| `persons_entitled` | `string[]` | Names of charge holders |
+
+### Sanctions Screening
+
+The agent screens the company, each current director, and each beneficial owner who is a person against global sanctions lists and PEP databases.
+
+| Field | Type | Description |
+|---|---|---|
+| `entity_name` | `string` | Name of the entity screened |
+| `entity_type` | `string` | `Person`, `Company`, or `LegalEntity` |
+| `screened` | `boolean` | `true` if screening was performed |
+| `hit` | `boolean` | `true` if any significant match found (score > 0.5) |
+| `sanctions_hit` | `boolean` | `true` if matched against a sanctions list |
+| `pep_hit` | `boolean` | `true` if matched as a Politically Exposed Person |
+| `risk_level` | `string` | `low`, `medium`, `high`, or `critical` |
+| `matches` | `array` | Matching records with `id`, `name`, `score`, `datasets`, `topics`, and `countries` |
+
+### Web Intelligence
+
+Adverse media and web search results gathered during verification.
+
+| Field | Type | Description |
+|---|---|---|
+| `query` | `string` | The search query used |
+| `findings` | `array` | Results, each with `title`, `url`, and `snippet` |
+
+---
+
+## Full Example Report
+
+```json
+{
+  "identity_verification": {
+    "business_name": "REVOLUT LTD",
+    "company_number": "09215231",
+    "company_status": "active",
+    "company_type": "ltd",
+    "incorporation_date": "2014-09-22",
+    "jurisdiction": "england-wales",
+    "sic_codes": ["64999"],
+    "source": "companies-house",
+    "source_url": "https://find-and-update.company-information.service.gov.uk/company/09215231"
+  },
+  "registered_address": {
+    "formatted_address": "7 Westferry Circus, Canary Wharf, London, E14 4HD",
+    "verification_status": "Not Performed",
+    "red_flags": ["Address validation could not be performed"],
+    "risk_level": "inconclusive"
+  },
+  "officers": [
+    {
+      "name": "STORONSKY, Nikolay",
+      "role": "director",
+      "appointed_on": "2014-09-22",
+      "resigned_on": null,
+      "nationality": "British",
+      "is_current": true
+    }
+  ],
+  "beneficial_owners": [
+    {
+      "name": "Nikolay Storonsky",
+      "kind": "individual-person-with-significant-control",
+      "nature_of_control": ["ownership-of-shares-50-to-75-percent"],
+      "notified_on": "2016-04-06",
+      "nationality": "British",
+      "country_of_residence": "England",
+      "is_person": true
+    }
+  ],
+  "filing_health": {
+    "last_accounts_filed": "2024-03-15",
+    "next_accounts_due": "2025-12-31",
+    "accounts_overdue": false,
+    "last_confirmation_statement": "2024-09-22",
+    "next_confirmation_due": "2025-10-06",
+    "confirmation_overdue": false,
+    "recent_filings_count": 8
+  },
+  "charges": [],
+  "sanctions_screening": [
+    {
+      "entity_name": "REVOLUT LTD",
+      "entity_type": "Company",
+      "screened": true,
+      "hit": false,
+      "sanctions_hit": false,
+      "pep_hit": false,
+      "risk_level": "low",
+      "matches": []
+    },
+    {
+      "entity_name": "Nikolay Storonsky",
+      "entity_type": "Person",
+      "screened": true,
+      "hit": true,
+      "sanctions_hit": true,
+      "pep_hit": false,
+      "risk_level": "critical",
+      "matches": [
+        {
+          "id": "ua-nsdc-storonsky",
+          "name": "Nikolay Storonsky",
+          "score": 0.85,
+          "datasets": ["ua_nsdc_sanctions"],
+          "topics": ["sanction"],
+          "countries": ["ua", "gb"]
+        }
+      ]
+    }
+  ],
+  "web_intelligence": [
+    {
+      "query": "Revolut Ltd regulatory action UK",
+      "findings": [
+        {
+          "title": "Revolut secures UK banking licence",
+          "url": "https://example.com/revolut-licence",
+          "snippet": "Revolut has been granted a UK banking licence by the PRA..."
+        }
+      ]
+    }
+  ],
+  "risk_assessment": {
+    "score": 55,
+    "classification": "HIGH_RISK",
+    "recommendation": "EDD",
+    "signal_breakdown": [
+      { "signal": "Company dissolved/liquidation", "points": 40, "triggered": false },
+      { "signal": "Overdue accounts", "points": 15, "triggered": false },
+      { "signal": "Overdue confirmation statement", "points": 10, "triggered": false },
+      { "signal": "Address not verified", "points": 15, "triggered": true },
+      { "signal": "Low address precision", "points": 10, "triggered": false },
+      { "signal": "No web presence", "points": 10, "triggered": false },
+      { "signal": "No active directors", "points": 20, "triggered": false },
+      { "signal": "Single director", "points": 5, "triggered": false },
+      { "signal": "No PSCs declared", "points": 15, "triggered": false },
+      { "signal": "Active charges", "points": 0, "triggered": false },
+      { "signal": "Company age < 1 year", "points": 10, "triggered": false },
+      { "signal": "Sanctions hit", "points": 50, "triggered": true },
+      { "signal": "PEP hit", "points": 20, "triggered": false }
+    ]
+  },
+  "executive_summary": [
+    {
+      "icon": "critical",
+      "tone": "red",
+      "title": "Sanctions Match",
+      "description": "Director Nikolay Storonsky matched on Ukraine NSDC sanctions list"
+    },
+    {
+      "icon": "check",
+      "tone": "green",
+      "title": "Active & Compliant",
+      "description": "Company is active with filings up to date"
+    },
+    {
+      "icon": "warning",
+      "tone": "yellow",
+      "title": "Address Not Verified",
+      "description": "Registered address could not be independently verified"
+    }
+  ]
+}
+```
