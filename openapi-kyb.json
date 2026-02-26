@@ -103,32 +103,98 @@
                     "value": {
                       "status": "completed",
                       "report_id": "rpt_7f3a2b1c9d4e",
-                      "created_at": "2026-02-23T10:30:00Z",
-                      "completed_at": "2026-02-23T10:32:45Z",
-                      "business_name": "Stripe Inc",
-                      "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080",
+                      "created_at": "2026-01-29T03:54:00Z",
+                      "completed_at": "2026-01-29T03:56:32Z",
+                      "business_name": "Connex Solutions LLC",
+                      "business_address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
                       "report": {
-                        "entity_verification": {
-                          "legal_name": "Stripe, Inc.",
-                          "status": "active",
-                          "state_of_incorporation": "Delaware",
-                          "entity_type": "Corporation",
-                          "formation_date": "2010-09-16"
+                        "report": {
+                          "business_status": "Verified",
+                          "last_updated": "01/29/2026 at 3:54AM"
                         },
-                        "address_verification": {
-                          "match": true,
-                          "normalized_address": "354 Oyster Point Blvd, South San Francisco, CA 94080-0000",
-                          "property_type": "Commercial"
+                        "scores": {
+                          "fraud_risk_score": 73,
+                          "financial_risk_score": 65,
+                          "reprompt_validation_score": 92
                         },
-                        "web_presence": {
-                          "domain": "stripe.com",
-                          "domain_registered": "2009-09-03",
-                          "ssl_valid": true
+                        "submitted_information": {
+                          "business_name": { "value": "Connex Solutions LLC", "status": "Verified" },
+                          "tax_id": { "value": "33-3059213", "status": "Tax ID Match Found" },
+                          "office_address": { "value": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742", "status": "Failure" }
                         },
-                        "risk_signals": {
-                          "overall_risk": "low",
-                          "flags": []
-                        }
+                        "business_information": {
+                          "formation_state": "TN",
+                          "formation_date": "2025-01-27",
+                          "formation_date_relative": "1 year ago",
+                          "entity_type": "LLC",
+                          "tax_id": "33-3059213",
+                          "tax_id_status": "Tax ID Match Found",
+                          "tax_id_name_match": "CONNEX SOLUTIONS LLC",
+                          "tax_id_name_match_status": "Tax ID Match Found"
+                        },
+                        "sos": {
+                          "status_counts": { "ACTIVE": 1, "INACTIVE": 0, "UNKNOWN": 0 },
+                          "states": ["Tennessee · Active"],
+                          "secretary_of_state": [
+                            {
+                              "filing_id": "001617942",
+                              "business_name": "CONNEX SOLUTIONS LLC",
+                              "jurisdiction": "Domestic",
+                              "status": "Active",
+                              "sub_status": "Not Good",
+                              "status_details": "Active",
+                              "address": "4015 TRAVIS DR STE 211, NASHVILLE, TN 37211-3742",
+                              "filed_date": "01/27/2025",
+                              "filed_relative": "a year ago",
+                              "entity_type": "LLC",
+                              "source_url": "https://tnbear.tn.gov/ecommerce/FilingDetail.aspx?CN=001617942",
+                              "detailed_info": {
+                                "Term of Duration": "Perpetual",
+                                "Managed By": "Member Managed",
+                                "Series LLC": "No",
+                                "Number of Members": "6 or less",
+                                "Fiscal Ending Month": "December",
+                                "AR Due Date": "04/01/2026"
+                              },
+                              "registered_agent_name": "REPUBLIC REGISTERED AGENT LLC",
+                              "registered_agent_lines": ["4015 TRAVIS DR STE 211", "NASHVILLE, TN 37211-3742"],
+                              "principal_office_address": ["4015 TRAVIS DRIVE STE 211 #1749", "NASHVILLE, TN 37211"],
+                              "mailing_address": ["4015 TRAVIS DRIVE STE 211 #1749", "NASHVILLE, TN 37211"]
+                            }
+                          ]
+                        },
+                        "insights": {
+                          "sos": { "status": "Submitted Active" },
+                          "tin_match": { "status": "Found" },
+                          "formation_state": { "status": "Found" },
+                          "revenue_standing": { "status": "Issue Detected" },
+                          "office_address": { "status": "Failure" },
+                          "people": { "status": "Unverified" },
+                          "watchlist": { "status": "Verified" },
+                          "business_name": { "status": "Verified" }
+                        },
+                        "business_names": [
+                          { "name": "Connex Solutions LLC" },
+                          { "name": "CONNEX SOLUTIONS LLC" },
+                          { "name": "CONEX SOLUTIONS" }
+                        ],
+                        "online_presence": {
+                          "websites": [
+                            { "domain": "conexsolutions.co", "status": "Active" },
+                            { "domain": "conex-solutions.com", "status": "Active" }
+                          ],
+                          "social_profiles": [
+                            { "platform": "Facebook", "name": "Conex Solutions" }
+                          ]
+                        },
+                        "office_addresses": [
+                          { "address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742", "is_residential": false, "is_deliverable": true },
+                          { "address": "3150 Highway 41A S, Clarksville, TN 37043-6247", "is_residential": false, "is_deliverable": true }
+                        ],
+                        "people": [
+                          { "name": "William Doron", "roles": ["Primary Officer"] },
+                          { "name": "Clay Purvis", "roles": ["Secondary Officer"] }
+                        ]
                       },
                       "pdf_url": "https://api.reprompt.io/kyb/reports/rpt_7f3a2b1c9d4e/report.pdf",
                       "model_name": "gemini-3-flash-preview"

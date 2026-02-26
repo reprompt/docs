@@ -4,9 +4,37 @@ description: "Automated Know Your Business (KYB) verification reports via API."
 hidden: true
 ---
 
-## Overview
+Reprompt agent generates a deep research KYB PDF report and JSON output including risk assessment, executive summary, and individual risk flags.
 
-The KYB Agent API runs automated business verification. Submit a business name and address, and the agent researches and compiles a KYB report — including entity verification, address confirmation, and more.
+## How It Works
+
+**Inputs:** A business name and address. Optionally, the name of the person requesting the report and a tax identification number (EIN).
+
+**Processing:** The agent autonomously researches the business across Secretary of State filings, IRS records, USPS address validation, watchlist databases, and the open web. Reports typically complete in under 3 minutes.
+
+**Output:** A structured report with:
+
+- **Business status** -- Verified or unverified
+- **Executive summary** -- Key findings at a glance, designed for fast decisioning without reviewing the full report
+- **Risk scores** -- Fraud safety, loan approval, and Reprompt validation scores
+
+And detailed verification across:
+
+- **Entity verification** -- Business name, address, source classification (authoritative vs non-authoritative)
+- **Core business facts** -- Formation state, entity type, formation date, filing ID, SOS standing, TIN match status
+- **Address verification** -- USPS deliverability, property type (commercial/residential), CMRA, vacancy, risk level
+- **Secretary of State filings** -- Active/inactive registrations, standing, jurisdiction, registered agent, and detailed filing info
+- **Insights** -- Per-section status rollups (SOS, TIN match, formation state, revenue standing, office address, people, watchlist, business name)
+- **Business names** -- Legal name and DBA names found across sources
+- **Online presence** -- Active websites and social media profiles
+- **People** -- Officers with roles
+- **Watchlist screening** -- Company and person screening results
+- **News and adverse media** -- Recent news coverage and adverse media mentions
+- **Certifications** -- Industry certifications including non-government associations
+
+---
+
+## API Reference
 
 **Base URL:** `https://api.reprompt.io`
 
@@ -14,11 +42,145 @@ The KYB Agent API runs automated business verification. Submit a business name a
 
 ---
 
-## POST /kyb/report/start
+## Full Example Report
 
-Start a new KYB verification report.
+```json
+{
+  "status": "completed",
+  "report_id": "rpt_7f3a2b1c9d4e",
+  "created_at": "2026-01-29T03:54:00Z",
+  "completed_at": "2026-01-29T03:56:32Z",
+  "business_name": "Connex Solutions LLC",
+  "business_address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
+  "report": {
+    "report": {
+      "business_status": "Verified",
+      "last_updated": "01/29/2026 at 3:54AM"
+    },
+    "scores": {
+      "fraud_risk_score": 73,
+      "financial_risk_score": 65,
+      "reprompt_validation_score": 92
+    },
+    "executive_summary": "Entity Verified: Active LLC formed in Tennessee on 01/27/2025. Tax ID confirmed with IRS. No watchlist hits. Revenue Standing Issue: Revenue standing flagged as \"Not Good\" by Tennessee Department of Revenue. May indicate outstanding tax obligations. Address Risk: High risk location with 1,001-10,000 businesses registered. Associated with known registered agent (Republic Registered Agent LLC). Principal Verified: William \"Bill\" Doron confirmed via multiple sources including social media and industry associations. Active Operations: Confirmed business activity via social media, customer reviews, and online presence. Operating since 2025.",
+    "submitted_information": {
+      "business_name": {
+        "value": "Connex Solutions LLC",
+        "status": "Verified"
+      },
+      "tax_id": {
+        "value": "33-3059213",
+        "status": "Tax ID Match Found"
+      },
+      "office_address": {
+        "value": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
+        "status": "Failure"
+      }
+    },
+    "business_information": {
+      "formation_state": "TN",
+      "formation_date": "2025-01-27",
+      "formation_date_relative": "1 year ago",
+      "entity_type": "LLC",
+      "tax_id": "33-3059213",
+      "tax_id_status": "Tax ID Match Found",
+      "tax_id_name_match": "CONNEX SOLUTIONS LLC",
+      "tax_id_name_match_status": "Tax ID Match Found"
+    },
+    "sos": {
+      "status_counts": {
+        "ACTIVE": 1,
+        "INACTIVE": 0,
+        "UNKNOWN": 0
+      },
+      "states": ["Tennessee · Active"],
+      "secretary_of_state": [
+        {
+          "filing_id": "001617942",
+          "business_name": "CONNEX SOLUTIONS LLC",
+          "jurisdiction": "Domestic",
+          "status": "Active",
+          "sub_status": "Not Good",
+          "status_details": "Active",
+          "address": "4015 TRAVIS DR STE 211, NASHVILLE, TN 37211-3742",
+          "filed_date": "01/27/2025",
+          "filed_relative": "a year ago",
+          "entity_type": "LLC",
+          "source_url": "https://tnbear.tn.gov/ecommerce/FilingDetail.aspx?CN=001617942",
+          "detailed_info": {
+            "Term of Duration": "Perpetual",
+            "Managed By": "Member Managed",
+            "Series LLC": "No",
+            "Number of Members": "6 or less",
+            "Fiscal Ending Month": "December",
+            "AR Due Date": "04/01/2026"
+          },
+          "registered_agent_name": "REPUBLIC REGISTERED AGENT LLC",
+          "registered_agent_lines": [
+            "4015 TRAVIS DR STE 211",
+            "NASHVILLE, TN 37211-3742"
+          ],
+          "principal_office_address": [
+            "4015 TRAVIS DRIVE STE 211 #1749",
+            "NASHVILLE, TN 37211"
+          ],
+          "mailing_address": [
+            "4015 TRAVIS DRIVE STE 211 #1749",
+            "NASHVILLE, TN 37211"
+          ]
+        }
+      ]
+    },
+    "insights": {
+      "sos": { "status": "Submitted Active" },
+      "tin_match": { "status": "Found" },
+      "formation_state": { "status": "Found" },
+      "revenue_standing": { "status": "Issue Detected" },
+      "office_address": { "status": "Failure" },
+      "people": { "status": "Unverified" },
+      "watchlist": { "status": "Verified" },
+      "business_name": { "status": "Verified" }
+    },
+    "business_names": [
+      { "name": "Connex Solutions LLC" },
+      { "name": "CONNEX SOLUTIONS LLC" },
+      { "name": "CONEX SOLUTIONS" }
+    ],
+    "online_presence": {
+      "websites": [
+        { "domain": "conexsolutions.co", "status": "Active" },
+        { "domain": "conex-solutions.com", "status": "Active" }
+      ],
+      "social_profiles": [
+        { "platform": "Facebook", "name": "Conex Solutions" }
+      ]
+    },
+    "office_addresses": [
+      {
+        "address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
+        "is_residential": false,
+        "is_deliverable": true
+      },
+      {
+        "address": "3150 Highway 41A S, Clarksville, TN 37043-6247",
+        "is_residential": false,
+        "is_deliverable": true
+      }
+    ],
+    "people": [
+      { "name": "William Doron", "roles": ["Primary Officer"] },
+      { "name": "Clay Purvis", "roles": ["Secondary Officer"] }
+    ]
+  },
+  "pdf_url": "https://api.reprompt.io/kyb/reports/rpt_7f3a2b1c9d4e/report.pdf"
+}
+```
 
-### Request
+---
+
+## Start a Report
+
+### POST /kyb/report/start
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -32,12 +194,11 @@ curl -X POST "https://api.reprompt.io/kyb/report/start" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "business_name": "Stripe Inc",
-    "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080"
+    "business_name": "Connex Solutions LLC",
+    "business_address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
+    "tax_identification_number": "33-3059213"
   }'
 ```
-
-### Response
 
 ```json
 {
@@ -50,81 +211,158 @@ curl -X POST "https://api.reprompt.io/kyb/report/start" \
 }
 ```
 
-| Field | Description |
-|---|---|
-| `report_id` | Unique identifier. Use with the GET endpoint to poll for results. |
-| `poll_url` | URL path to poll for status. |
-| `stream_id` / `channel` | Pusher channel for real-time streaming. |
-| `event_name` | Pusher event name (`kyb:stream:event`). |
+Use `report_id` to poll for results. For real-time progress, subscribe to the Pusher channel using `stream_id` and `event_name`.
 
 ---
 
-## GET /kyb/report/{report_id}
+## Poll for Results
 
-Poll for report status and results.
+### GET /kyb/report/{report_id}
 
 ```bash
 curl "https://api.reprompt.io/kyb/report/rpt_7f3a2b1c9d4e" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-The response shape depends on the `status` field:
+The response shape depends on the `status` field: `processing`, `completed`, or `error`.
 
-### Processing
+When `status` is `completed`, the response includes the full `report` object and a `pdf_url` linking to a permanent PDF.
 
-```json
-{
-  "status": "processing",
-  "report_id": "rpt_7f3a2b1c9d4e",
-  "created_at": "2026-02-23T10:30:00Z",
-  "business_name": "Stripe Inc",
-  "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080"
-}
-```
+---
 
-### Completed
+## What the Report Covers
 
-```json
-{
-  "status": "completed",
-  "report_id": "rpt_7f3a2b1c9d4e",
-  "created_at": "2026-02-23T10:30:00Z",
-  "completed_at": "2026-02-23T10:32:45Z",
-  "business_name": "Stripe Inc",
-  "business_address": "354 Oyster Point Blvd, South San Francisco, CA 94080",
-  "report": {
-    "entity_verification": {
-      "legal_name": "Stripe, Inc.",
-      "status": "active",
-      "state_of_incorporation": "Delaware",
-      "entity_type": "Corporation",
-      "formation_date": "2010-09-16"
-    },
-    "address_verification": {
-      "match": true,
-      "normalized_address": "354 Oyster Point Blvd, South San Francisco, CA 94080-0000",
-      "property_type": "Commercial"
-    },
-    "web_presence": {
-      "domain": "stripe.com",
-      "domain_registered": "2009-09-03",
-      "ssl_valid": true
-    },
-    "risk_signals": {
-      "overall_risk": "low",
-      "flags": []
-    }
-  },
-  "pdf_url": "https://api.reprompt.io/kyb/reports/rpt_7f3a2b1c9d4e/report.pdf"
-}
-```
+Each completed report returns a `report` object containing:
 
-| Field | Description |
+| Section | What It Tells You |
 |---|---|
-| `report` | Full KYB report JSON with entity verification, address verification, web presence, and risk signals. |
-| `pdf_url` | Permanent URL to the PDF report. |
+| `report` | Business status (verified/unverified) and last updated timestamp |
+| `submitted_information` | Submitted business name, tax ID, and office address with verification status |
+| `business_information` | Formation state, formation date, entity type, tax ID match status |
+| `sos` | Secretary of State filings with status counts, states, and detailed filing records |
+| `insights` | Per-section status rollups (e.g. SOS, TIN match, revenue standing, office address) |
+| `business_names` | All known business names (legal + DBAs) |
+| `online_presence` | Websites and social media profiles |
+| `office_addresses` | Verified addresses with residential/deliverable flags |
+| `people` | Officers and their roles |
 
-### Error
+---
+
+## Report Sections in Detail
+
+### Report
+
+| Field | Type | Description |
+|---|---|---|
+| `business_status` | `string` | `Verified` or `Unverified` |
+| `last_updated` | `string` | Timestamp of last update |
+
+### Scores
+
+| Field | Type | Description |
+|---|---|---|
+| `fraud_risk_score` | `integer` | 0-100 |
+| `financial_risk_score` | `integer` | 0-100 |
+| `reprompt_validation_score` | `integer` | 0-100 |
+
+### Submitted Information
+
+| Field | Type | Description |
+|---|---|---|
+| `business_name` | `object` | `{ "value": string, "status": string }` |
+| `tax_id` | `object` | `{ "value": string, "status": string }` -- `"Not Provided"` if omitted |
+| `office_address` | `object` | `{ "value": string, "status": string }` |
+
+### Business Information
+
+| Field | Type | Description |
+|---|---|---|
+| `formation_state` | `string` | State where entity was formed (e.g. `TN`) |
+| `formation_date` | `string` | Date of formation |
+| `formation_date_relative` | `string` | Relative time (e.g. `1 year ago`) |
+| `entity_type` | `string` | Entity type (e.g. `LLC`, `Corporation`) |
+| `tax_id` | `string` | Tax identification number |
+| `tax_id_status` | `string` | `Tax ID Match Found` or `Tax ID Match Not Found` |
+| `tax_id_name_match` | `string` | Business name associated with the TIN |
+| `tax_id_name_match_status` | `string` | Match status |
+
+### SOS (Secretary of State)
+
+| Field | Type | Description |
+|---|---|---|
+| `status_counts` | `object` | `{ "ACTIVE": int, "INACTIVE": int, "UNKNOWN": int }` |
+| `states` | `string[]` | States where filings were found |
+| `secretary_of_state` | `array` | Detailed filing records (see below) |
+
+Each filing record:
+
+| Field | Type | Description |
+|---|---|---|
+| `filing_id` | `string` | State filing ID |
+| `business_name` | `string` | Name as registered |
+| `jurisdiction` | `string` | e.g. `Domestic`, `Foreign` |
+| `status` | `string` | `Active` or `Inactive` |
+| `sub_status` | `string` | e.g. `Good Standing`, `Not Good` |
+| `status_details` | `string` | Additional status info |
+| `address` | `string` | Address on file |
+| `filed_date` | `string` | Date of filing |
+| `filed_relative` | `string` | Relative time (e.g. `a year ago`) |
+| `entity_type` | `string` | Entity type |
+| `source_url` | `string` | Link to source registry |
+| `detailed_info` | `object` | Key-value pairs of additional filing details (term of duration, managed by, fiscal ending month, etc.) |
+| `registered_agent_name` | `string` | Registered agent name |
+| `registered_agent_lines` | `string[]` | Registered agent address lines |
+| `principal_office_address` | `string[]` | Principal office address lines |
+| `mailing_address` | `string[]` | Mailing address lines |
+
+### Insights
+
+Per-section status rollups. Each key maps to `{ "status": string }`.
+
+| Key | Example Status Values |
+|---|---|
+| `sos` | `Submitted Active` |
+| `tin_match` | `Found` |
+| `formation_state` | `Found` |
+| `revenue_standing` | `Issue Detected` |
+| `office_address` | `Verified`, `Failure` |
+| `people` | `Verified`, `Unverified` |
+| `watchlist` | `Verified` |
+| `business_name` | `Verified` |
+
+### Business Names
+
+Array of `{ "name": string }` objects -- all known legal and DBA names.
+
+### Online Presence
+
+| Field | Type | Description |
+|---|---|---|
+| `websites` | `array` | `{ "domain": string, "status": string }` |
+| `social_profiles` | `array` | `{ "platform": string, "name": string }` |
+
+### Office Addresses
+
+Array of address objects:
+
+| Field | Type | Description |
+|---|---|---|
+| `address` | `string` | Full address |
+| `is_residential` | `boolean` | `true` if residential, `false` if commercial (omitted if unknown) |
+| `is_deliverable` | `boolean` | `true` if USPS deliverable (omitted if unknown) |
+
+### People
+
+Array of person objects:
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `string` | Full name |
+| `roles` | `string[]` | Roles (e.g. `Primary Officer`, `Secondary Officer`) |
+
+---
+
+## Error Response
 
 ```json
 {
