@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Reprompt US KYB API",
-    "description": "Create and poll authenticated US KYB report requests. Completed responses include the full report payload and an authenticated PDF download path.",
+    "description": "Create and poll authenticated US KYB report requests. Completed responses include the full report payload and a direct S3 PDF URL.",
     "version": "1.0.0"
   },
   "paths": {
@@ -167,86 +167,6 @@
           },
           "502": {
             "description": "Upstream provider error."
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/us-kyb/reports/{request_id}/pdf": {
-      "get": {
-        "summary": "Download the generated US KYB report PDF",
-        "operationId": "get_us_kyb_report_pdf_v1_us_kyb_reports__request_id__pdf_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "request_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Request Id"
-            }
-          },
-          {
-            "name": "org_slug",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Org Slug"
-            }
-          },
-          {
-            "name": "apiKey",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Apikey"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid authentication."
-          },
-          "404": {
-            "description": "Request not found."
           },
           "422": {
             "description": "Validation Error",
