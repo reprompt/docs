@@ -310,11 +310,6 @@
               }
             ],
             "title": "Tax Identification Number"
-          },
-          "model_name": {
-            "type": "string",
-            "title": "Model Name",
-            "default": "gemini-3-flash-preview"
           }
         },
         "additionalProperties": false,
@@ -405,10 +400,6 @@
             "type": "string",
             "title": "Pdf Url",
             "description": "Direct URL to the PDF report."
-          },
-          "model_name": {
-            "type": "string",
-            "title": "Model Name"
           }
         },
         "type": "object",
@@ -419,8 +410,7 @@
           "business_name",
           "business_address",
           "report",
-          "pdf_url",
-          "model_name"
+          "pdf_url"
         ],
         "title": "KybReportStatusCompleted"
       },
@@ -577,11 +567,6 @@
             "type": "boolean",
             "title": "Stream",
             "default": false
-          },
-          "model_name": {
-            "type": "string",
-            "title": "Model Name",
-            "default": "gemini-3-flash-preview"
           }
         },
         "additionalProperties": false,
