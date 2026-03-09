@@ -3,11 +3,11 @@ title: "KYB Agent API"
 description: "Automated Know Your Business (KYB) verification reports via API."
 ---
 
-Reprompt agent generates a deep research KYB PDF report and JSON output including risk assessment, executive summary, and individual risk flags.
+Reprompt generates an authenticated US KYB report API with structured JSON output and a downloadable PDF artifact.
 
 ## How It Works
 
-**Inputs:** A business name and address. Optionally, the name of the person requesting the report and a tax identification number (EIN).
+**Inputs:** A business name plus a structured US address. Optionally, the name of the person requesting the report, a tax identification number (EIN), and whether to enable streaming metadata.
 
 **Processing:** The agent autonomously researches the business across Secretary of State filings, IRS records, USPS address validation, watchlist databases, and the open web. Reports typically complete in under 3 minutes.
 
@@ -47,12 +47,10 @@ The public OpenAPI document for this API is available at `https://api.reprompt.i
 
 ```json
 {
+  "request_id": "rpt_7f3a2b1c9d4e",
   "status": "completed",
-  "report_id": "rpt_7f3a2b1c9d4e",
   "created_at": "2026-01-29T03:54:00Z",
   "completed_at": "2026-01-29T03:56:32Z",
-  "business_name": "Connex Solutions LLC",
-  "business_address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
   "report": {
     "report": {
       "business_status": "Verified",
@@ -173,7 +171,7 @@ The public OpenAPI document for this API is available at `https://api.reprompt.i
       { "name": "Clay Purvis", "roles": ["Secondary Officer"] }
     ]
   },
-  "pdf_url": "https://api.reprompt.io/kyb/reports/rpt_7f3a2b1c9d4e/report.pdf"
+  "pdf_download_url": "/v1/us-kyb/reports/rpt_7f3a2b1c9d4e/pdf"
 }
 ```
 
@@ -181,53 +179,60 @@ The public OpenAPI document for this API is available at `https://api.reprompt.i
 
 ## Start a Report
 
-### POST /kyb/report/start
+### POST /v1/us-kyb/reports
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `business_name` | string | Yes | Legal or trading name of the business |
-| `business_address` | string | Yes | Full address of the business |
-| `person_submitting` | string | No | Name of the person requesting the report |
-| `tax_identification_number` | string | No | EIN or other tax ID |
+| `address` | object | Yes | Structured US address |
+| `submitted_by_name` | string | No | Name of the person requesting the report |
+| `tin.number` | string | No | EIN or other tax ID |
+| `stream` | boolean | No | Include stream metadata in the creation response |
 
 ```bash
-curl -X POST "https://api.reprompt.io/kyb/report/start" \
+curl -X POST "https://api.reprompt.io/v1/us-kyb/reports" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
     "business_name": "Connex Solutions LLC",
-    "business_address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
-    "tax_identification_number": "33-3059213"
+    "submitted_by_name": "Alex Analyst",
+    "address": {
+      "address_line1": "4015 Travis Dr Ste 211",
+      "city": "Nashville",
+      "state": "TN",
+      "postal_code": "37211-3742",
+      "country_code": "US"
+    },
+    "tin": {
+      "number": "33-3059213"
+    }
   }'
 ```
 
 ```json
 {
+  "request_id": "rpt_7f3a2b1c9d4e",
   "status": "processing",
-  "report_id": "rpt_7f3a2b1c9d4e",
-  "poll_url": "/kyb/report/rpt_7f3a2b1c9d4e",
-  "stream_id": "rpt_7f3a2b1c9d4e",
-  "channel": "rpt_7f3a2b1c9d4e",
-  "event_name": "kyb:stream:event"
+  "poll_url": "/v1/us-kyb/reports/rpt_7f3a2b1c9d4e"
 }
 ```
 
-Use `report_id` to poll for results. For real-time progress, subscribe to the Pusher channel using `stream_id` and `event_name`.
+Use `request_id` to poll for results. If you set `stream: true`, the response also includes `stream_id`, `channel`, and `event_name`.
 
 ---
 
 ## Poll for Results
 
-### GET /kyb/report/{report_id}
+### GET /v1/us-kyb/reports/{request_id}
 
 ```bash
-curl "https://api.reprompt.io/kyb/report/rpt_7f3a2b1c9d4e" \
+curl "https://api.reprompt.io/v1/us-kyb/reports/rpt_7f3a2b1c9d4e" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 The response shape depends on the `status` field: `processing`, `completed`, or `error`.
 
-When `status` is `completed`, the response includes the full `report` object and a `pdf_url` linking to a permanent PDF.
+When `status` is `completed`, the response includes the full `report` object and a `pdf_download_url` path for the authenticated PDF download.
 
 ---
 
