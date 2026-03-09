@@ -47,6 +47,18 @@ git commit -m "Update V2 OpenAPI spec from production"
 git push
 ```
 
+**KYB Spec:**
+```bash
+# Pull latest KYB spec from production (requires API key)
+curl "https://api.reprompt.io/kyb/openapi.json" \
+  -H "Authorization: Bearer YOUR_API_KEY" > openapi-kyb.json
+
+# Commit and push (Mintlify auto-deploys on push to main)
+git add openapi-kyb.json
+git commit -m "Update KYB OpenAPI spec from production"
+git push
+```
+
 ## Repository Structure
 
 ### Documentation Content
@@ -57,33 +69,35 @@ git push
 ### OpenAPI Specifications
 - **openapi-v2.json**: V2 API specification (~42KB) - Current experimental version
 - **openapi-v1.json**: V1 API specification (~32KB) - Stable version
+- **openapi-kyb.json**: KYB API specification - Generated from the Reprompt-hosted KYB OpenAPI endpoint
 
 ### Custom Components
 - **snippets/PlacematchPlayground.tsx**: Interactive React component for testing Placematch API
   - Uses Mapbox GL JS for map visualization
   - Displays match results, confidence scores, and API request/response
   - Sample scenarios: name-only search, international addresses
-  - Hardcoded Mapbox token (public read-only): `pk.eyJ1IjoicmVwcm9tcHQiLCJhIjoiY20yMWdseDYzMDB4djJrczF5dXZycjdlaiJ9.lCIzH2Ol77ODbvOpyXmJOA`
+- Mapbox token is currently embedded in the playground component; replace with a placeholder before sharing snippets publicly
 - **snippets/PlacematchPlayground.jsx**: JavaScript version of the same component
 
 ### Configuration
 - **docs.json**: Main Mintlify configuration used for both local development and production deployment
-  - Uses versioned navigation format with V1 and V2 API references
+  - Uses versioned navigation format with V1, V2, and KYB API references
   - V2 fetches OpenAPI spec directly from production: `https://api.reprompt.io/v2/openapi.json`
+  - KYB spec is refreshed from `https://api.reprompt.io/kyb/openapi.json` and committed as `openapi-kyb.json`
   - Automatically deployed when pushed to main branch
   - Theme: "aspen", Primary color: #5046e5
   - API playground mode: "interactive"
 
 ## API Architecture
 
-The Reprompt API provides place enrichment and matching capabilities. The API documentation includes both V1 (stable) and V2 (experimental) versions.
+The Reprompt API documentation includes V1 place enrichment, V2 experimental APIs, and the KYB agent API.
 
 ### Key Endpoints
 - **Place Enrichment**: Core enrichment API for adding attributes to place data
 - **Batch Processing**: Asynchronous processing for large datasets
 - **Placematch**: Match places across different data sources
 
-Refer to the OpenAPI specifications (`openapi-v1.json` and `openapi-v2.json`) for detailed endpoint documentation.
+Refer to the OpenAPI specifications (`openapi-v1.json`, `openapi-v2.json`, and `openapi-kyb.json`) for detailed endpoint documentation.
 
 ## Important Patterns
 
@@ -104,7 +118,7 @@ import { ComponentName } from "/snippets/ComponentName.tsx"
 ```
 
 ### OpenAPI Integration
-API documentation references OpenAPI specs defined in `docs.json` navigation structure. The specs are automatically rendered by Mintlify. V2 API spec is fetched dynamically from production at `https://api.reprompt.io/v2/openapi.json`.
+API documentation references OpenAPI specs defined in `docs.json` navigation structure. The specs are automatically rendered by Mintlify. V2 API spec is fetched dynamically from production at `https://api.reprompt.io/v2/openapi.json`. KYB uses the Reprompt-hosted OpenAPI endpoint at `https://api.reprompt.io/kyb/openapi.json`, which is pulled into `openapi-kyb.json` before commit.
 
 ### Interactive Playground Component
 The PlacematchPlayground component in `/snippets`:
