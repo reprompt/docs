@@ -3,33 +3,54 @@ title: "KYB Agent API"
 description: "Automated Know Your Business (KYB) verification reports via API."
 ---
 
-Reprompt generates an authenticated US KYB report API with structured JSON output and a downloadable PDF artifact.
+This API creates an authenticated US KYB report and returns a structured business profile with fraud-relevant signals once processing is complete.
 
-## How It Works
+Reprompt positions KYB as more than a registry lookup. In practice, the report combines business-registration data with address, operating-status, web, and social signals in a single response. The live API is asynchronous: you create a report request, poll for completion, then consume the returned JSON and `pdf_url`.
 
-**Inputs:** A business name plus a structured US address. Optionally, the name of the person requesting the report, a tax identification number (EIN), and whether to enable streaming metadata.
+## What This API Does
 
-**Processing:** The agent autonomously researches the business across Secretary of State filings, IRS records, USPS address validation, watchlist databases, and the open web. Reports typically complete in under 3 minutes.
+Use this API when you need a researched business profile for onboarding, fraud review, underwriting, or manual analyst review.
 
-**Output:** A structured report with:
+The report may include evidence from:
 
-- **Business status** -- Verified or unverified
-- **Executive summary** -- Key findings at a glance, designed for fast decisioning without reviewing the full report
-- **Risk scores** -- Fraud safety, loan approval, and Reprompt validation scores
+- IRS and tax-ID matching
+- Secretary of State and registration records
+- address validation and physical-presence signals
+- officers, principals, and watchlist context
+- web presence and social activity
+- operating-status, closure, and business-consistency signals
 
-And detailed verification across:
+The completed response is designed to support two workflows:
 
-- **Entity verification** -- Business name, address, source classification (authoritative vs non-authoritative)
-- **Core business facts** -- Formation state, entity type, formation date, filing ID, SOS standing, TIN match status
-- **Address verification** -- USPS deliverability, property type (commercial/residential), CMRA, vacancy, risk level
-- **Secretary of State filings** -- Active/inactive registrations, standing, jurisdiction, registered agent, and detailed filing info
-- **Insights** -- Per-section status rollups (SOS, TIN match, formation state, revenue standing, office address, people, watchlist, business name)
-- **Business names** -- Legal name and DBA names found across sources
-- **Online presence** -- Active websites and social media profiles
-- **People** -- Officers with roles
-- **Watchlist screening** -- Company and person screening results
-- **News and adverse media** -- Recent news coverage and adverse media mentions
-- **Certifications** -- Industry certifications including non-government associations
+- machine consumption of the structured `report` JSON
+- analyst review of the rendered PDF at `pdf_url`
+
+## Request Flow
+
+1. `POST /v1/us-kyb/reports` with a business name and structured US address
+2. Save the returned `request_id`
+3. `GET /v1/us-kyb/reports/{request_id}` until status changes from `processing`
+4. Read the structured `report` payload and optional `pdf_url`
+
+## Response Lifecycle
+
+- `processing`: the report is still being generated
+- `completed`: the response includes the full `report` object and `pdf_url`
+- `error`: report generation failed and the response includes an error object
+
+## Evidence Categories
+
+The returned report can include:
+
+- business status and summary findings
+- score outputs used for decision support
+- submitted-information verification for business name, address, and tax ID
+- business-information fields like formation state, entity type, and TIN match status
+- Secretary of State records and filing details
+- insights and status rollups for major verification areas
+- business names, online presence, addresses, and people
+
+The exact fields present depend on the business and the evidence found during processing.
 
 ---
 
