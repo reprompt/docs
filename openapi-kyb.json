@@ -655,10 +655,10 @@
             "title": "Report",
             "description": "Full KYB report JSON."
           },
-          "pdf_download_url": {
+          "pdf_url": {
             "type": "string",
-            "title": "Pdf Download Url",
-            "description": "Authenticated URL path for the PDF report."
+            "title": "Pdf Url",
+            "description": "Direct S3 URL for the generated PDF report."
           }
         },
         "type": "object",
@@ -667,7 +667,7 @@
           "created_at",
           "completed_at",
           "report",
-          "pdf_download_url"
+          "pdf_url"
         ],
         "title": "UsKybStatusCompleted"
       },
