@@ -3,54 +3,22 @@ title: "KYB Agent API"
 description: "Automated Know Your Business (KYB) verification reports via API."
 ---
 
-This API creates an authenticated US KYB report and returns a structured business profile with fraud-relevant signals once processing is complete.
+## Overview
 
-Reprompt positions KYB as more than a registry lookup. In practice, the report combines business-registration data with address, operating-status, web, and social signals in a single response. The live API is asynchronous: you create a report request, poll for completion, then consume the returned JSON and `pdf_url`.
+The [`/v1/us-kyb/reports`](/api-reference/create-a-us-kyb-report-request) endpoint lets you generate a KYB report for a US business from a business name and structured address.
 
-## What This API Does
+Reports are generated asynchronously. Create a report request, poll [`/v1/us-kyb/reports/{request_id}`](/api-reference/poll-a-us-kyb-report-request) until it completes, then read the structured `report` payload and `pdf_url`.
 
-Use this API when you need a researched business profile for onboarding, fraud review, underwriting, or manual analyst review.
-
-The report may include evidence from:
+Completed reports can include:
 
 - IRS and tax-ID matching
-- Secretary of State and registration records
-- address validation and physical-presence signals
-- officers, principals, and watchlist context
-- web presence and social activity
-- operating-status, closure, and business-consistency signals
+- Secretary of State records
+- address and physical-presence signals
+- officers and watchlist context
+- web and social presence
+- operating-status and business-consistency signals
 
-The completed response is designed to support two workflows:
-
-- machine consumption of the structured `report` JSON
-- analyst review of the rendered PDF at `pdf_url`
-
-## Request Flow
-
-1. `POST /v1/us-kyb/reports` with a business name and structured US address
-2. Save the returned `request_id`
-3. `GET /v1/us-kyb/reports/{request_id}` until status changes from `processing`
-4. Read the structured `report` payload and optional `pdf_url`
-
-## Response Lifecycle
-
-- `processing`: the report is still being generated
-- `completed`: the response includes the full `report` object and `pdf_url`
-- `error`: report generation failed and the response includes an error object
-
-## Evidence Categories
-
-The returned report can include:
-
-- business status and summary findings
-- score outputs used for decision support
-- submitted-information verification for business name, address, and tax ID
-- business-information fields like formation state, entity type, and TIN match status
-- Secretary of State records and filing details
-- insights and status rollups for major verification areas
-- business names, online presence, addresses, and people
-
-The exact fields present depend on the business and the evidence found during processing.
+Use the JSON response for application logic, and `pdf_url` when you need a rendered report for analyst review.
 
 ---
 
