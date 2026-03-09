@@ -171,7 +171,7 @@ The public OpenAPI document for this API is available at `https://api.reprompt.i
       { "name": "Clay Purvis", "roles": ["Secondary Officer"] }
     ]
   },
-  "pdf_download_url": "/v1/us-kyb/reports/rpt_7f3a2b1c9d4e/pdf"
+  "pdf_url": "https://reprompt1.s3.amazonaws.com/kyb-agent-reports/connex-solutions-llc/20260309_224905/connex-solutions-llc_20260309_224905.pdf"
 }
 ```
 
@@ -232,7 +232,7 @@ curl "https://api.reprompt.io/v1/us-kyb/reports/rpt_7f3a2b1c9d4e" \
 
 The response shape depends on the `status` field: `processing`, `completed`, or `error`.
 
-When `status` is `completed`, the response includes the full `report` object and a `pdf_download_url` path for the authenticated PDF download.
+When `status` is `completed`, the response includes the full `report` object and a `pdf_url` pointing at the generated PDF in S3.
 
 ---
 
