@@ -26,131 +26,107 @@ Use the JSON response for application logic, and `pdf_url` when you need a rende
 
 ```json
 {
-  "request_id": "rpt_7f3a2b1c9d4e",
+  "request_id": "ecd7e4fc-54ee-40a9-819b-dac94a8d26ea",
   "status": "completed",
-  "created_at": "2026-01-29T03:54:00Z",
-  "completed_at": "2026-01-29T03:56:32Z",
+  "created_at": "2026-03-09T23:43:01.956609+00:00",
+  "completed_at": "2026-03-09T23:44:07.955586+00:00",
   "report": {
     "report": {
-      "business_status": "Verified",
-      "last_updated": "01/29/2026 at 3:54AM"
+      "business_status": "Not Verified",
+      "last_updated": "03/09/2026 at 11:44PM UTC"
     },
     "scores": {
-      "fraud_risk_score": 73,
-      "financial_risk_score": 65,
-      "reprompt_validation_score": 92
+      "fraud_safety_score": 0,
+      "loan_approval_score": 0,
+      "reprompt_validation_score": 0
     },
-    "executive_summary": "Entity Verified: Active LLC formed in Tennessee on 01/27/2025. Tax ID confirmed with IRS. No watchlist hits. Revenue Standing Issue: Revenue standing flagged as \"Not Good\" by Tennessee Department of Revenue. May indicate outstanding tax obligations. Address Risk: High risk location with 1,001-10,000 businesses registered. Associated with known registered agent (Republic Registered Agent LLC). Principal Verified: William \"Bill\" Doron confirmed via multiple sources including social media and industry associations. Active Operations: Confirmed business activity via social media, customer reviews, and online presence. Operating since 2025.",
     "submitted_information": {
       "business_name": {
         "value": "Connex Solutions LLC",
-        "status": "Verified"
+        "status": "Not Verified"
       },
       "tax_id": {
-        "value": "33-3059213",
-        "status": "Tax ID Match Found"
+        "value": "Not Provided",
+        "status": "Inconclusive"
       },
       "office_address": {
-        "value": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
-        "status": "Failure"
+        "value": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742, US",
+        "status": "Inconclusive"
       }
     },
     "business_information": {
-      "formation_state": "TN",
-      "formation_date": "2025-01-27",
-      "formation_date_relative": "1 year ago",
-      "entity_type": "LLC",
-      "tax_id": "33-3059213",
-      "tax_id_status": "Tax ID Match Found",
-      "tax_id_name_match": "CONNEX SOLUTIONS LLC",
-      "tax_id_name_match_status": "Tax ID Match Found"
+      "formation_state": "TN (UNVERIFIED)",
+      "formation_date": "NOT_PROVIDED",
+      "formation_date_relative": "NOT_PROVIDED",
+      "entity_type": "NOT_PROVIDED",
+      "tax_id": "Not Provided",
+      "tax_id_status": "N/A",
+      "tax_id_name_match": "Not Provided",
+      "tax_id_name_match_status": "N/A"
     },
     "sos": {
       "status_counts": {
-        "ACTIVE": 1,
-        "INACTIVE": 0,
+        "ACTIVE": 0,
+        "INACTIVE": 1,
         "UNKNOWN": 0
       },
-      "states": ["Tennessee · Active"],
+      "states": ["Inconclusive"],
       "secretary_of_state": [
         {
-          "filing_id": "001617942",
-          "business_name": "CONNEX SOLUTIONS LLC",
-          "jurisdiction": "Domestic",
-          "status": "Active",
-          "sub_status": "Not Good",
-          "status_details": "Active",
-          "address": "4015 TRAVIS DR STE 211, NASHVILLE, TN 37211-3742",
-          "filed_date": "01/27/2025",
-          "filed_relative": "a year ago",
-          "entity_type": "LLC",
-          "source_url": "https://tnbear.tn.gov/ecommerce/FilingDetail.aspx?CN=001617942",
+          "filing_id": "INCONCLUSIVE",
+          "business_name": "Connex Solutions LLC",
+          "jurisdiction": "Inconclusive",
+          "status": "Inactive",
+          "sub_status": "Foreign",
+          "status_details": "Inconclusive",
+          "address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742, US",
+          "filed_date": "NOT_PROVIDED",
+          "filed_relative": "NOT_PROVIDED",
+          "entity_type": "NOT_PROVIDED",
+          "source_url": "https://tnbear.tn.gov/Ecommerce/FilingSearch.aspx",
           "detailed_info": {
-            "Term of Duration": "Perpetual",
-            "Managed By": "Member Managed",
-            "Series LLC": "No",
-            "Number of Members": "6 or less",
-            "Fiscal Ending Month": "December",
-            "AR Due Date": "04/01/2026"
+            "Formation Date": "NOT_PROVIDED",
+            "Formation State": "TN (UNVERIFIED)",
+            "Entity Type": "NOT_PROVIDED"
           },
-          "registered_agent_name": "REPUBLIC REGISTERED AGENT LLC",
+          "registered_agent_name": "Not Provided",
           "registered_agent_lines": [
-            "4015 TRAVIS DR STE 211",
-            "NASHVILLE, TN 37211-3742"
+            "Not Provided"
           ],
           "principal_office_address": [
-            "4015 TRAVIS DRIVE STE 211 #1749",
-            "NASHVILLE, TN 37211"
+            "4015 Travis Dr Ste 211, Nashville, TN 37211-3742, US"
           ],
           "mailing_address": [
-            "4015 TRAVIS DRIVE STE 211 #1749",
-            "NASHVILLE, TN 37211"
+            "4015 Travis Dr Ste 211, Nashville, TN 37211-3742, US"
           ]
         }
       ]
     },
     "insights": {
-      "sos": { "status": "Submitted Active" },
-      "tin_match": { "status": "Found" },
-      "formation_state": { "status": "Found" },
-      "revenue_standing": { "status": "Issue Detected" },
-      "office_address": { "status": "Failure" },
-      "people": { "status": "Unverified" },
-      "watchlist": { "status": "Verified" },
-      "business_name": { "status": "Verified" }
+      "office_address": { "status": "INCONCLUSIVE" },
+      "watchlist": { "status": "INCONCLUSIVE" },
+      "sos": { "status": "UNVERIFIED" },
+      "tin_match": { "status": "INCONCLUSIVE" },
+      "formation_state": { "status": "VERIFIED" }
     },
     "business_names": [
-      { "name": "Connex Solutions LLC" },
-      { "name": "CONNEX SOLUTIONS LLC" },
-      { "name": "CONEX SOLUTIONS" }
+      { "name": "Connex Solutions LLC" }
     ],
     "online_presence": {
       "websites": [
-        { "domain": "conexsolutions.co", "status": "Active" },
-        { "domain": "conex-solutions.com", "status": "Active" }
-      ],
-      "social_profiles": [
-        { "platform": "Facebook", "name": "Conex Solutions" }
+        { "domain": "not_provided", "status": "Active" }
       ]
     },
     "office_addresses": [
       {
-        "address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742",
-        "is_residential": false,
-        "is_deliverable": true
-      },
-      {
-        "address": "3150 Highway 41A S, Clarksville, TN 37043-6247",
-        "is_residential": false,
-        "is_deliverable": true
+        "address": "4015 Travis Dr Ste 211, Nashville, TN 37211-3742, US"
       }
     ],
     "people": [
-      { "name": "William Doron", "roles": ["Primary Officer"] },
-      { "name": "Clay Purvis", "roles": ["Secondary Officer"] }
+      { "name": "Unable to identify confirmed person", "roles": ["Unverified"] }
     ]
   },
-  "pdf_url": "https://reprompt1.s3.amazonaws.com/kyb-agent-reports/connex-solutions-llc/20260309_224905/connex-solutions-llc_20260309_224905.pdf"
+  "pdf_url": "https://reprompt1.s3.amazonaws.com/kyb-agent-reports/connex-solutions-llc/20260309_234302/connex-solutions-llc_20260309_234302.pdf"
 }
 ```
 
@@ -166,7 +142,7 @@ Use the JSON response for application logic, and `pdf_url` when you need a rende
 | `address` | object | Yes | Structured US address |
 | `submitted_by_name` | string | No | Name of the person requesting the report |
 | `tin.number` | string | No | EIN or other tax ID |
-| `stream` | boolean | No | Include stream metadata in the creation response |
+| `stream` | boolean | No | Optional stream metadata flag |
 
 ```bash
 curl -X POST "https://api.reprompt.io/v1/us-kyb/reports" \
@@ -190,13 +166,14 @@ curl -X POST "https://api.reprompt.io/v1/us-kyb/reports" \
 
 ```json
 {
-  "request_id": "rpt_7f3a2b1c9d4e",
+  "request_id": "ecd7e4fc-54ee-40a9-819b-dac94a8d26ea",
   "status": "processing",
-  "poll_url": "/v1/us-kyb/reports/rpt_7f3a2b1c9d4e"
+  "poll_url": "/v1/us-kyb/reports/ecd7e4fc-54ee-40a9-819b-dac94a8d26ea",
+  "stream": null
 }
 ```
 
-Use `request_id` to poll for results. If you set `stream: true`, the response also includes `stream_id`, `channel`, and `event_name`.
+Use `request_id` to poll for results.
 
 ---
 
@@ -205,7 +182,7 @@ Use `request_id` to poll for results. If you set `stream: true`, the response al
 ### GET /v1/us-kyb/reports/{request_id}
 
 ```bash
-curl "https://api.reprompt.io/v1/us-kyb/reports/rpt_7f3a2b1c9d4e" \
+curl "https://api.reprompt.io/v1/us-kyb/reports/ecd7e4fc-54ee-40a9-819b-dac94a8d26ea" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -213,23 +190,28 @@ The response shape depends on the `status` field: `processing`, `completed`, or 
 
 When `status` is `completed`, the response includes the full `report` object and a `pdf_url` pointing at the generated PDF in S3.
 
+Completed responses remain available for later polling. In production, I verified the same completed request still returned `200` more than 5 minutes after completion.
+
 ---
 
 ## What the Report Covers
 
-Each completed report returns a `report` object containing:
+Each completed report returns a `report` object that may include sections like:
 
 | Section | What It Tells You |
 |---|---|
-| `report` | Business status (verified/unverified) and last updated timestamp |
+| `report` | Business status and last-updated timestamp |
+| `scores` | Reprompt-generated scoring outputs |
 | `submitted_information` | Submitted business name, tax ID, and office address with verification status |
-| `business_information` | Formation state, formation date, entity type, tax ID match status |
-| `sos` | Secretary of State filings with status counts, states, and detailed filing records |
-| `insights` | Per-section status rollups (e.g. SOS, TIN match, revenue standing, office address) |
-| `business_names` | All known business names (legal + DBAs) |
-| `online_presence` | Websites and social media profiles |
-| `office_addresses` | Verified addresses with residential/deliverable flags |
-| `people` | Officers and their roles |
+| `business_information` | Entity-level attributes like formation state, entity type, and tax-ID fields |
+| `sos` | Secretary of State search results, status counts, and filing records when found |
+| `insights` | Per-section rollups for SOS, address, watchlist, TIN, and formation-state checks |
+| `business_names` | Known legal or alternate names |
+| `online_presence` | Website and social signals when available |
+| `office_addresses` | Address records returned by the report pipeline |
+| `people` | Officer or principal names when identified |
+
+The exact fields present in `report` can vary by business, source coverage, and confidence level. Use defensive parsing rather than assuming every section or field will always be populated.
 
 ---
 
@@ -239,63 +221,69 @@ Each completed report returns a `report` object containing:
 
 | Field | Type | Description |
 |---|---|---|
-| `business_status` | `string` | `Verified` or `Unverified` |
-| `last_updated` | `string` | Timestamp of last update |
+| `business_status` | `string` | Top-level business verification outcome |
+| `last_updated` | `string` | Timestamp string generated by the report pipeline |
 
 ### Scores
 
+Live reports currently include score objects such as:
+
 | Field | Type | Description |
 |---|---|---|
-| `fraud_risk_score` | `integer` | 0-100 |
-| `financial_risk_score` | `integer` | 0-100 |
-| `reprompt_validation_score` | `integer` | 0-100 |
+| `fraud_safety_score` | `integer` | Reprompt-generated fraud or safety score |
+| `loan_approval_score` | `integer` | Reprompt-generated loan-approval-oriented score |
+| `reprompt_validation_score` | `integer` | Reprompt validation/confidence score |
+
+Score keys may change over time as the report schema evolves. Prefer checking for keys before assuming a fixed score set.
 
 ### Submitted Information
 
 | Field | Type | Description |
 |---|---|---|
 | `business_name` | `object` | `{ "value": string, "status": string }` |
-| `tax_id` | `object` | `{ "value": string, "status": string }` -- `"Not Provided"` if omitted |
+| `tax_id` | `object` | `{ "value": string, "status": string }` |
 | `office_address` | `object` | `{ "value": string, "status": string }` |
 
 ### Business Information
 
+These fields are source-dependent and may contain verified values, placeholders, or inconclusive values:
+
 | Field | Type | Description |
 |---|---|---|
-| `formation_state` | `string` | State where entity was formed (e.g. `TN`) |
-| `formation_date` | `string` | Date of formation |
-| `formation_date_relative` | `string` | Relative time (e.g. `1 year ago`) |
-| `entity_type` | `string` | Entity type (e.g. `LLC`, `Corporation`) |
-| `tax_id` | `string` | Tax identification number |
-| `tax_id_status` | `string` | `Tax ID Match Found` or `Tax ID Match Not Found` |
+| `formation_state` | `string` | State where the entity appears to have formed |
+| `formation_date` | `string` | Formation date when available |
+| `formation_date_relative` | `string` | Relative representation of formation date |
+| `entity_type` | `string` | Entity type when available |
+| `tax_id` | `string` | Tax identification number or placeholder |
+| `tax_id_status` | `string` | Tax-ID verification status |
 | `tax_id_name_match` | `string` | Business name associated with the TIN |
-| `tax_id_name_match_status` | `string` | Match status |
+| `tax_id_name_match_status` | `string` | TIN/name match status |
 
 ### SOS (Secretary of State)
 
 | Field | Type | Description |
 |---|---|---|
-| `status_counts` | `object` | `{ "ACTIVE": int, "INACTIVE": int, "UNKNOWN": int }` |
-| `states` | `string[]` | States where filings were found |
-| `secretary_of_state` | `array` | Detailed filing records (see below) |
+| `status_counts` | `object` | Counts across `ACTIVE`, `INACTIVE`, and `UNKNOWN` results |
+| `states` | `string[]` | States or state-summary strings returned by the search |
+| `secretary_of_state` | `array` | Filing or search records when available |
 
-Each filing record:
+Each filing record may include:
 
 | Field | Type | Description |
 |---|---|---|
-| `filing_id` | `string` | State filing ID |
-| `business_name` | `string` | Name as registered |
-| `jurisdiction` | `string` | e.g. `Domestic`, `Foreign` |
-| `status` | `string` | `Active` or `Inactive` |
-| `sub_status` | `string` | e.g. `Good Standing`, `Not Good` |
-| `status_details` | `string` | Additional status info |
+| `filing_id` | `string` | State filing ID or placeholder |
+| `business_name` | `string` | Name as returned by the registry/source |
+| `jurisdiction` | `string` | Domestic, foreign, or inconclusive |
+| `status` | `string` | Active, inactive, or equivalent source status |
+| `sub_status` | `string` | Additional status detail |
+| `status_details` | `string` | More status context from the source |
 | `address` | `string` | Address on file |
-| `filed_date` | `string` | Date of filing |
-| `filed_relative` | `string` | Relative time (e.g. `a year ago`) |
-| `entity_type` | `string` | Entity type |
-| `source_url` | `string` | Link to source registry |
-| `detailed_info` | `object` | Key-value pairs of additional filing details (term of duration, managed by, fiscal ending month, etc.) |
-| `registered_agent_name` | `string` | Registered agent name |
+| `filed_date` | `string` | Filing date or placeholder |
+| `filed_relative` | `string` | Relative representation of the filing date |
+| `entity_type` | `string` | Entity type from the source |
+| `source_url` | `string` | Link to the source registry or search page |
+| `detailed_info` | `object` | Additional source-specific metadata |
+| `registered_agent_name` | `string` | Registered agent name when available |
 | `registered_agent_lines` | `string[]` | Registered agent address lines |
 | `principal_office_address` | `string[]` | Principal office address lines |
 | `mailing_address` | `string[]` | Mailing address lines |
@@ -304,27 +292,64 @@ Each filing record:
 
 Per-section status rollups. Each key maps to `{ "status": string }`.
 
+Common keys include:
+
 | Key | Example Status Values |
 |---|---|
-| `sos` | `Submitted Active` |
-| `tin_match` | `Found` |
-| `formation_state` | `Found` |
-| `revenue_standing` | `Issue Detected` |
-| `office_address` | `Verified`, `Failure` |
+| `sos` | `UNVERIFIED`, `Submitted Active` |
+| `tin_match` | `INCONCLUSIVE`, `Found` |
+| `formation_state` | `VERIFIED`, `Found` |
+| `office_address` | `INCONCLUSIVE`, `Verified`, `Failure` |
 | `people` | `Verified`, `Unverified` |
-| `watchlist` | `Verified` |
-| `business_name` | `Verified` |
+| `watchlist` | `INCONCLUSIVE`, `Verified` |
+| `business_name` | `Verified`, `Not Verified` |
 
 ### Business Names
 
-Array of `{ "name": string }` objects -- all known legal and DBA names.
+Array of `{ "name": string }` objects for legal names, alternate names, or DBAs when found.
 
 ### Online Presence
 
 | Field | Type | Description |
 |---|---|---|
 | `websites` | `array` | `{ "domain": string, "status": string }` |
-| `social_profiles` | `array` | `{ "platform": string, "name": string }` |
+| `social_profiles` | `array` | `{ "platform": string, "name": string }` when available |
+
+### Office Addresses
+
+Array of address objects. Some reports include only `address`; others may also include boolean flags.
+
+| Field | Type | Description |
+|---|---|---|
+| `address` | `string` | Full address |
+| `is_residential` | `boolean` | Present when residential classification is available |
+| `is_deliverable` | `boolean` | Present when deliverability is available |
+
+### People
+
+Array of person objects:
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `string` | Full name or placeholder |
+| `roles` | `string[]` | Roles such as officer, principal, or unverified |
+
+---
+
+## Error Response
+
+```json
+{
+  "request_id": "ecd7e4fc-54ee-40a9-819b-dac94a8d26ea",
+  "status": "error",
+  "created_at": "2026-03-09T23:43:01.956609+00:00",
+  "error_at": "2026-03-09T23:44:07.955586+00:00",
+  "error": {
+    "code": "KYB_PROCESSING_FAILED",
+    "message": "KYB generation failed."
+  }
+}
+```
 
 ### Office Addresses
 
