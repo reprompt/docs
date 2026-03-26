@@ -111,5 +111,19 @@
    "options": [
      "copy"
    ]
- }
+ },
+"redirects": [
+  {
+    "source": "/quickstart",
+    "destination": "/guides/quickstart"
+  },
+  {
+    "source": "/introduction",
+    "destination": "/guides/quickstart"
+  },
+  {
+    "source": "/guides/troubleshooting",
+    "destination": "/guides/troubleshooting-40x"
+  }
+]
 }

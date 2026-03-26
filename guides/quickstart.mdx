@@ -26,8 +26,8 @@ curl -X POST \
   -H 'Authorization: Bearer {YOUR_API_KEY}' \
   -H 'Content-Type: application/json' \
   -d '{
+    "place_id": "my_place_123",
     "inputs": {
-      "place_id": "my_place_123",
       "name": "Joe'\''s Pizza",
       "latitude": 40.7359,
       "longitude": -73.9911,
@@ -47,8 +47,8 @@ headers = {
 }
 
 data = {
+    "place_id": "my_place_123",
     "inputs": {
-        "place_id": "my_place_123",
         "name": "Joes Pizza",
         "latitude": 40.7359,
         "longitude": -73.9911,
@@ -70,8 +70,8 @@ const response = await fetch('https://api.repromptai.com/v1/{org_slug}/place_enr
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
+    place_id: "my_place_123",
     inputs: {
-      place_id: "my_place_123",
       name: "Joes Pizza",
       latitude: 40.7359,
       longitude: -73.9911,
@@ -90,7 +90,7 @@ console.log(result);
 Replace `{org_slug}` with your actual organization slug. The API key variable will be automatically populated.
 
 <Tip>
-**Include a `place_id`**: We recommend providing your own stable identifier (like your database ID) as `place_id`. This makes it easy to join enriched results back to your data. If not provided, we'll auto-generate a UUID for you.
+**Include a `place_id`**: The `place_id` field is required at the top level of your request (alongside `inputs`, not inside it). We recommend providing your own stable identifier (like your database ID). This makes it easy to join enriched results back to your data.
 </Tip>
 
 ### Input Flexibility
@@ -101,9 +101,11 @@ The `inputs` object accepts different combinations:
 ```json
 {
   "place_id": "my_place_123",
-  "name": "Joes Pizza",
-  "latitude": 40.7359,
-  "longitude": -73.9911
+  "inputs": {
+    "name": "Joes Pizza",
+    "latitude": 40.7359,
+    "longitude": -73.9911
+  }
 }
 ```
 
@@ -111,8 +113,10 @@ The `inputs` object accepts different combinations:
 ```json
 {
   "place_id": "my_place_123",
-  "name": "Joes Pizza",
-  "full_address": "7 Carmine St, New York, NY 10014"
+  "inputs": {
+    "name": "Joes Pizza",
+    "full_address": "7 Carmine St, New York, NY 10014"
+  }
 }
 ```
 
@@ -120,10 +124,12 @@ The `inputs` object accepts different combinations:
 ```json
 {
   "place_id": "my_place_123",
-  "name": "Joes Pizza",
-  "latitude": 40.7359,
-  "longitude": -73.9911,
-  "full_address": "7 Carmine St, New York, NY 10014"
+  "inputs": {
+    "name": "Joes Pizza",
+    "latitude": 40.7359,
+    "longitude": -73.9911,
+    "full_address": "7 Carmine St, New York, NY 10014"
+  }
 }
 ```
 
@@ -138,22 +144,29 @@ The API will return enriched data about the place, including your `place_id` for
 ```json
 {
   "place_id": "my_place_123",
+  "status": "completed",
+  "inputs": {
+    "name": "Joe's Pizza",
+    "latitude": 40.7359,
+    "longitude": -73.9911,
+    "full_address": "7 Carmine St, New York, NY 10014"
+  },
   "outputs": {
-    "website": "https://www.joespizzanyc.com",
-    "phone": "+12122555803",
-    "social_profiles": {
-      "instagram": "joespizzanyc",
-      "facebook": "joespizzanyc"
+    "websites": ["https://www.joespizzanyc.com"],
+    "phoneNumbers": ["+12122555803"],
+    "openingHours": {
+      "monday": "10:00-2:00",
+      "tuesday": "10:00-2:00"
     },
-    "is_permanently_closed": false,
-    "price_tier": "$$"
+    "closed_permanently": false
   },
   "job_metadata": {
+    "last_enriched": "2024-03-15T10:35:00Z",
     "attribute_status": {
-      "website": "RUN",
-      "phone": "RUN",
-      "address": "RUN",
-      "name": "RUN"
+      "websites": "RUN",
+      "phoneNumbers": "RUN",
+      "openingHours": "RUN",
+      "closed_permanently": "RUN"
     }
   }
 }
@@ -165,12 +178,12 @@ Specify exactly which attributes you want to enrich using the `attributes` array
 
 | Attribute | Description |
 |-----------|-------------|
-| `websites` | Business website URL |
-| `phoneNumbers` | Phone number |
-| `social_profiles` | Social media handles (Instagram, Facebook, etc.) |
+| `websites` | Business website URLs |
+| `phoneNumbers` | Phone numbers |
+| `socialHandles` | Social media handles (Instagram, Facebook, etc.) |
 | `closed_permanently` | Whether the business is permanently closed |
 | `price_tier` | Price range (e.g., $, $$, $$$) |
-| `categories` | Type of cuisine (for restaurants) |
+| `categories` | Business categories |
 | `openingHours` | Opening hours |
 | `names` | Alternative names for the business |
 | `address` | Address |
