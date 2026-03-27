@@ -80,10 +80,16 @@ You can upload CSV files with up to **1,000,000 rows** in a single upload. The d
 
 ## Run Enrichment
 
-After importing, select **Enrich Place** to start enriching your datasets. This runs place enrichment across all imported batches.
+After importing, your datasets appear in the sidebar and the main list. Select the datasets you want to enrich by checking the boxes, then click **Enrich N datasets...** at the top.
 
 <Frame>
-  <img src="/images/csv_upload/enrich-place.png" alt="Select Enrich Place to start enrichment" />
+  <img src="/images/csv_upload/datasets-selected.png" alt="Datasets list with 8 datasets selected showing Enrich button" />
+</Frame>
+
+In the enrichment dialog, select **Enrich Place** under Select Columns, then click **Process N places across N datasets** to start.
+
+<Frame>
+  <img src="/images/csv_upload/enrich-place.png" alt="Run Enrichments dialog with Enrich Place selected" />
 </Frame>
 
 ### Splitting files over 200 MB
@@ -93,6 +99,10 @@ If your CSV exceeds the 200 MB file size limit, split it into smaller files befo
 ## Monitoring Progress
 
 After importing, each auto-split batch appears as a separate dataset in the sidebar under **Datasets**. You can track enrichment progress for each one independently.
+
+<Frame>
+  <img src="/images/csv_upload/datasets-list.png" alt="Datasets list showing auto-split batches with status and progress" />
+</Frame>
 
 - **Pending** - jobs are queued and waiting to start
 - **In Progress** - jobs are actively being enriched
