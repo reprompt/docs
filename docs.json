@@ -27,6 +27,7 @@
           {
             "group": "Guides",
             "pages": [
+              "guides/csv-upload",
               "guides/batch-processing",
               "guides/troubleshooting-40x",
               "guides/open-closed",
