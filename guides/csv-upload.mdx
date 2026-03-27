@@ -1,82 +1,99 @@
 ---
 title: "Upload Large Files"
-description: "Upload and enrich large CSV datasets through the Reprompt dashboard — including how to handle files that exceed the row limit."
+description: "Upload and enrich large CSV datasets through the Reprompt dashboard. The platform automatically splits uploads up to 1 million rows."
 ---
 
-The Reprompt dashboard lets you upload a CSV file of places and enrich them in bulk without writing any code. Navigate to **[Place Enrichment → Upload CSV](https://app.repromptai.com/place-enrichment/upload-csv)** to get started.
+The Reprompt dashboard lets you upload a CSV file of places and enrich them in bulk without writing any code. You can upload files with **up to 1 million rows** — the platform automatically splits them into batches for you.
 
-<img src="/images/csv-upload-page.png" alt="CSV upload page in the Reprompt dashboard" />
+Navigate to **[Datasets → Upload dataset](https://app.repromptai.com/place-enrichment/upload-csv)** to get started.
 
-## Prepare Your CSV
+<Frame>
+  <img src="/images/csv-upload-page.png" alt="CSV upload page in the Reprompt dashboard" />
+</Frame>
 
-Your CSV must include a header row. The following columns are recognized:
+Drag and drop your CSV file onto the upload area, or click to browse. The file must be under **200 MB**, include a **header row**, and contain at least a place name with an address or coordinates.
 
-| Column | Required | Description |
-|--------|----------|-------------|
+## Map Your Columns
+
+After uploading, the dashboard parses your file and shows the **Map CSV Columns** screen. It auto-detects columns where possible.
+
+<Frame>
+  <img src="/images/csv-upload-column-mapping.png" alt="Essential field mapping after uploading a 1.29 million row CSV" />
+</Frame>
+
+### Essential Fields
+
+These fields drive enrichment accuracy. Map as many as you have:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | Yes | Unique identifier for each place |
 | `name` | Yes | Business or place name |
-| `full_address` | Recommended | Full street address including city, state, zip |
-| `latitude` | Optional | Latitude coordinate |
-| `longitude` | Optional | Longitude coordinate |
-| `place_id` | Optional | Your internal identifier for the place |
+| `latitude` | Recommended | Latitude coordinate |
+| `longitude` | Recommended | Longitude coordinate |
 
-<Tip>
-Including `full_address` alongside `name` significantly improves enrichment accuracy. If you have coordinates, include those too.
-</Tip>
+### Additional Options
 
-**Example CSV:**
+Expand **Additional Options** to map every column your CSV has. The more fields you map, the better your enrichment results.
 
-```csv
-place_id,name,full_address,latitude,longitude
-store_001,Downtown Coffee,123 Main St New York NY 10001,40.7128,-74.0060
-store_002,Airport Cafe,1 Airport Blvd Los Angeles CA 90045,33.9425,-118.4081
-store_003,Lakeside Diner,456 Lake Shore Dr Chicago IL 60611,41.8902,-87.6164
-```
+<Frame>
+  <img src="/images/csv-upload-additional-options.png" alt="Additional column mapping options including phone, website, address fields, and more" />
+</Frame>
 
-## Upload a CSV
-
-<Steps>
-  <Step title="Open the Upload CSV page">
-    Go to [app.repromptai.com/place-enrichment/upload-csv](https://app.repromptai.com/place-enrichment/upload-csv). You'll see a file upload area.
-  </Step>
-  <Step title="Select your file">
-    Drag and drop your CSV onto the upload area, or click to browse and select the file.
-
-    <img src="/images/csv-upload-file-selected.png" alt="CSV file selected for upload" />
-  </Step>
-  <Step title="Map columns">
-    The dashboard will preview your CSV and ask you to map columns to the expected fields (`name`, `full_address`, `latitude`, `longitude`, etc.). Confirm that each column is mapped correctly.
-
-    <img src="/images/csv-upload-column-mapping.png" alt="Column mapping step" />
-  </Step>
-  <Step title="Choose attributes">
-    Select which enrichment attributes you want (e.g. `websites`, `phoneNumbers`, `categories`, `openingHours`). Only selected attributes are enriched.
-
-    <img src="/images/csv-upload-attributes.png" alt="Attribute selection" />
-  </Step>
-  <Step title="Review and submit">
-    Review the summary — total rows, mapped columns, selected attributes — then click **Start Enrichment** to submit the batch.
-  </Step>
-</Steps>
+| Field | Description |
+|-------|-------------|
+| `wkt_geometry` | WKT geometry string |
+| `phone` | Phone number |
+| `website` | Official website URL |
+| `category` | Place category |
+| `opening_hours` | Opening hours (JSON) |
+| `house` | House/building number |
+| `street` | Street name |
+| `city` | City |
+| `postalCode` | Postal / zip code |
+| `state` | State or province |
+| `country_code` | ISO country code |
+| `country` | Country name |
 
 <Warning>
-Clicking **Start Enrichment** begins processing and consumes API credits. Double-check your row count and attribute selection before submitting.
+Map **every field you have** in your CSV. Unmapped columns are ignored during enrichment, which reduces match quality. For example, if your CSV has a `phone_number` column, make sure it's mapped to the `phone` field.
 </Warning>
 
-## Row Limits
+## Preview and Import
 
-The upload page accepts CSV files up to **50,000 rows** per upload. If your file exceeds this limit, you'll need to split it before uploading.
+After mapping, the dashboard shows a **Preview** of your data. Click **Select All** to include every row, then review the import summary at the bottom.
 
-## Splitting Large CSV Files
+<Frame>
+  <img src="/images/csv-upload-preview.png" alt="Preview showing 1,290,391 records selected, ready to import as 259 datasets" />
+</Frame>
 
-If your dataset has more than 50,000 rows, split it into smaller files first. Each chunk keeps the original header row.
+The dashboard tells you exactly how many rows you're importing and how many datasets (batches) it will create. In this example, **1,290,391 rows** are automatically split into **259 datasets**.
 
-### Using the command line
+Click **Import 1,290,391 rows as 259 datasets** to start the upload. The platform handles all the splitting for you — no need to manually chunk your file.
+
+<Tip>
+You can upload CSV files with up to **1,000,000 rows** in a single upload. The dashboard automatically splits them into batches of ~5,000 rows each.
+</Tip>
+
+## File Size Limits
+
+| Limit | Value |
+|-------|-------|
+| Max file size | 200 MB |
+| Max rows per upload | 1,000,000 |
+| Auto-split batch size | ~5,000 rows |
+
+If your CSV exceeds 200 MB, split it into smaller files before uploading. Each file can still contain up to 1 million rows as long as it's under the file size limit.
+
+### Splitting files over 200 MB
+
+For very large files that exceed the 200 MB file size limit, split them before uploading:
 
 **macOS / Linux:**
 
 ```bash
-# Split a large CSV into chunks of 50,000 rows each (preserving the header)
-tail -n +2 large_dataset.csv | split -l 50000 - chunk_
+# Split a large CSV into chunks of 500,000 rows each (preserving the header)
+tail -n +2 large_dataset.csv | split -l 500000 - chunk_
 for f in chunk_*; do
   head -1 large_dataset.csv > "split_${f}.csv"
   cat "$f" >> "split_${f}.csv"
@@ -84,89 +101,55 @@ for f in chunk_*; do
 done
 ```
 
-**Windows (PowerShell):**
-
-```powershell
-$header = Get-Content large_dataset.csv -First 1
-$rows = Get-Content large_dataset.csv | Select-Object -Skip 1
-$chunkSize = 50000
-$i = 0
-for ($offset = 0; $offset -lt $rows.Count; $offset += $chunkSize) {
-    $chunk = $rows[$offset..([Math]::Min($offset + $chunkSize - 1, $rows.Count - 1))]
-    $i++
-    @($header) + $chunk | Set-Content "split_part${i}.csv"
-}
-```
-
-### Using Python
+**Python:**
 
 ```python
-import csv
-import os
+import csv, os
 
-def split_csv(input_file, max_rows=50000):
-    with open(input_file, 'r') as f:
+def split_csv(input_file, max_rows=500000):
+    with open(input_file, "r") as f:
         reader = csv.reader(f)
         header = next(reader)
+        file_num, current_rows = 1, []
 
-        file_num = 1
-        current_rows = []
         for row in reader:
             current_rows.append(row)
             if len(current_rows) >= max_rows:
                 write_chunk(header, current_rows, input_file, file_num)
                 file_num += 1
                 current_rows = []
-
         if current_rows:
             write_chunk(header, current_rows, input_file, file_num)
 
 def write_chunk(header, rows, original_name, part_num):
     base = os.path.splitext(original_name)[0]
-    output = f"{base}_part{part_num}.csv"
-    with open(output, 'w', newline='') as f:
+    with open(f"{base}_part{part_num}.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(header)
         writer.writerows(rows)
-    print(f"Wrote {len(rows)} rows to {output}")
 
 split_csv("large_dataset.csv")
 ```
 
-### Upload each chunk
+Upload each resulting file separately through the dashboard.
 
-Once split, upload each file separately through the dashboard. Each upload creates its own batch that you can monitor independently.
+## Monitoring Progress
 
-<Tip>
-Name your batches descriptively (e.g. "Q1 Stores - Part 1 of 3") so you can track which chunks have completed.
-</Tip>
-
-## Monitoring Your Upload
-
-After uploading, you'll be redirected to the batch detail page where you can track progress in real time.
-
-<img src="/images/csv-upload-batch-status.png" alt="Batch status page showing enrichment progress" />
+After importing, each auto-split batch appears as a separate dataset in the sidebar under **Datasets**. You can track enrichment progress for each one independently.
 
 - **Pending** — jobs are queued and waiting to start
-- **In Progress** — jobs are being enriched
-- **Completed** — enrichment finished; results are available to download
+- **In Progress** — jobs are actively being enriched
+- **Completed** — enrichment finished; results are available
 - **Failed** — some jobs failed; you can reprocess them
 
-See [Batch Processing](/guides/batch-processing) for details on monitoring, pagination, and reprocessing failed items.
-
-## Downloading Results
-
-Once a batch completes, click **Download Results** on the batch detail page to export the enriched data as a CSV.
-
-<img src="/images/csv-upload-download-results.png" alt="Download results button on completed batch" />
+See [Batch Processing](/guides/batch-processing) for details on monitoring, pagination, and reprocessing failed items via the API.
 
 ## Best Practices
 
-- **Include full addresses** — `full_address` is the single most impactful field for enrichment accuracy.
-- **Add coordinates when available** — `latitude` and `longitude` help disambiguate places with similar names.
-- **Use unique place IDs** — The `place_id` column lets you join enriched results back to your source data.
-- **Split proactively** — If your dataset is close to 50K rows, split it. Smaller batches are easier to retry if something fails.
-- **Start with a sample** — Upload 10–100 rows first to verify column mapping and attribute selection before processing your full dataset.
+- **Map every column** — The more fields you map, the higher the enrichment accuracy. Don't leave columns unmapped if they contain useful data.
+- **Include coordinates** — `latitude` and `longitude` help disambiguate places with similar names at different locations.
+- **Give datasets descriptive names** — The dataset name helps you find results later. Name them by geography, date, or purpose (e.g. "texas" or "Q1 2025 Store Locations").
+- **Start with a sample** — Upload a small subset (100–1,000 rows) first to verify column mapping before processing your full dataset.
 
 ## Next Steps
 
