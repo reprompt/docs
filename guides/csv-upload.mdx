@@ -1,15 +1,15 @@
 ---
 title: "Upload Large Files"
-description: "Upload and enrich large CSV datasets through the Reprompt dashboard. The platform automatically splits uploads up to 1 million rows."
+description: "Upload and enrich large CSV datasets through the Reprompt dashboard."
 ---
 
-The Reprompt dashboard lets you upload a CSV file of places and enrich them in bulk without writing any code. You can upload files with **up to 1 million rows** and the platform automatically splits them into batches for you.
+Upload a CSV of places and enrich them in bulk — no code required. Files must be under **200 MB** and include a header row.
 
-Navigate to **[Datasets → Upload dataset](https://app.repromptai.com/place-enrichment/upload-csv)** to get started. Drag and drop your CSV file onto the upload area, or click to browse. The file must be under **200 MB**, include a **header row**, and contain at least a place name with an address or coordinates.
+Go to **[Datasets → Upload dataset](https://app.repromptai.com/place-enrichment/upload-csv)** to get started.
 
 ## Map Your Columns
 
-After uploading, the dashboard parses your file and shows the **Map CSV Columns** screen. It auto-detects columns where possible, and shows a green "All required columns mapped" banner when the essential fields are set.
+After uploading, map your CSV columns to Reprompt fields. The dashboard auto-detects columns where possible.
 
 <Frame>
   <img src="/images/csv_upload/upload-and-mapping.png" alt="Upload CSV page showing texas.csv with 1,290,391 rows and Essential Fields mapping" />
@@ -17,19 +17,19 @@ After uploading, the dashboard parses your file and shows the **Map CSV Columns*
 
 ### Essential Fields
 
-These fields drive enrichment accuracy. You need either a `full_address` string (preferred) or the individual address components (`house`, `street`, `city`, `state`, `postalCode`, `country`).
+All five fields below are required for best results. You can technically omit either coordinates or address, but enrichment accuracy drops significantly — always provide both when possible.
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | Yes | Unique identifier for each place |
-| `name` | Yes | Business or place name |
-| `full_address` | Recommended | Full street address as a single string (preferred over separate components) |
-| `latitude` | Recommended | Latitude coordinate |
-| `longitude` | Recommended | Longitude coordinate |
+| Field | Description |
+|-------|-------------|
+| `id` | Unique identifier for each place |
+| `name` | Business or place name |
+| `full_address` | Full street address as a single string (or map individual components instead) |
+| `latitude` | Latitude coordinate |
+| `longitude` | Longitude coordinate |
 
 ### Additional Options
 
-Expand **Additional Options** to map every column your CSV has. The more fields you map, the better your enrichment results.
+Expand **Additional Options** to map extra columns. The more fields you map, the better your results.
 
 <Frame>
   <img src="/images/csv_upload/column-mapping.png" alt="Essential Fields and Additional Options column mapping" />
@@ -48,75 +48,40 @@ Expand **Additional Options** to map every column your CSV has. The more fields 
 | `country_code` | ISO country code |
 | `country` | Country name |
 
-<Info>
-If you don't provide a `full_address`, make sure to map the individual address components (`house`, `street`, `city`, `state`, `postalCode`, `country`) so the platform can resolve your places accurately.
-</Info>
-
 <Warning>
-Map **every field you have** in your CSV. Unmapped columns are ignored during enrichment, which reduces match quality. For example, if your CSV has a `phone_number` column, make sure it's mapped to the `phone` field.
+Map **every field you have**. Unmapped columns are ignored during enrichment, which reduces match quality.
 </Warning>
 
 ## Preview and Import
 
-After mapping, the dashboard shows a **Preview** of your data. Click **Select All** to include every row, then review the import summary at the bottom.
+After mapping, review the **Preview**, click **Select All**, and confirm the import. The platform automatically splits large files into batches of ~5,000 rows each.
 
 <Frame>
-  <img src="/images/csv_upload/preview.png" alt="Preview showing 1,290,391 records selected, ready to import as 259 datasets" />
+  <img src="/images/csv_upload/preview.png" alt="Preview showing records selected, ready to import as datasets" />
 </Frame>
-
-The dashboard tells you exactly how many rows you're importing and how many datasets (batches) it will create. In this example, **1,290,391 rows** are automatically split into **259 datasets**.
-
-Click **Import 1,290,391 rows as 259 datasets** to start the upload. The platform handles all the splitting for you, no need to manually chunk your file.
-
-<Tip>
-You can upload CSV files with up to **1,000,000 rows** in a single upload. The dashboard automatically splits them into batches of ~5,000 rows each.
-</Tip>
 
 ## Run Enrichment
 
-After importing, your datasets appear in the sidebar and the main list. Select the datasets you want to enrich by checking the boxes, then click **Enrich N datasets...** at the top.
+Select datasets from the list, click **Enrich N datasets...**, choose **Enrich Place**, and start processing.
 
 <Frame>
-  <img src="/images/csv_upload/datasets-selected.png" alt="Datasets list with 8 datasets selected showing Enrich button" />
+  <img src="/images/csv_upload/datasets-selected.png" alt="Datasets list with datasets selected showing Enrich button" />
 </Frame>
-
-In the enrichment dialog, select **Enrich Place** under Select Columns, then click **Process N places across N datasets** to start.
 
 <Frame>
   <img src="/images/csv_upload/enrich-place.png" alt="Run Enrichments dialog with Enrich Place selected" />
 </Frame>
 
-### Splitting files over 200 MB
+## Files Over 200 MB
 
-If your CSV exceeds the 200 MB file size limit, split it into smaller files before uploading. There are many free CSV splitter tools available online, or you can use a command-line utility like [`csv-split`](https://www.npmjs.com/package/csv-split) from npm. Upload each resulting file separately through the dashboard.
-
-## Monitoring Progress
-
-After importing, each auto-split batch appears as a separate dataset in the sidebar under **Datasets**. You can track enrichment progress for each one independently.
-
-<Frame>
-  <img src="/images/csv_upload/datasets-list.png" alt="Datasets list showing auto-split batches with status and progress" />
-</Frame>
-
-- **Pending** - jobs are queued and waiting to start
-- **In Progress** - jobs are actively being enriched
-- **Completed** - enrichment finished; results are available
-- **Failed** - some jobs failed; you can reprocess them
-
-See [Batch Processing](/guides/batch-processing) for details on monitoring, pagination, and reprocessing failed items via the API.
+Split files exceeding 200 MB before uploading. You can use a tool like [`csv-split`](https://www.npmjs.com/package/csv-split) from npm, then upload each part separately.
 
 ## Best Practices
 
-- **Map every column** - The more fields you map, the higher the enrichment accuracy. Don't leave columns unmapped if they contain useful data.
-- **Include coordinates** - `latitude` and `longitude` help disambiguate places with similar names at different locations.
-- **Give datasets descriptive names** - The dataset name helps you find results later. Name them by geography, date, or purpose (e.g. "texas" or "Q1 2025 Store Locations").
-- **Start with a sample** - Upload a small subset (100–1,000 rows) first to verify column mapping before processing your full dataset.
-
-## Large Uploads and Processing Time
-
-Uploading and enriching large datasets (hundreds of thousands or millions of rows) can take a significant amount of time - both for the upload itself and for enrichment to complete across all batches.
-
-If you're working with very large files or need a faster transfer method, you can use an **S3 bucket** to exchange data with Reprompt instead of uploading through the browser. Contact the Reprompt team to set up S3-based ingestion for your account.
+- **Map every column** — unmapped columns are ignored, reducing match quality.
+- **Provide both address and coordinates** — this gives the best enrichment accuracy.
+- **Use descriptive dataset names** — name by geography, date, or purpose (e.g. "texas" or "Q1 2025 Store Locations").
+- **Start with a sample** — upload 100–1,000 rows first to verify column mapping.
 
 ## Next Steps
 
