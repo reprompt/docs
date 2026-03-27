@@ -9,7 +9,11 @@ Navigate to **[Datasets → Upload dataset](https://app.repromptai.com/place-enr
 
 ## Map Your Columns
 
-After uploading, the dashboard parses your file and shows the **Map CSV Columns** screen. It auto-detects columns where possible.
+After uploading, the dashboard parses your file and shows the **Map CSV Columns** screen. It auto-detects columns where possible, and shows a green "All required columns mapped" banner when the essential fields are set.
+
+<Frame>
+  <img src="/images/csv_upload/upload-and-mapping.png" alt="Upload CSV page showing texas.csv with 1,290,391 rows and Essential Fields mapping" />
+</Frame>
 
 ### Essential Fields
 
@@ -26,6 +30,10 @@ These fields drive enrichment accuracy. You need either a `full_address` string 
 ### Additional Options
 
 Expand **Additional Options** to map every column your CSV has. The more fields you map, the better your enrichment results.
+
+<Frame>
+  <img src="/images/csv_upload/column-mapping.png" alt="Essential Fields and Additional Options column mapping" />
+</Frame>
 
 | Field | Description |
 |-------|-------------|
@@ -50,7 +58,13 @@ Map **every field you have** in your CSV. Unmapped columns are ignored during en
 
 ## Preview and Import
 
-After mapping, the dashboard shows a **Preview** of your data. Click **Select All** to include every row, then review the import summary at the bottom. The dashboard tells you exactly how many rows you're importing and how many datasets (batches) it will create. In this example, **1,290,391 rows** are automatically split into **259 datasets**.
+After mapping, the dashboard shows a **Preview** of your data. Click **Select All** to include every row, then review the import summary at the bottom.
+
+<Frame>
+  <img src="/images/csv_upload/preview.png" alt="Preview showing 1,290,391 records selected, ready to import as 259 datasets" />
+</Frame>
+
+The dashboard tells you exactly how many rows you're importing and how many datasets (batches) it will create. In this example, **1,290,391 rows** are automatically split into **259 datasets**.
 
 Click **Import 1,290,391 rows as 259 datasets** to start the upload. The platform handles all the splitting for you, no need to manually chunk your file.
 
@@ -88,18 +102,6 @@ After importing, each auto-split batch appears as a separate dataset in the side
 - **In Progress** - jobs are actively being enriched
 - **Completed** - enrichment finished; results are available
 - **Failed** - some jobs failed; you can reprocess them
-
-Once enrichment completes, you can inspect individual results. Each enriched place shows how your input fields were mapped and the enrichment output for each attribute.
-
-<Frame>
-  <img src="/images/csv_upload/enrichment-detail.png" alt="Enrichment result detail showing mapped fields like name and full_address" />
-</Frame>
-
-Some attributes may show validation warnings if the data couldn't be resolved. For example, a Tripadvisor Category enrichment might return `CANT_VERIFY` if the place type isn't found in the mapping.
-
-<Frame>
-  <img src="/images/csv_upload/enrichment-results.png" alt="Enrichment results showing classification validation status" />
-</Frame>
 
 See [Batch Processing](/guides/batch-processing) for details on monitoring, pagination, and reprocessing failed items via the API.
 
