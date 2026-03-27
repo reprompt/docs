@@ -5,21 +5,11 @@ description: "Upload and enrich large CSV datasets through the Reprompt dashboar
 
 The Reprompt dashboard lets you upload a CSV file of places and enrich them in bulk without writing any code. You can upload files with **up to 1 million rows** and the platform automatically splits them into batches for you.
 
-Navigate to **[Datasets → Upload dataset](https://app.repromptai.com/place-enrichment/upload-csv)** to get started.
-
-<Frame>
-  <img src="/images/csv_upload/page.png" alt="CSV upload page in the Reprompt dashboard" />
-</Frame>
-
-Drag and drop your CSV file onto the upload area, or click to browse. The file must be under **200 MB**, include a **header row**, and contain at least a place name with an address or coordinates.
+Navigate to **[Datasets → Upload dataset](https://app.repromptai.com/place-enrichment/upload-csv)** to get started. Drag and drop your CSV file onto the upload area, or click to browse. The file must be under **200 MB**, include a **header row**, and contain at least a place name with an address or coordinates.
 
 ## Map Your Columns
 
 After uploading, the dashboard parses your file and shows the **Map CSV Columns** screen. It auto-detects columns where possible.
-
-<Frame>
-  <img src="/images/csv_upload/column-mapping.png" alt="Essential field mapping after uploading a 1.29 million row CSV" />
-</Frame>
 
 ### Essential Fields
 
@@ -36,10 +26,6 @@ These fields drive enrichment accuracy. You need either a `full_address` string 
 ### Additional Options
 
 Expand **Additional Options** to map every column your CSV has. The more fields you map, the better your enrichment results.
-
-<Frame>
-  <img src="/images/csv_upload/additional-options.png" alt="Additional column mapping options including phone, website, address fields, and more" />
-</Frame>
 
 | Field | Description |
 |-------|-------------|
@@ -64,13 +50,7 @@ Map **every field you have** in your CSV. Unmapped columns are ignored during en
 
 ## Preview and Import
 
-After mapping, the dashboard shows a **Preview** of your data. Click **Select All** to include every row, then review the import summary at the bottom.
-
-<Frame>
-  <img src="/images/csv_upload/preview.png" alt="Preview showing 1,290,391 records selected, ready to import as 259 datasets" />
-</Frame>
-
-The dashboard tells you exactly how many rows you're importing and how many datasets (batches) it will create. In this example, **1,290,391 rows** are automatically split into **259 datasets**.
+After mapping, the dashboard shows a **Preview** of your data. Click **Select All** to include every row, then review the import summary at the bottom. The dashboard tells you exactly how many rows you're importing and how many datasets (batches) it will create. In this example, **1,290,391 rows** are automatically split into **259 datasets**.
 
 Click **Import 1,290,391 rows as 259 datasets** to start the upload. The platform handles all the splitting for you, no need to manually chunk your file.
 
