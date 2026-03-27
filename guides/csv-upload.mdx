@@ -89,6 +89,18 @@ After importing, each auto-split batch appears as a separate dataset in the side
 - **Completed** - enrichment finished; results are available
 - **Failed** - some jobs failed; you can reprocess them
 
+Once enrichment completes, you can inspect individual results. Each enriched place shows how your input fields were mapped and the enrichment output for each attribute.
+
+<Frame>
+  <img src="/images/csv_upload/enrichment-detail.png" alt="Enrichment result detail showing mapped fields like name and full_address" />
+</Frame>
+
+Some attributes may show validation warnings if the data couldn't be resolved. For example, a Tripadvisor Category enrichment might return `CANT_VERIFY` if the place type isn't found in the mapping.
+
+<Frame>
+  <img src="/images/csv_upload/enrichment-results.png" alt="Enrichment results showing classification validation status" />
+</Frame>
+
 See [Batch Processing](/guides/batch-processing) for details on monitoring, pagination, and reprocessing failed items via the API.
 
 ## Best Practices
