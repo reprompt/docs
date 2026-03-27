@@ -151,6 +151,12 @@ See [Batch Processing](/guides/batch-processing) for details on monitoring, pagi
 - **Give datasets descriptive names** — The dataset name helps you find results later. Name them by geography, date, or purpose (e.g. "texas" or "Q1 2025 Store Locations").
 - **Start with a sample** — Upload a small subset (100–1,000 rows) first to verify column mapping before processing your full dataset.
 
+## Large Uploads and Processing Time
+
+Uploading and enriching large datasets (hundreds of thousands or millions of rows) can take a significant amount of time — both for the upload itself and for enrichment to complete across all batches.
+
+If you're working with very large files or need a faster transfer method, you can use an **S3 bucket** to exchange data with Reprompt instead of uploading through the browser. Contact the Reprompt team to set up S3-based ingestion for your account.
+
 ## Next Steps
 
 - [Batch Processing](/guides/batch-processing) — Monitor batches, paginate results, and reprocess failures via the API
