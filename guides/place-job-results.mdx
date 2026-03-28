@@ -125,8 +125,9 @@ Types: `string` | `number` | `list of strings`
 **Core Attributes**
 
 `closed_permanently` attribute returns:
-  - open_closed_status `string`
-  - open_closed_status_confidence_score `string`
+  - open_closed_status `string` — One of `"Open"`, `"Closed"`, `"Temporarily Closed"`, or `"No Internet Presence"`
+  - open_closed_status_confidence_score `string` — One of `"VERY_HIGH"`, `"HIGH"`, `"MEDIUM"`, `"LOW"`, or `"NONE"`
+  - open_closed_status_reason_bucket `string` — One of `"active_digital_presence"`, `"minimal_digital_presence"`, `"explicit_closure_signal"`, `"no_recent_digital_presence"`, `"official_temporary_closure"`, or `"no_internet_presence"`. See [Place Status - Open/Closed](/guides/open-closed#reason-buckets) for details.
 
 `address` attribute returns:
   - `address` `string`

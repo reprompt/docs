@@ -10,6 +10,7 @@ Reprompt determines business status and returns a structured `open_closed_status
 - `status` (enum): One of `"Open"`, `"Closed"`, `"Temporarily Closed"`, or `"No Internet Presence"`
 - `reasoning` (string): Explanation with referenced sources
 - `confidence` (enum): `VERY_HIGH`, `HIGH`, `MEDIUM`, `LOW`, or `NONE`
+- `reason_bucket` (enum): The high-level category explaining why the status was assigned
 
 ## Status Values
 
@@ -20,6 +21,29 @@ class OpenClosedStatus(str, Enum):
     CLOSED = "Closed"
     TEMPORARILY_CLOSED = "Temporarily Closed"
 ```
+
+## Reason Buckets
+
+Each status determination falls into one of the following buckets, returned as `open_closed_status_reason_bucket`:
+
+```python
+class OpenClosedReasonBucket(str, Enum):
+    ACTIVE_DIGITAL_PRESENCE = "active_digital_presence"
+    MINIMAL_DIGITAL_PRESENCE = "minimal_digital_presence"
+    EXPLICIT_CLOSURE_SIGNAL = "explicit_closure_signal"
+    NO_RECENT_DIGITAL_PRESENCE = "no_recent_digital_presence"
+    OFFICIAL_TEMPORARY_CLOSURE = "official_temporary_closure"
+    NO_INTERNET_PRESENCE = "no_internet_presence"
+```
+
+| Bucket | Typical Status | Description |
+|--------|---------------|-------------|
+| `active_digital_presence` | Open | Official website, active social media, recent aggregator listings — no closure evidence |
+| `minimal_digital_presence` | Open | Some web presence (e.g. official website + gov filing) but limited overall — often medium confidence |
+| `explicit_closure_signal` | Closed | First-party or corroborated third-party sources explicitly indicate permanent closure |
+| `no_recent_digital_presence` | Closed | Customer-facing storefront with no official presence and only outdated third-party listings |
+| `official_temporary_closure` | Temporarily Closed | Official first-party or social sources indicate a temporary closure |
+| `no_internet_presence` | No Internet Presence | No exact or near-exact name match and no address match tied to the business name on web sources |
 
 ## Usage Example
 
@@ -50,6 +74,7 @@ curl -X POST \
     "closed_permanently": {
       "status": "Open",
       "confidence": "HIGH",
+      "reason_bucket": "active_digital_presence",
       "reasoning": "Recent activity confirmed from multiple credible sources; business appears to be operating normally."
     }
   }
@@ -81,9 +106,9 @@ Specific cases:
 #### Example cases
 
 
-| Place                                    | Status  | Reasoning                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Joe's Pizza, 7 carmine st, new york, ny  | Open    | Joe's Pizza has a significant digital presence with an official first-party website (joespizzanyc.com) and official social media with posts in the last 6 months. They are mentioned by multiple news articles and listed on multiple review aggregator websites. The agent finds no evidence of closure or temporary closure.                |
-| Iza Ramen, 237 Fillmore St, San Francisco, CA | Closed  | Iza Ramen has news articles mentioning closure of the business during COVID. The business has official social media with no mention of the closure. There is no evidence of reopening or that the closure is temporary. The agent marks the business as permanently closed.                                                               |
-| Terry's Donuts, 712 steiner st, Seattle, WA   | Closed  | Terry's Donuts has no official web or social presence. It is not listed on review aggregator websites. It's only listed on Better Business Bureau from 2009. The agent marks the business as permanently closed without an explicit signal, based on absence of information from up to date sources. Special case: no recent digital presence. |
-| Robertson Commercial Construction, 701 Power Line Rd, Winter Haven, FL | Open | Robertson Commercial Construction has an official website which lists its office address as 701 Power Line Rd, Winter Haven, FL, and a county filing from 2021. It has very little internet presence otherwise. The agent marks the business as open with medium confidence since this is not a customer-facing business.                        |
+| Place                                    | Status  | Reason Bucket | Reasoning                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Joe's Pizza, 7 carmine st, new york, ny  | Open    | `active_digital_presence` | Joe's Pizza has a significant digital presence with an official first-party website (joespizzanyc.com) and official social media with posts in the last 6 months. They are mentioned by multiple news articles and listed on multiple review aggregator websites. The agent finds no evidence of closure or temporary closure.                |
+| Iza Ramen, 237 Fillmore St, San Francisco, CA | Closed  | `explicit_closure_signal` | Iza Ramen has news articles mentioning closure of the business during COVID. The business has official social media with no mention of the closure. There is no evidence of reopening or that the closure is temporary. The agent marks the business as permanently closed.                                                               |
+| Terry's Donuts, 712 steiner st, Seattle, WA   | Closed  | `no_recent_digital_presence` | Terry's Donuts has no official web or social presence. It is not listed on review aggregator websites. It's only listed on Better Business Bureau from 2009. The agent marks the business as permanently closed without an explicit signal, based on absence of information from up to date sources. Special case: no recent digital presence. |
+| Robertson Commercial Construction, 701 Power Line Rd, Winter Haven, FL | Open | `minimal_digital_presence` | Robertson Commercial Construction has an official website which lists its office address as 701 Power Line Rd, Winter Haven, FL, and a county filing from 2021. It has very little internet presence otherwise. The agent marks the business as open with medium confidence since this is not a customer-facing business.                        |
