@@ -53,7 +53,8 @@
               "guides/troubleshooting-40x",
               "guides/finding-places",
               "guides/placematch",
-              "guides/agents-in-api"
+              "guides/agents-in-api",
+              "guides/classify-locations"
             ]
           }
         ]

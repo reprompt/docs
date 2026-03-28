@@ -1,0 +1,116 @@
+---
+title: "Classify Locations with Agents"
+description: "Use workbook agents to research and classify a list of locations — e.g. flag vet clinics as ER, 24-hour, or specialty surgery."
+---
+
+## Overview
+
+You have a list of locations and need to research each one to classify or flag them based on specific criteria. For example, a client sends a spreadsheet of veterinary clinics and wants to know which ones are:
+
+- Emergency room clinics
+- 24-hour clinics
+- Specialty surgery clinics
+
+Workbook agents handle this automatically — they research each location online and return structured results with reasoning and sources.
+
+## 1. Create a workbook
+
+Go to **[Workbooks](https://app.repromptai.com/workbooks)** and click **Blank workbook** or **Upload CSV/XLSX** to import your data.
+
+<Frame>
+  <img src="/images/classify-locations/workbooks-page.png" alt="Workbooks page with options to create a blank workbook or upload CSV/XLSX" />
+</Frame>
+
+Your workbook should have columns for the location details the agent needs — typically **Name**, **Address**, **City**, **State**, and **Zip**.
+
+<Frame>
+  <img src="/images/classify-locations/clinic-spreadsheet.png" alt="Workbook with 6 veterinary clinics showing Name, Address, City, State, and Zip columns" />
+</Frame>
+
+## 2. Create an agent prompt
+
+Click **+ New** to add a new agent column. Give it a name (e.g. "Research Clinic") and write a prompt that tells the agent what to research. Use `@` to reference your workbook columns so the agent gets the location details for each row.
+
+Example prompt:
+
+```
+Please research if a clinic has the following information:
+- has an emergency room
+- is a 24 hour clinic
+- list themselves online as a specialty surgery clinic
+
+Clinic name: @Name
+Clinic street: @Address
+Clinic city: @City
+Clinic state: @State
+Clinic ZIP: @Zip
+
+Respond with true/false for all these attributes reasoning with sources
+why you believe it has an attribute.
+```
+
+<Frame>
+  <img src="/images/classify-locations/agent-prompt.png" alt="Agent prompt editor with research instructions and column references" />
+</Frame>
+
+## 3. Define structured output fields
+
+Scroll down to **Structured Output Fields** to define what the agent should return. Each field has a name, type, and description.
+
+For this use case, add:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `has_emergency_room` | True/False | True if the clinic has an emergency room |
+| `emergency_room_reasoning_and_sources` | Text | Explanation and sources for the emergency room determination |
+| `is_24_hour_clinic` | True/False | True if the clinic operates 24 hours |
+| `is_specialty_surgery_clinic_online` | True/False | True if the clinic lists itself online as a specialty surgery clinic |
+
+<Frame>
+  <img src="/images/classify-locations/agent-prompt-with-outputs.png" alt="Agent prompt with structured output fields defined — True/False and Text types" />
+</Frame>
+
+## 4. Run the agent
+
+Click the agent column header to open the run menu. Select **Run on all** to process every row, or **Run on not run** to only process rows that haven't been run yet.
+
+<Frame>
+  <img src="/images/classify-locations/run-agent.png" alt="Column header dropdown showing Run on 6, Run on not run, and Run on all options" />
+</Frame>
+
+The agent researches each location and shows a progress bar as it works through the rows.
+
+<Frame>
+  <img src="/images/classify-locations/processing.png" alt="Progress bar at 83% showing the agent processing rows" />
+</Frame>
+
+## 5. Review results
+
+Once complete, click any cell in the agent column to expand the structured results. Each row shows the True/False classifications and the reasoning the agent used to reach its conclusion.
+
+<Frame>
+  <img src="/images/classify-locations/results-summary.png" alt="Completed results at 100% with expanded panel showing has_emergency_room, is_24_hour_clinic, and is_specialty_surgery_clinic_online fields" />
+</Frame>
+
+Click into individual fields to see detailed reasoning and the sources the agent found.
+
+<Frame>
+  <img src="/images/classify-locations/results-reasoning.png" alt="Expanded result showing has_emergency_room value, reasoning text, and source links" />
+</Frame>
+
+The agent provides specific reasoning for each classification — for example, noting that a clinic provides emergency/urgent care during business hours but directs after-hours emergencies elsewhere, so it is not a true ER/24-7 emergency hospital.
+
+<Frame>
+  <img src="/images/classify-locations/results-detail.png" alt="Detailed reasoning with source citations explaining emergency room and 24-hour clinic determinations" />
+</Frame>
+
+You can also expand the structured output fields into their own columns for easier filtering and sorting.
+
+<Frame>
+  <img src="/images/classify-locations/final-columns.png" alt="Final workbook view with agent output expanded into separate columns — is_specialty_surgery_clinic, has_emergency_room, is_24_hour_clinic" />
+</Frame>
+
+## Next steps
+
+- [Use Workbook Agents in the API](/guides/agents-in-api) — Enable your agent for programmatic access via the `/enrich` endpoint
+- [Upload Large Files](/guides/csv-upload) — Import large CSV datasets for bulk classification
