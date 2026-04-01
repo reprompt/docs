@@ -1,11 +1,11 @@
 ---
 title: "Upload Large Files"
-description: "Upload and enrich large CSV datasets through the Reprompt dashboard."
+description: "Upload and enrich large CSV files through the Reprompt dashboard."
 ---
 
 Upload a CSV of places and enrich them in bulk — no code required. Files must be under **200 MB** and include a header row.
 
-Go to **[Datasets → Upload dataset](https://app.repromptai.com/place-enrichment/upload-csv)** to get started.
+Go to **[Place Enrichment → Upload](https://app.repromptai.com/place-enrichment/upload-csv)** to get started.
 
 ## Map Your Columns
 
@@ -57,15 +57,15 @@ Map **every field you have**. Unmapped columns are ignored during enrichment, wh
 After mapping, review the **Preview**, click **Select All**, and confirm the import. The platform automatically splits large files into batches of ~5,000 rows each.
 
 <Frame>
-  <img src="/images/csv_upload/preview.png" alt="Preview showing records selected, ready to import as datasets" />
+  <img src="/images/csv_upload/preview.png" alt="Preview showing records selected, ready to import as batches" />
 </Frame>
 
 ## Run Enrichment
 
-Select datasets from the list, click **Enrich N datasets...**, choose **Enrich Place**, and start processing.
+Select batches from the list, click **Enrich N batches of places...**, choose **Enrich Place**, and start processing.
 
 <Frame>
-  <img src="/images/csv_upload/datasets-selected.png" alt="Datasets list with datasets selected showing Enrich button" />
+  <img src="/images/csv_upload/datasets-selected.png" alt="Batches list with batches selected showing Enrich button" />
 </Frame>
 
 <Frame>
@@ -80,7 +80,7 @@ Split files exceeding 200 MB before uploading. You can use a tool like [`csv-spl
 
 - **Map every column** — unmapped columns are ignored, reducing match quality.
 - **Provide both address and coordinates** — this gives the best enrichment accuracy.
-- **Use descriptive dataset names** — name by geography, date, or purpose (e.g. "texas" or "Q1 2025 Store Locations").
+- **Use descriptive batch names** — name by geography, date, or purpose (e.g. "texas" or "Q1 2025 Store Locations").
 - **Start with a sample** — upload 100–1,000 rows first to verify column mapping.
 
 ## Next Steps
