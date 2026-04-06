@@ -1,169 +1,94 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This is the **Reprompt API documentation site**, built with [Mintlify](https://mintlify.com). It documents a geospatial API platform providing place enrichment, batch processing, and KYB (Know Your Business) capabilities.
 
-## Project Overview
+**Live site:** https://docs.repromptai.com
+**Auto-deploys** on push to `main`.
 
-This is the Reprompt API documentation site, built with Mintlify. It documents a geospatial API platform that provides place enrichment capabilities across multiple data sources.
+## Quick Reference
 
-## Development Commands
-
-### Local Development
 ```bash
-# Install dependencies for React components
-npm install
-
-# Start Mintlify dev server
-mintlify dev
-
-# Test with specific organization context
-mintlify dev --groups org:reprompt
+npm install          # Install deps for React components
+mintlify dev         # Start local dev server at http://localhost:3000
 ```
 
-The docs will be available at `http://localhost:3000`.
+## Repository Layout
 
-### Updating OpenAPI Spec
+```
+docs.json              # Mintlify config: navigation, theme, API playground settings
+openapi-v1.json        # V1 OpenAPI spec (stable) — committed, auto-rendered by Mintlify
+openapi-v2.json        # V2 OpenAPI spec (experimental) — fetched live from production
+openapi-kyb.json       # KYB OpenAPI spec — pulled from production, committed
+guides/*.mdx           # Documentation pages (quickstart, batch, CSV upload, etc.)
+schemas/               # Shared schema documentation
+snippets/              # React components and reusable MDX snippets
+images/                # Screenshots and static assets
+logo/                  # Brand logos (light/dark)
+changelog.mdx          # API changelog
+```
 
-**V1 Spec:**
+## Common Tasks
+
+### Adding a new documentation page
+1. Create `guides/my-page.mdx` with required frontmatter:
+   ```mdx
+   ---
+   title: "Page Title"
+   description: "Page description"
+   ---
+   ```
+2. Add the page path to `docs.json` under the appropriate version/group in `navigation.versions`.
+3. Push to `main` — Mintlify auto-deploys.
+
+### Adding a React component
+- Place `.jsx` files in `/snippets`.
+- Import in MDX: `import { MyComponent } from "/snippets/MyComponent.jsx"`
+- Use `<MyComponent />` in the page body.
+
+### Updating OpenAPI specs
+
+**V1** (requires API key):
 ```bash
-# Pull latest V1 spec from production (requires API key)
 curl "https://api.repromptai.com/v1/reprompt/openapi.json" \
-  -H "Authorization: Bearer YOUR_API_KEY" > openapi-v1.json
-
-# Commit and push (Mintlify auto-deploys on push to main)
-git add openapi-v1.json
-git commit -m "Update V1 OpenAPI spec from production"
-git push
+  -H "Authorization: Bearer $REPROMPT_API_KEY" > openapi-v1.json
 ```
 
-**V2 Spec:**
+**V2** (no auth):
 ```bash
-# Pull latest V2 spec from production (no auth required)
 curl "https://api.repromptai.com/v2/openapi.json" > openapi-v2.json
-
-# Commit and push (Mintlify auto-deploys on push to main)
-git add openapi-v2.json
-git commit -m "Update V2 OpenAPI spec from production"
-git push
 ```
 
-**KYB Spec:**
+**KYB** (requires API key):
 ```bash
-# Pull latest KYB spec from production (requires API key)
 curl "https://api.reprompt.io/kyb/openapi.json" \
-  -H "Authorization: Bearer YOUR_API_KEY" > openapi-kyb.json
-
-# Commit and push (Mintlify auto-deploys on push to main)
-git add openapi-kyb.json
-git commit -m "Update KYB OpenAPI spec from production"
-git push
+  -H "Authorization: Bearer $REPROMPT_API_KEY" > openapi-kyb.json
 ```
 
-## Repository Structure
+After updating any spec: commit, push to `main`, and it auto-deploys.
 
-### Documentation Content
-- **guides/**: API guides including quickstart, batch processing, placematch, open-closed status, and TripAdvisor categories
-- **schemas/**: Shared schema documentation
-- **changelog.mdx**: API changelog
+Note: The V2 spec in `docs.json` is configured to fetch live from `https://api.reprompt.io/v2/openapi.json`, so the committed `openapi-v2.json` is a local reference copy. V1 and KYB use committed files directly.
 
-### OpenAPI Specifications
-- **openapi-v2.json**: V2 API specification (~42KB) - Current experimental version
-- **openapi-v1.json**: V1 API specification (~32KB) - Stable version
-- **openapi-kyb.json**: KYB API specification - Generated from the Reprompt-hosted KYB OpenAPI endpoint
+## Navigation Structure (`docs.json`)
 
-### Custom Components
-- **snippets/PlacematchPlayground.tsx**: Interactive React component for testing Placematch API
-  - Uses Mapbox GL JS for map visualization
-  - Displays match results, confidence scores, and API request/response
-  - Sample scenarios: name-only search, international addresses
-- Mapbox token is currently embedded in the playground component; replace with a placeholder before sharing snippets publicly
-- **snippets/PlacematchPlayground.jsx**: JavaScript version of the same component
+The site uses versioned navigation with three sections:
+- **v1** — Stable API: quickstart, enrichment API reference (from `openapi-v1.json`), guides
+- **v2 experimental** — Experimental API: V2 API reference (fetched live), guides
+- **kyb** — KYB agent API: quickstart, API reference (from `openapi-kyb.json`)
 
-### Configuration
-- **docs.json**: Main Mintlify configuration used for both local development and production deployment
-  - Uses versioned navigation format with V1, V2, and KYB API references
-  - V2 fetches OpenAPI spec directly from production: `https://api.reprompt.io/v2/openapi.json`
-  - KYB spec is refreshed from `https://api.reprompt.io/kyb/openapi.json` and committed as `openapi-kyb.json`
-  - Automatically deployed when pushed to main branch
-  - Theme: "aspen", Primary color: #5046e5
-  - API playground mode: "interactive"
+Pages are referenced by path without extension (e.g., `"guides/quickstart"`).
 
-## API Architecture
+## Key Patterns
 
-The Reprompt API documentation includes V1 place enrichment, V2 experimental APIs, and the KYB agent API.
+- All `.mdx` files require `title` and `description` frontmatter
+- OpenAPI specs are auto-rendered by Mintlify — just reference them in `docs.json`
+- API playground is set to `"interactive"` mode
+- Theme: "aspen", primary color: `#5046e5`
+- Mapbox token is embedded in playground components — do not share publicly without replacing
 
-### Key Endpoints
-- **Place Enrichment**: Core enrichment API for adding attributes to place data
-- **Batch Processing**: Asynchronous processing for large datasets
-- **Placematch**: Match places across different data sources
+## Deprecated Endpoints (removed from docs)
 
-Refer to the OpenAPI specifications (`openapi-v1.json`, `openapi-v2.json`, and `openapi-kyb.json`) for detailed endpoint documentation.
+The following V2 endpoints have been disabled in the backend and removed from documentation:
+- `/v2/find-places` — Search/discover places
+- `/v2/placematch` — Match places across data sources
 
-## Important Patterns
-
-### MDX File Structure
-All `.mdx` files require frontmatter:
-```mdx
----
-title: "Page Title"
-description: "Page description"
----
-```
-
-### Custom Component Import
-```mdx
-import { ComponentName } from "/snippets/ComponentName.tsx"
-
-<ComponentName />
-```
-
-### OpenAPI Integration
-API documentation references OpenAPI specs defined in `docs.json` navigation structure. The specs are automatically rendered by Mintlify. V2 API spec is fetched dynamically from production at `https://api.reprompt.io/v2/openapi.json`. KYB uses the Reprompt-hosted OpenAPI endpoint at `https://api.reprompt.io/kyb/openapi.json`, which is pulled into `openapi-kyb.json` before commit.
-
-### Interactive Playground Component
-The PlacematchPlayground component in `/snippets`:
-- Makes real-time API calls to demonstrate Placematch functionality
-- Uses Mapbox GL JS for GeoJSON visualization on interactive maps
-- Includes multiple sample scenarios and input modes
-- Displays confidence scores (VERY_HIGH, HIGH, MEDIUM, LOW) with reasoning
-- Built with React 18 and TypeScript, styled with Tailwind CSS
-
-## Development Notes
-
-### When Adding New Documentation
-1. Create `.mdx` file in appropriate directory
-2. Add required frontmatter (title, description)
-3. Update `docs.json` navigation if adding new pages
-4. For API endpoints, reference OpenAPI spec or use inline API documentation
-
-### When Working with Custom Components
-- React components live in `/snippets` directory
-- Use TypeScript with proper type definitions (`.tsx` extension)
-- Maintain both `.tsx` and `.jsx` versions for compatibility
-- Import Mapbox GL CSS when using maps: `import 'mapbox-gl/dist/mapbox-gl.css'`
-- Follow existing patterns in PlacematchPlayground.tsx
-- Dependencies: React 18, Mapbox GL 3.0, TypeScript 5.0
-
-## Dependencies
-
-```json
-{
-  "dependencies": {
-    "mapbox-gl": "^3.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "playwright": "^1.56.0",
-    "typescript": "^5.0.0"
-  }
-}
-```
-
-Playwright is included as a dev dependency for potential browser automation/testing.
-
-## Building Interactive Playgrounds
-
-When creating interactive API playgrounds in Mintlify, import components from `@mintlify/components` such as `Tip` and `CodeBlock` for consistent styling. Use `CodeBlock` with a `language` prop and pass a `<code>` element as children to render syntax-highlighted responses. Implement API key injection by using `useEffect` to query and update DOM code blocks with `document.querySelectorAll('code')` when the API key changes. Always use Mapbox's `satellite-streets-v12` style for consistent map appearance regardless of theme. Disable interactive buttons when required inputs (like API keys) are missing to prevent error states. Display dynamic API responses by rendering the actual JSON from successful requests, limiting to the first 3 results for readability.
+Do not re-add documentation for these endpoints.

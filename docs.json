@@ -51,8 +51,6 @@
             "group": "Guides",
             "pages": [
               "guides/troubleshooting-40x",
-              "guides/finding-places",
-              "guides/placematch",
               "guides/agents-in-api"
             ]
           }
