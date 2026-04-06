@@ -55,21 +55,6 @@
             ]
           }
         ]
-      },
-      {
-        "version": "kyb",
-        "groups": [
-          {
-            "group": " ",
-            "pages": [
-              "guides/kyb-quickstart"
-            ]
-          },
-          {
-            "group": "KYB API Reference",
-            "openapi": "openapi-kyb.json"
-          }
-        ]
       }
     ]
   },

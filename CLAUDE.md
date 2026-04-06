@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This is the **Reprompt API documentation site**, built with [Mintlify](https://mintlify.com). It documents a geospatial API platform providing place enrichment, batch processing, and KYB (Know Your Business) capabilities.
+This is the **Reprompt API documentation site**, built with [Mintlify](https://mintlify.com). It documents a geospatial API platform providing place enrichment and batch processing capabilities.
 
 **Live site:** https://docs.repromptai.com
 **Auto-deploys** on push to `main`.
@@ -18,7 +18,6 @@ mintlify dev         # Start local dev server at http://localhost:3000
 docs.json              # Mintlify config: navigation, theme, API playground settings
 openapi-v1.json        # V1 OpenAPI spec (stable) — committed, auto-rendered by Mintlify
 openapi-v2.json        # V2 OpenAPI spec (experimental) — fetched live from production
-openapi-kyb.json       # KYB OpenAPI spec — pulled from production, committed
 guides/*.mdx           # Documentation pages (quickstart, batch, CSV upload, etc.)
 schemas/               # Shared schema documentation
 snippets/              # React components and reusable MDX snippets
@@ -58,22 +57,15 @@ curl "https://api.repromptai.com/v1/reprompt/openapi.json" \
 curl "https://api.repromptai.com/v2/openapi.json" > openapi-v2.json
 ```
 
-**KYB** (requires API key):
-```bash
-curl "https://api.reprompt.io/kyb/openapi.json" \
-  -H "Authorization: Bearer $REPROMPT_API_KEY" > openapi-kyb.json
-```
-
 After updating any spec: commit, push to `main`, and it auto-deploys.
 
-Note: The V2 spec in `docs.json` is configured to fetch live from `https://api.reprompt.io/v2/openapi.json`, so the committed `openapi-v2.json` is a local reference copy. V1 and KYB use committed files directly.
+Note: The V2 spec in `docs.json` is configured to fetch live from `https://api.reprompt.io/v2/openapi.json`, so the committed `openapi-v2.json` is a local reference copy. V1 uses the committed file directly.
 
 ## Navigation Structure (`docs.json`)
 
 The site uses versioned navigation with three sections:
 - **v1** — Stable API: quickstart, enrichment API reference (from `openapi-v1.json`), guides
 - **v2 experimental** — Experimental API: V2 API reference (fetched live), guides
-- **kyb** — KYB agent API: quickstart, API reference (from `openapi-kyb.json`)
 
 Pages are referenced by path without extension (e.g., `"guides/quickstart"`).
 
@@ -85,10 +77,12 @@ Pages are referenced by path without extension (e.g., `"guides/quickstart"`).
 - Theme: "aspen", primary color: `#5046e5`
 - Mapbox token is embedded in playground components — do not share publicly without replacing
 
-## Deprecated Endpoints (removed from docs)
+## Removed from docs
 
-The following V2 endpoints have been disabled in the backend and removed from documentation:
+The following have been disabled in the backend and removed from documentation:
 - `/v2/find-places` — Search/discover places
 - `/v2/placematch` — Match places across data sources
+- `/v2/validate` — Validate place data
+- KYB API — Know Your Business verification (entire version section removed)
 
-Do not re-add documentation for these endpoints.
+Do not re-add documentation for these.
