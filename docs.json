@@ -29,6 +29,7 @@
             "pages": [
               "guides/csv-upload",
               "guides/batch-processing",
+              "guides/csv-export",
               "guides/troubleshooting-40x",
               "guides/open-closed",
               "guides/tripadvisor-category",

@@ -1,0 +1,215 @@
+---
+title: "CSV Export"
+description: "Export enriched place data for one or more batches as a single CSV, delivered inline or as a background job."
+---
+
+### Endpoints
+
+| Action | Method & Path |
+|--------|---------------|
+| Create export | `POST /v1/{org_slug}/place_enrichment/exports` |
+| List exports | `GET /v1/{org_slug}/place_enrichment/exports?status=&cursor=&limit=` |
+| Get export status | `GET /v1/{org_slug}/place_enrichment/exports/{export_id}` |
+| Download export | `GET /v1/{org_slug}/place_enrichment/exports/{export_id}/download` |
+
+Auth is the same as the batch endpoints: `Authorization: Bearer {YOUR_API_KEY}` or the `apiKey` header.
+
+**Sync vs. Async export:**
+
+| Selection | Response |
+|-----------|----------|
+| ≤ ~50,000 rows (~120 MB) — a single batch always qualifies | `200` — CSV inline |
+| Bigger, spanning multiple batches | `202` — poll, then download |
+
+## Quick Start
+
+Call `POST /exports` with the `batch_ids` you want combined into one CSV; delivery mode is decided for you by size. 
+
+Prefer clicking through instead? See [Using the Dashboard](#using-the-dashboard) for the same flow with checkboxes and an **Export N Batches** button.
+
+<RequestExample>
+
+```bash Request
+curl -X POST \
+  'https://api.repromptai.com/v1/{org_slug}/place_enrichment/exports' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: 4a7c1e02-3f3d-4b1a-9c2e-8f6d2b1a9e40' \
+  -d '{
+    "batch_ids": ["batch_2024_03_15_123456", "batch_2024_03_16_654321"]
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 202 Response
+{
+  "id": "e59f3b9a-6b7d-4e21-9d34-9d1b6c9b6a41",
+  "status": "queued",
+  "batch_ids": ["batch_2024_03_15_123456", "batch_2024_03_16_654321"],
+  "batch_names": {
+    "batch_2024_03_15_123456": "NYC Restaurants March 2024",
+    "batch_2024_03_16_654321": "Chicago Retail March 2024"
+  },
+  "created_at": "2024-03-15T10:00:00Z",
+  "updated_at": "2024-03-15T10:00:00Z",
+  "status_url": "/v1/{org_slug}/place_enrichment/exports/e59f3b9a-6b7d-4e21-9d34-9d1b6c9b6a41",
+  "download_url": null,
+  "error": null,
+  "metadata": null,
+  "expired": false
+}
+```
+
+</ResponseExample>
+
+<Tip>
+`Idempotency-Key` is optional but recommended for async requests — see [Async Exports](#async-exports) for how it works.
+</Tip>
+
+## Sync Exports
+
+Small exports skip the export job entirely. A single batch (max 50,000 places) always qualifies; so does any combination of batches that stays roughly under 50,000 rows and 120 MB. You get `200` back with the CSV already in the body:
+
+```bash
+curl -X POST \
+  'https://api.repromptai.com/v1/{org_slug}/place_enrichment/exports' \
+  -H 'Authorization: Bearer {YOUR_API_KEY}' \
+  -H 'Content-Type: application/json' \
+  -d '{"batch_ids": ["batch_2024_03_15_123456"]}' \
+  -o place-enrichment.csv
+```
+
+## Async Exports
+
+Larger selections return `202` immediately: `status: queued`, a `status_url` to poll, and `download_url: null` until the job finishes. 
+
+There is no set limit to number of batches or total jobs to export, async export comfortably handles exports >1M jobs across many batches.
+
+### Idempotency-Key
+
+Sending an `Idempotency-Key` is optional, not required. Its only job is to make retries safe:
+
+- **With a key**: retry the same request (same key, same `batch_ids`) as many times as you want, like after a timeout, and you'll get back the original export job instead of a new one. Reuse the key with a *different* `batch_ids` set and you'll get `409`, since that's not a retry.
+- **Without a key**: every request creates a new export job, including retries. Fine for one-off calls; risky if your client retries automatically.
+
+We recommend a UUID v4, generated once per export attempt and reused across that attempt's retries — not a new one per HTTP call.
+
+<Tip>
+If your HTTP client already retries on timeout, generate the key before the first attempt and pass the same value through every retry it makes.
+</Tip>
+
+## Export Lifecycle
+
+1. <Badge color="gray">Queued</Badge>: Export Job accepted; waiting for a worker to pick it up.
+2. <Badge color="blue">Running</Badge>: A worker is generating the CSV.
+3. <Badge color="green">Completed</Badge>: `download_url` is set. Download it before the retention window closes.
+4. <Badge color="red">Failed</Badge>: Something went wrong — check `error`. Worker dispatch failures return `502` on create and mark the export job `failed` immediately; it's safe to retry.
+5. <Badge color="gray">Expired</Badge>: The artifact aged past its 7-day retention window. `download_url` is `null` and `expired` is `true`.
+
+<AccordionGroup>
+  <Accordion title="What's populated at each status" icon="circle-info">
+    | Status | `download_url` | `error` | `metadata` |
+    |--------|-----------------|---------|------------|
+    | `queued` | `null` | `null` | `null` |
+    | `running` | `null` | `null` | `null` or partial |
+    | `completed` | signed URL (1h validity) | `null` | `rows_exported` + stage timings |
+    | `failed` | `null` | reason string | may include partial stats |
+    | `expired` | `null` | `null` | retained from `completed` |
+  </Accordion>
+</AccordionGroup>
+
+## Polling & Downloading
+
+<Steps>
+  <Step title="Poll for status">
+    Call `GET /exports/{export_id}` (or follow `status_url` from the create response) every few seconds. Don't poll faster than that.
+  </Step>
+  <Step title="Stop when terminal">
+    Stop once `status` is `completed`, `failed`, or `expired`.
+  </Step>
+  <Step title="Download">
+    Call `GET /exports/{export_id}/download`. It returns `307` with a `Location` pointing at a short-lived signed S3 URL. Most HTTP clients (curl, `requests`, `fetch`) follow the redirect automatically, and the body that arrives is `text/csv`.
+  </Step>
+</Steps>
+
+<Info>
+The signed URL from `/download` is valid for 1 hour. The underlying artifact is retained for 7 days; call `/download` again to get a fresh URL as long as the export hasn't expired.
+</Info>
+
+<Warning>
+Calling `/download` before `status` is `completed` returns `409`. Calling it after the 7-day retention window returns `410`.
+</Warning>
+
+## Status Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `id` | Export identifier (UUID) |
+| `status` | `queued`, `running`, `completed`, `failed`, or `expired` |
+| `batch_ids` | Batch IDs included in this export |
+| `batch_names` | Best-effort `{batch_id → name}` map; a batch is omitted if its name can't be resolved |
+| `created_at` / `updated_at` | ISO-8601 timestamps |
+| `status_url` | URL to poll this export's status |
+| `download_url` | Download URL; present only while `status` is `completed` and unexpired |
+| `error` | Failure reason, set when `status` is `failed` |
+| `metadata` | Worker-reported stats: `rows_exported` plus per-stage timings |
+| `expired` | `true` once the artifact has aged past its 7-day retention window |
+
+This is the shape returned by the `202` on create, by **Get export status**, and by each element of **List exports**.
+
+## Listing Exports
+
+`GET /exports?status=&cursor=&limit=` returns `{ exports: [...], next_cursor }`, newest first.
+
+| Param | Default | Description |
+|-------|---------|-------------|
+| `status` | — | Filter by status: `queued`, `running`, `completed`, `failed`, `expired` |
+| `cursor` | — | Opaque cursor from a previous page's `next_cursor` |
+| `limit` | `50` | Max results per page (max `200`) |
+
+<Tip>
+`next_cursor` is `null` on the last page. Keep passing it back as `cursor` until then.
+</Tip>
+
+## CSV Columns
+
+Every export has the same shape: `batch_id`, `batch_name`, `place_id`, `status`, then per-attribute columns — `{field}_original` (your inputs), `{field}_enriched` (the enriched value), `{field}_status`, plus confidence and reasoning columns. Columns that are blank across every row are dropped.
+
+For what each attribute returns, see [Place Job Results](/guides/place-job-results).
+
+## Errors
+
+| Code | Meaning |
+|------|---------|
+| `404` | A `batch_id` isn't owned by the org, or the export doesn't exist |
+| `409` | `Idempotency-Key` reused with a different `batch_ids` set, or `/download` called before `completed` |
+| `410` | Export artifact has expired |
+| `502` | Worker dispatch failed; the export job is marked `failed` — safe to retry |
+
+## Using the Dashboard
+
+Exports work the same way without writing any code.
+
+On **Place Enrichment → Run Batches**, check one or more batches and click **Export N Batches**. A confirm dialog — "Export N batches (~X jobs) as a single CSV. Large selections generate in the background…" — kicks off the same `POST /exports` under the hood.
+
+- **Small exports** download instantly in the browser.
+- **Large exports** show a "queued" toast with a **View** link to the **Exports** screen (sidebar → Exports, `/place-enrichment/exports`).
+- The Exports screen lists background exports with status pills — Queued / Generating / Ready / Failed / Expired — and auto-polls until each one finishes. Ready rows get a **Download** button (a plain link that follows the `307` to S3); failed rows get **Retry**.
+- Its subtitle states the rule plainly: "Background CSV exports, kept 7 days. Small exports download instantly and aren't listed here."
+
+Idempotency is handled for you — the dashboard sends one key per export attempt.
+
+## Best Practices
+
+- **Send an Idempotency-Key for anything you might retry** — a UUID v4 per export attempt, reused across that attempt's retries, not generated per HTTP call.
+- **Poll politely** — every few seconds is enough; the export runs as a background export job either way.
+- **Download promptly** — the signed URL expires in 1 hour. Call `/download` again for a fresh one if you miss the window.
+- **Check `metadata.rows_exported`** — confirms the export covered the rows you expected before you rely on the file.
+
+## Next Steps
+
+- [Batch Processing](/guides/batch-processing) - create the batches you're exporting
+- [Place Job Results](/guides/place-job-results) - full schema of the enriched attributes behind each CSV column
