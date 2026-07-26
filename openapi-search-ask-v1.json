@@ -1,0 +1,214 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Reprompt Search and Ask API",
+    "version": "1.0.0",
+    "description": "Search returns normalized web results. Ask returns a fast, single-hop narrative answer grounded in web results; it is not a deep-research workflow."
+  },
+  "servers": [
+    {
+      "url": "https://api.repromptai.com/v1/{org_slug}",
+      "variables": {
+        "org_slug": {
+          "default": "reprompt",
+          "description": "The organization slug associated with the API key."
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/search": {
+      "post": {
+        "tags": ["Search & Answers"],
+        "summary": "Search the web",
+        "description": "Returns a stable, normalized list of web search results.",
+        "operationId": "search",
+        "security": [{ "HTTPBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QueryRequest" },
+              "example": { "query": "What is the difference between a web search API and a research agent?" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized web search results.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "422": { "$ref": "#/components/responses/InvalidQuery" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/UpstreamFailure" }
+        }
+      }
+    },
+    "/ask": {
+      "post": {
+        "tags": ["Search & Answers"],
+        "summary": "Get a fast, source-backed answer",
+        "description": "Retrieves web results and generates a concise single-hop answer. This endpoint is not intended for deep research.",
+        "operationId": "ask",
+        "security": [{ "HTTPBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QueryRequest" },
+              "example": { "query": "What is the difference between a web search API and a research agent?" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A fast narrative answer with its normalized sources.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AskResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "422": { "$ref": "#/components/responses/InvalidQuery" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "502": { "$ref": "#/components/responses/UncitedAnswer" },
+          "503": { "$ref": "#/components/responses/UpstreamFailure" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "QueryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Natural-language web query."
+          }
+        }
+      },
+      "SearchResult": {
+        "type": "object",
+        "required": ["title", "url", "position"],
+        "properties": {
+          "title": { "type": "string", "description": "Result title." },
+          "url": { "type": "string", "format": "uri", "description": "Canonical result URL." },
+          "snippet": { "type": "string", "description": "Search-result excerpt." },
+          "position": { "type": "integer", "minimum": 1, "description": "One-based result rank." },
+          "date": { "type": "string", "description": "Date supplied by the result, when available." }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "required": ["query", "results"],
+        "properties": {
+          "query": { "type": "string" },
+          "answer_box": { "$ref": "#/components/schemas/AnswerBox" },
+          "knowledge_graph": { "$ref": "#/components/schemas/KnowledgeGraph" },
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SearchResult" }
+          }
+        }
+      },
+      "AnswerBox": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "answer": { "type": "string" },
+          "snippet": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "date": { "type": "string" }
+        }
+      },
+      "KnowledgeGraph": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "type": { "type": "string" },
+          "description": { "type": "string" },
+          "website": { "type": "string", "format": "uri" },
+          "facts": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "AskResponse": {
+        "type": "object",
+        "required": ["query", "answer", "sources"],
+        "properties": {
+          "query": { "type": "string" },
+          "answer": { "type": "string", "description": "Fast narrative answer grounded in the provided sources." },
+          "sources": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SearchResult" }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "responses": {
+      "InvalidQuery": {
+        "description": "The request is invalid, query is missing/blank, or Ask found no web results.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "Unauthorized": {
+        "description": "The API key is missing, invalid, or revoked.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "Forbidden": {
+        "description": "The API key cannot access this organization or endpoint.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "RateLimited": {
+        "description": "A rate or usage limit has been exceeded.",
+        "headers": {
+          "Retry-After": {
+            "schema": { "type": "integer" },
+            "description": "Seconds to wait before retrying, when provided."
+          }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "UpstreamFailure": {
+        "description": "A required search or answer provider is temporarily unavailable.",
+        "headers": {
+          "Retry-After": {
+            "schema": { "type": "integer" },
+            "description": "Seconds to wait before retrying."
+          }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "UncitedAnswer": {
+        "description": "Ask could not produce a citation-backed answer from the retrieved sources.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      }
+    }
+  }
+}
