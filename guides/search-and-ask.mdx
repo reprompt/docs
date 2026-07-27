@@ -18,10 +18,10 @@ Both endpoints accept the same minimal body. There are no filters, modes, or str
 
 ## Authentication and base URL
 
-Create an API key in [Organization Settings → API Keys](https://app.repromptai.com/organization), then send it as a bearer token. Replace `{org_slug}` with the organization slug associated with that key.
+Create an API key in [Organization Settings → API Keys](https://app.repromptai.com/organization), then send it as a bearer token. Reprompt resolves the organization from the authenticated API key, so no organization identifier is required in the URL.
 
 ```bash
-https://api.repromptai.com/v1/{org_slug}
+https://api.repromptai.com/v1
 ```
 
 ## Search
@@ -32,7 +32,7 @@ Send a natural-language query to `POST /search`. The response is a stable, norma
 
 ```bash cURL
 curl --request POST \
-  --url 'https://api.repromptai.com/v1/{org_slug}/search' \
+  --url 'https://api.repromptai.com/v1/search' \
   --header 'Authorization: Bearer {YOUR_API_KEY}' \
   --header 'Content-Type: application/json' \
   --data '{
@@ -44,7 +44,7 @@ curl --request POST \
 import requests
 
 response = requests.post(
-    "https://api.repromptai.com/v1/{org_slug}/search",
+    "https://api.repromptai.com/v1/search",
     headers={
         "Authorization": "Bearer {YOUR_API_KEY}",
         "Content-Type": "application/json",
@@ -59,7 +59,7 @@ print(response.json())
 
 ```javascript JavaScript
 const response = await fetch(
-  'https://api.repromptai.com/v1/{org_slug}/search',
+  'https://api.repromptai.com/v1/search',
   {
     method: 'POST',
     headers: {
@@ -126,7 +126,7 @@ Send the same query to `POST /ask` to receive a concise narrative answer plus th
 
 ```bash cURL
 curl --request POST \
-  --url 'https://api.repromptai.com/v1/{org_slug}/ask' \
+  --url 'https://api.repromptai.com/v1/ask' \
   --header 'Authorization: Bearer {YOUR_API_KEY}' \
   --header 'Content-Type: application/json' \
   --data '{
@@ -138,7 +138,7 @@ curl --request POST \
 import requests
 
 response = requests.post(
-    "https://api.repromptai.com/v1/{org_slug}/ask",
+    "https://api.repromptai.com/v1/ask",
     headers={
         "Authorization": "Bearer {YOUR_API_KEY}",
         "Content-Type": "application/json",
@@ -156,7 +156,7 @@ for source in answer["sources"]:
 
 ```javascript JavaScript
 const response = await fetch(
-  'https://api.repromptai.com/v1/{org_slug}/ask',
+  'https://api.repromptai.com/v1/ask',
   {
     method: 'POST',
     headers: {
@@ -203,7 +203,7 @@ Both endpoints return JSON errors. Handle these status codes:
 | Status | Meaning | What to do |
 | --- | --- | --- |
 | `401` | The API key is missing, invalid, or revoked. | Create or use an active API key. |
-| `403` | The key cannot access the organization or endpoint. | Verify the key and `{org_slug}` belong together. |
+| `403` | The authenticated account cannot access the endpoint. | Verify the feature is enabled for the account. |
 | `422` | The request is invalid, including a missing, blank, or extra input field; `Ask` also uses this when no web results are available. | Correct the request; do not retry unchanged input. |
 | `429` | The account has exceeded a rate or usage limit. | Retry with exponential backoff and respect `Retry-After` when present. |
 | `502` | `Ask` could not produce a citation-backed answer from the retrieved sources. | Retry once or reformulate the query. |

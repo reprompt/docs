@@ -7,13 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://api.repromptai.com/v1/{org_slug}",
-      "variables": {
-        "org_slug": {
-          "default": "reprompt",
-          "description": "The organization slug associated with the API key."
-        }
-      }
+      "url": "https://api.repromptai.com/v1"
     }
   ],
   "paths": {
