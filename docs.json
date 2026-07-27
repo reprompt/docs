@@ -25,6 +25,16 @@
             "openapi": "openapi-v1.json"
           },
           {
+            "group": "Search & Answers",
+            "pages": [
+              "guides/search-and-ask"
+            ]
+          },
+          {
+            "group": "Search & Answers API Reference",
+            "openapi": "openapi-search-ask-v1.json"
+          },
+          {
             "group": "Guides",
             "pages": [
               "guides/csv-upload",

@@ -1,0 +1,218 @@
+---
+title: "Search and Ask"
+description: "Retrieve normalized web results or get a fast, source-backed answer."
+---
+
+## Overview
+
+Reprompt offers two small, complementary web endpoints:
+
+- **Search** retrieves normalized web search results for a query. Use it when your application or agent needs the results themselves.
+- **Ask** retrieves search results and produces a fast, single-hop narrative answer grounded in those results. Use it when your user needs a concise answer with sources.
+
+Both endpoints accept the same minimal body. There are no filters, modes, or structured search inputs at launch.
+
+<Note>
+`Ask` is a fast grounded-answer endpoint, not a deep-research workflow. It does not perform multi-step research or replace source review for high-stakes decisions.
+</Note>
+
+## Authentication and base URL
+
+Create an API key in [Organization Settings → API Keys](https://app.repromptai.com/organization), then send it as a bearer token. Reprompt resolves the organization from the authenticated API key, so no organization identifier is required in the URL.
+
+```bash
+https://api.repromptai.com/v1
+```
+
+## Search
+
+Send a natural-language query to `POST /search`. The response is a stable, normalized result list; it intentionally does not expose the underlying search-provider response.
+
+<CodeGroup>
+
+```bash cURL
+curl --request POST \
+  --url 'https://api.repromptai.com/v1/search' \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "query": "What is the difference between a web search API and a research agent?"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.repromptai.com/v1/search",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "query": "What is the difference between a web search API and a research agent?"
+    },
+)
+response.raise_for_status()
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.repromptai.com/v1/search',
+  {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer {YOUR_API_KEY}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      query: 'What is the difference between a web search API and a research agent?'
+    })
+  }
+);
+
+if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+console.log(await response.json());
+```
+
+</CodeGroup>
+
+### Search response
+
+```json
+{
+  "query": "What is the difference between a web search API and a research agent?",
+  "answer_box": {
+    "answer": "A web search API retrieves ranked web results.",
+    "url": "https://example.com/search-apis"
+  },
+  "results": [
+    {
+      "title": "Example result title",
+      "url": "https://example.com/search-vs-research",
+      "snippet": "A short excerpt describing the result.",
+      "position": 1,
+      "date": "2026-07-25"
+    }
+  ]
+}
+```
+
+Each item in `results` has a stable normalized shape:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `title` | string | Result title. |
+| `url` | string | Canonical result URL. |
+| `snippet` | string, optional | Search-result excerpt. |
+| `position` | integer | One-based rank in the returned result set. |
+| `date` | string, optional | Date supplied by the result, when available. |
+
+The `results` array can be empty when no results match the query.
+
+When the search provider supplies them, the response can also include:
+
+- `answer_box` — a direct answer or featured snippet with its source URL.
+- `knowledge_graph` — entity information such as a title, type, description, website, and scalar facts.
+
+These objects are optional. Build agent logic around `results` unless it explicitly benefits from enriched search features.
+
+## Ask
+
+Send the same query to `POST /ask` to receive a concise narrative answer plus the source objects used to ground it. Reprompt uses DeepSeek V4 Flash through OpenRouter for this endpoint.
+
+<CodeGroup>
+
+```bash cURL
+curl --request POST \
+  --url 'https://api.repromptai.com/v1/ask' \
+  --header 'Authorization: Bearer {YOUR_API_KEY}' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "query": "What is the difference between a web search API and a research agent?"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.repromptai.com/v1/ask",
+    headers={
+        "Authorization": "Bearer {YOUR_API_KEY}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "query": "What is the difference between a web search API and a research agent?"
+    },
+)
+response.raise_for_status()
+answer = response.json()
+print(answer["answer"])
+for source in answer["sources"]:
+    print(source["title"], source["url"])
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.repromptai.com/v1/ask',
+  {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer {YOUR_API_KEY}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      query: 'What is the difference between a web search API and a research agent?'
+    })
+  }
+);
+
+if (!response.ok) throw new Error(`Ask failed: ${response.status}`);
+const { answer, sources } = await response.json();
+console.log(answer, sources);
+```
+
+</CodeGroup>
+
+### Ask response
+
+```json
+{
+  "query": "What is the difference between a web search API and a research agent?",
+  "answer": "A web search API returns relevant documents for a query. A research agent typically uses search as one step in a larger, multi-step process that evaluates sources and synthesizes a response. [1]",
+  "sources": [
+    {
+      "title": "Example result title",
+      "url": "https://example.com/search-vs-research",
+      "snippet": "A short excerpt describing the result.",
+      "position": 1,
+      "date": "2026-07-25"
+    }
+  ]
+}
+```
+
+`sources` uses the same normalized source-object shape as `Search` results. Render the source URLs alongside the answer so people can inspect the evidence themselves.
+
+## Errors and retries
+
+Both endpoints return JSON errors. Handle these status codes:
+
+| Status | Meaning | What to do |
+| --- | --- | --- |
+| `401` | The API key is missing, invalid, or revoked. | Create or use an active API key. |
+| `403` | The authenticated account cannot access the endpoint. | Verify the feature is enabled for the account. |
+| `422` | The request is invalid, including a missing, blank, or extra input field; `Ask` also uses this when no web results are available. | Correct the request; do not retry unchanged input. |
+| `429` | The account has exceeded a rate or usage limit. | Retry with exponential backoff and respect `Retry-After` when present. |
+| `502` | `Ask` could not produce a citation-backed answer from the retrieved sources. | Retry once or reformulate the query. |
+| `503` | A search or answer provider is temporarily unavailable. | Retry idempotently with exponential backoff and respect `Retry-After`. |
+
+For authentication help, see [Troubleshooting Authentication & 40x Errors](/guides/troubleshooting-40x).
+
+## Pricing
+
+`Search` costs **$5 per 1,000 requests** ($0.005 per request). `Ask` costs **$5 per 1,000 requests** ($0.005 per request).
+
+Pricing is per endpoint request. `Ask` includes the search and answer-generation work with no additional token surcharge; do not make an additional `Search` call solely to support the same `Ask` request unless your product also needs the raw result list.
