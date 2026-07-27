@@ -210,9 +210,3 @@ Both endpoints return JSON errors. Handle these status codes:
 | `503` | A search or answer provider is temporarily unavailable. | Retry idempotently with exponential backoff and respect `Retry-After`. |
 
 For authentication help, see [Troubleshooting Authentication & 40x Errors](/guides/troubleshooting-40x).
-
-## Pricing
-
-`Search` costs **$5 per 1,000 requests** ($0.005 per request). `Ask` costs **$5 per 1,000 requests** ($0.005 per request).
-
-Pricing is per endpoint request. `Ask` includes the search and answer-generation work with no additional token surcharge; do not make an additional `Search` call solely to support the same `Ask` request unless your product also needs the raw result list.
