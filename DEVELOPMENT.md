@@ -67,11 +67,21 @@ Before releasing, compare the Mintlify and replacement pages in a browser: quick
 
 ## Vercel and cutover
 
-1. Import the repository as a Next.js project, Node 22, `npm ci`, `npm run build`. No environment variables are required. Keep the production docs domain on Mintlify during review.
-2. Create a preview deployment from the migration branch. Test it using the checks above. `.vercelignore` excludes local datasets, experimental scripts, unpublished guides, and environment files from CLI uploads.
-3. After accepting the preview, deploy production, attach `docs.repromptai.com`, and apply the DNS records Vercel provides. Verify redirects, canonical URLs, assets, and API CORS on that origin.
-4. Keep the old Mintlify deployment available through cutover. If needed, restore the prior domain/DNS mapping. Do not cancel Mintlify until production passes verification.
+The Vercel project `reprompt-ai/reprompt-docs` is connected to `reprompt/docs`, with `main` as its production branch. Its defaults are Next.js, Node 22, `npm ci`, and `npm run build`; no environment variables are required. PR branches get preview deployments. `.vercelignore` excludes local datasets, experimental scripts, unpublished guides, and environment files from CLI uploads.
+
+The migration is deployed publicly at https://reprompt-docs.vercel.app. The production deployment built from commit `780ab2b` is https://reprompt-docs-17n5qmuwt-reprompt-ai.vercel.app. Clean-checkout and GitHub CI builds passed, as did the public production smoke suite without any authentication bypass.
+
+The custom-domain handoff is still pending. `docs.repromptai.com` already has the CNAME `cname.vercel-dns.com`; Vercel reports the DNS configuration is valid. Adding it to the new project fails with `alias_conflict` because another project outside the Reprompt team still holds it. The existing Mintlify site remains live. A Mintlify login is needed to inspect and release that assignment.
+
+To finish the handoff:
+
+1. Open the [Mintlify custom-domain settings](https://app.mintlify.com/settings/project/custom-domain), confirm the Reprompt project and its fallback Mintlify URL, and release only `docs.repromptai.com`. Keep the Mintlify project available for rollback.
+2. Immediately run `vercel domains add docs.repromptai.com --scope reprompt-ai --non-interactive` from this linked project. Confirm verification with `vercel domains inspect docs.repromptai.com --scope reprompt-ai`. If it still reports an ownership conflict, resolve it through Mintlify/Vercel rather than changing unrelated DNS records.
+3. Run `DOCS_TEST_URL=https://docs.repromptai.com npm run test:smoke`, then verify the custom domain in a browser, including assets, search, API reference, and canonical URLs. The existing CNAME already matches Vercel's recommendation; change DNS only if Vercel explicitly requires a different record.
+4. Merge the migration PR after the domain is serving the replacement. Verify the automatic production deployment from `main`. Do not cancel Mintlify until production passes verification.
+
+If the handoff fails, remove the hostname from the replacement project if it was attached, re-add it to the original Mintlify project, and verify the old site. Its CNAME can remain `cname.vercel-dns.com` unless Mintlify requests a new target. If only a later replacement release fails, use Vercel rollback to return to the known-good deployment.
 
 Do not push this migration directly to the Mintlify-connected main branch before coordinating cutover: the content and assets have moved. The previous Mintlify configuration remains in `docs.json` for migration comparison only; the Next.js build does not read it.
 
-The migration review project is `reprompt-ai/reprompt-docs`. Its verified deployment is https://reprompt-docs-bfa46q1tw-reprompt-ai.vercel.app. The live docs domain has not been attached or moved. Local production and remote preview builds passed all 33 page checks, seven redirects, exclusions, and discovery endpoints; browser checks covered responsive layouts, search, code tabs/copy, nested schemas, organization variables, and mocked playground success/error responses.
+Local production, the remote preview, and the public production deployment passed all 33 page checks, seven redirects, exclusions, and discovery endpoints; browser checks covered responsive layouts, search, code tabs/copy, nested schemas, organization variables, and mocked playground success/error responses.
