@@ -1,0 +1,35 @@
+name: Docs validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run generate
+      - run: npm run check
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npm run build
+      - name: Verify production routes
+        run: |
+          npm start > /tmp/docs-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:3000/guides/quickstart > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:smoke

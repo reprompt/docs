@@ -1,88 +1,19 @@
-# CLAUDE.md
+# Reprompt documentation
 
-This is the **Reprompt API documentation site**, built with [Mintlify](https://mintlify.com). It documents a geospatial API platform providing place enrichment and batch processing capabilities.
+This is a Next.js App Router site using Fumadocs and MDX. Read `DEVELOPMENT.md` for setup, content editing, validation, and Vercel deployment.
 
-**Live site:** https://docs.repromptai.com
-**Auto-deploys** on push to `main`.
+- Use Node 22 and `npm ci`.
+- `npm run dev` generates API pages and starts the local site.
+- `npm run build` generates and builds from committed OpenAPI snapshots. No API credentials or remote schema fetches are needed.
+- Authored pages live in `content/docs`; navigation lives in each folder's `meta.json`.
+- `content/docs/api-reference`, `.source`, and `public/openapi*.json` are generated; do not edit them.
+- `lib/api-routes.ts` defines stable API URLs. Every new operation needs an explicit mapping.
+- `npm run sync:openapi` explicitly refreshes V2. Review its diff before committing.
+- Public assets live in `public`; reusable MDX lives in `snippets`.
+- Validate with `npm run check`, `npm test`, `npm run typecheck`, and `npm run build`.
+- Run `npm run test:smoke` against a running production server.
+- Browser-test desktop/mobile, search, code tabs, schemas, and the playground. Mock API responses for tests; do not run billable API requests as a build check.
 
-## Quick Reference
+The source contains unpublished legacy files outside `content/docs`. Do not publish `guides/tripadvisor-category.mdx` without implementing authorization. `guides/entrances.mdx` and `changelog.mdx` are also excluded.
 
-```bash
-npm install          # Install deps for React components
-mintlify dev         # Start local dev server at http://localhost:3000
-```
-
-## Repository Layout
-
-```
-docs.json              # Mintlify config: navigation, theme, API playground settings
-openapi-v1.json        # V1 OpenAPI spec (stable) — committed, auto-rendered by Mintlify
-openapi-v2.json        # V2 OpenAPI spec (experimental) — fetched live from production
-guides/*.mdx           # Documentation pages (quickstart, batch, CSV upload, etc.)
-schemas/               # Shared schema documentation
-snippets/              # React components and reusable MDX snippets
-images/                # Screenshots and static assets
-logo/                  # Brand logos (light/dark)
-changelog.mdx          # API changelog
-```
-
-## Common Tasks
-
-### Adding a new documentation page
-1. Create `guides/my-page.mdx` with required frontmatter:
-   ```mdx
-   ---
-   title: "Page Title"
-   description: "Page description"
-   ---
-   ```
-2. Add the page path to `docs.json` under the appropriate version/group in `navigation.versions`.
-3. Push to `main` — Mintlify auto-deploys.
-
-### Adding a React component
-- Place `.jsx` files in `/snippets`.
-- Import in MDX: `import { MyComponent } from "/snippets/MyComponent.jsx"`
-- Use `<MyComponent />` in the page body.
-
-### Updating OpenAPI specs
-
-**V1** (requires API key):
-```bash
-curl "https://api.repromptai.com/v1/reprompt/openapi.json" \
-  -H "Authorization: Bearer $REPROMPT_API_KEY" > openapi-v1.json
-```
-
-**V2** (no auth):
-```bash
-curl "https://api.repromptai.com/v2/openapi.json" > openapi-v2.json
-```
-
-After updating any spec: commit, push to `main`, and it auto-deploys.
-
-Note: The V2 spec in `docs.json` is configured to fetch live from `https://api.reprompt.io/v2/openapi.json`, so the committed `openapi-v2.json` is a local reference copy. V1 uses the committed file directly.
-
-## Navigation Structure (`docs.json`)
-
-The site uses versioned navigation with three sections:
-- **v1** — Stable API: quickstart, enrichment API reference (from `openapi-v1.json`), guides
-- **v2 experimental** — Experimental API: V2 API reference (fetched live), guides
-
-Pages are referenced by path without extension (e.g., `"guides/quickstart"`).
-
-## Key Patterns
-
-- All `.mdx` files require `title` and `description` frontmatter
-- OpenAPI specs are auto-rendered by Mintlify — just reference them in `docs.json`
-- API playground is set to `"interactive"` mode
-- Theme: "aspen", primary color: `#5046e5`
-- Mapbox token is embedded in playground components — do not share publicly without replacing
-
-## Removed from docs
-
-The following have been disabled in the backend and removed from documentation:
-- `/v2/find-places` — Search/discover places
-- `/v2/placematch` — Match places across data sources
-- `/v2/validate` — Validate place data
-- KYB API — Know Your Business verification (entire version section removed)
-
-Do not re-add documentation for these.
+Do not restore the retired KYB API or V2 `/find-places`, `/placematch`, or `/validate` operations. The V1 refresh-batches operation is withheld because its committed specification references missing schemas. Preserve its redirect to the monthly-refresh guide until the API contract is verified.

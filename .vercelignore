@@ -1,0 +1,14 @@
+.playwright-mcp/
+.github/
+/guides/
+changelog.mdx
+test_*.py
+*.csv
+progress.md
+README.md
+node_modules/
+.next/
+.source/
+tests/
+test-results/
+.env*

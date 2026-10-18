@@ -18,7 +18,7 @@ If you already have place data, you can enrich it with over 40 attributes using 
 
 Let's enrich a single place with basic information. The `inputs` object requires a place **name** along with either **coordinates (latitude/longitude)** or an **address**.
 
-<CodeGroup>
+<CodeGroup titles={["cURL", "Python", "JavaScript"]}>
 
 ```bash cURL
 curl -X POST \
@@ -87,7 +87,7 @@ console.log(result);
 
 </CodeGroup>
 
-Replace `{org_slug}` with your actual organization slug. The API key variable will be automatically populated.
+Replace `{org_slug}` with your organization slug and `{YOUR_API_KEY}` with your API key from [Organization Settings](https://app.repromptai.com/organization).
 
 <Tip>
 **Include a `place_id`**: The `place_id` field is required at the top level of your request (alongside `inputs`, not inside it). We recommend providing your own stable identifier (like your database ID). This makes it easy to join enriched results back to your data.
@@ -189,7 +189,7 @@ Specify exactly which attributes you want to enrich using the `attributes` array
 | `address` | Address |
 
 
-You can see the entire list of attributes by calling the [Enrichment Attributes](/api-reference/attributes/get-enrichment-attributes) endpoint.
+You can see the entire list of attributes by calling the [Enrichment Attributes](/api-reference/attributes/get-all-available-attributes) endpoint.
 
 ---
 

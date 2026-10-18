@@ -28,7 +28,7 @@ https://api.repromptai.com/v1
 
 Send a natural-language query to `POST /search`. The response is a stable, normalized result list; it intentionally does not expose the underlying search-provider response.
 
-<CodeGroup>
+<CodeGroup titles={["cURL", "Python", "JavaScript"]}>
 
 ```bash cURL
 curl --request POST \
@@ -122,7 +122,7 @@ These objects are optional. Build agent logic around `results` unless it explici
 
 Send the same query to `POST /ask` to receive a concise narrative answer plus the source objects used to ground it. Reprompt uses DeepSeek V4 Flash through OpenRouter for this endpoint.
 
-<CodeGroup>
+<CodeGroup titles={["cURL", "Python", "JavaScript"]}>
 
 ```bash cURL
 curl --request POST \

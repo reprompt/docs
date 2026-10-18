@@ -4,12 +4,13 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - 'guides/**/*.mdx'
-      - 'openapi-v*.json'
+      - 'content/docs/**/*.mdx'
+      - 'openapi*.json'
       - '.github/workflows/claude-auto-review.yml'
 
 jobs:
   auto-review:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
 
       - name: Install Python dependencies
         run: |
@@ -49,7 +50,7 @@ jobs:
             Assessment: DO_NOT_SHIP, FURTHER_REVIEW_REQUESTED, PROBABLY_FINE, DEFINITELY_FINE
 
             ## Your Tasks
-            1. **Identify changed guide files** (guides/*.mdx) in this PR
+            1. **Identify changed guide files** (content/docs/guides/*.mdx) in this PR
             2. **Extract code examples** from changed files (bash/curl, Python, JavaScript blocks)
             3. **Test API examples** by executing them:
                - Use Bash tool for curl examples
@@ -65,7 +66,7 @@ jobs:
             - **API Correctness**: Are endpoint URLs and request formats correct?
             - **Placeholder Consistency**: Check {YOUR_API_KEY}, {org_slug} format
             - **Response Examples**: Do response examples match current API format?
-            - **OpenAPI Changes**: If openapi-v*.json changed, verify breaking changes
+            - **OpenAPI Changes**: If openapi*.json changed, verify breaking changes
             - **Documentation Quality (NO AI SLOP)**:
               * Flag verbose/repetitive content
               * Flag obvious explanations (e.g., "this endpoint returns data about places")
