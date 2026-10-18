@@ -41,5 +41,10 @@ for (const path of ['/api/search', '/sitemap.xml', '/robots.txt', '/llms.txt', '
   const text = await response.text();
   assert.ok(text.length > 20, `Empty discovery endpoint: ${path}`);
   assert.ok(!text.includes('tripadvisor-category'), `Restricted page in ${path}`);
+  if (path === '/sitemap.xml') {
+    assert.ok(!/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[\da-f]+);)/i.test(text), 'Unescaped ampersand in sitemap XML');
+    assert.ok(text.includes('/search-%26-answers/search-the-web'), 'Missing encoded legacy sitemap URL');
+    assert.equal((text.match(/<loc>/g) ?? []).length, pages.length, 'Sitemap page coverage');
+  }
 }
 console.log(`HTTP smoke checks passed: ${pages.length} pages, ${redirects.length} redirects, exclusions, encoded URLs, search, and discovery endpoints.`);
