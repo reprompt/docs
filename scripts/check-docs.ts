@@ -13,8 +13,8 @@ for (const [id, method, path, slug] of apiRoutes) {
   assert.ok(readSpec(id).paths?.[path]?.[method], `Missing API operation: ${id} ${method} ${path}`);
   assert.ok(routes.has(`/api-reference/${slug}`), `Missing generated page: ${slug}`);
 }
-for (const redirect of redirects) assert.ok(routes.has(redirect.destination), `Broken redirect: ${redirect.source}`);
-const excluded = ['tripadvisor-category', '/entrances', 'changelog', 'kyb', 'find-places', 'placematch', '/validate'];
+for (const redirect of redirects) assert.ok(routes.has(redirect.destination.replace(/\.md$/, '')), `Broken redirect: ${redirect.source}`);
+const excluded = ['tripadvisor-category', 'kyb', 'find-places', 'placematch', '/validate'];
 for (const route of routes) for (const name of excluded) assert.ok(!route.includes(name), `Excluded route published: ${route}`);
 const problems: string[] = [];
 for await (const file of glob('**/*.mdx', { cwd: 'content/docs' })) {
@@ -34,3 +34,9 @@ for await (const file of glob('**/*.mdx', { cwd: 'content/docs' })) {
 }
 assert.deepEqual(problems, [], 'Broken internal links or assets');
 console.log(`Checked ${pages.length} pages, ${apiRoutes.length} API operations, redirects, exclusions, and local links/assets.`);
+
+// Snapshot of the public Mintlify sitemap and public unlisted pages (2026-10-20).
+const legacyUrls: string[] = JSON.parse(await readFile('tests/legacy-public-urls.json', 'utf8'));
+for (const url of legacyUrls) {
+  assert.ok(routes.has(url) || redirects.some((redirect) => redirect.source === url), `Legacy public URL lost: ${url}`);
+}

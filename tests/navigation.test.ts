@@ -7,7 +7,7 @@ import { createVersionNavigation, navigationVersion } from '../lib/navigation';
 test('version navigation exposes every published page', () => {
   const pages = JSON.parse(readFileSync('public/docs-manifest.json', 'utf8')) as { slug: string; title: string }[];
   const versions = createVersionNavigation({ name: 'Docs', children: pages.map(({ slug, title }) => ({ type: 'page', name: title, url: `/${slug}` })) });
-  assert.deepEqual(new Set(flattenTree(versions).map((page) => page.url)), new Set(pages.map((page) => `/${page.slug}`)));
+  assert.deepEqual(new Set(flattenTree(versions).map((page) => page.url)), new Set(pages.filter((page) => !['guides/entrances', 'changelog'].includes(page.slug)).map((page) => `/${page.slug}`)));
 });
 
 test('shared troubleshooting keeps its version while cross-version links switch', () => {

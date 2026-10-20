@@ -29,13 +29,13 @@ for (const { source, destination, permanent } of redirects) {
   assert.equal(response.status, permanent ? 308 : 307, source);
   assert.equal(new URL(response.headers.get('location')!, base).pathname, destination, source);
 }
-for (const path of ['/missing-page', '/guides/tripadvisor-category', '/guides/entrances', '/changelog', '/api-reference/enrichments/find-places', '/api-reference/enrichments/placematch', '/api-reference/enrichments/validate']) {
+for (const path of ['/missing-page', '/api-reference/enrichments/find-places', '/api-reference/enrichments/placematch', '/api-reference/enrichments/validate']) {
   const response = await fetchPage(path);
   assert.equal(response.status, 404, path);
 }
 const encodedSearch = await fetchPage('/api-reference/search-%26-answers/search-the-web');
 assert.equal(encodedSearch.status, 200, 'Encoded legacy search URL');
-for (const path of ['/api/search', '/sitemap.xml', '/robots.txt', '/llms.txt', '/openapi-v1.json', '/openapi-search-ask-v1.json', '/openapi-v2.json']) {
+for (const path of ['/api/search', '/sitemap.xml', '/robots.txt', '/llms.txt', '/llms-full.txt', '/guides/quickstart.md', '/openapi-v1.json', '/openapi-search-ask-v1.json', '/openapi-v2.json']) {
   const response = await fetchPage(path);
   assert.equal(response.status, 200, path);
   const text = await response.text();
@@ -48,3 +48,16 @@ for (const path of ['/api/search', '/sitemap.xml', '/robots.txt', '/llms.txt', '
   }
 }
 console.log(`HTTP smoke checks passed: ${pages.length} pages, ${redirects.length} redirects, exclusions, encoded URLs, search, and discovery endpoints.`);
+
+const legacyUrls: string[] = JSON.parse(await readFile('tests/legacy-public-urls.json', 'utf8'));
+for (const path of legacyUrls) {
+  for (const suffix of ['', '.md']) {
+    const url = path + suffix;
+    const response = await fetchPage(url);
+    const redirect = redirects.find((entry) => entry.source === url);
+    // HTML redirects also need equivalent Markdown destinations.
+    assert.equal(response.status, redirect ? (redirect.permanent ? 308 : 307) : 200, `Legacy URL: ${url}`);
+    if (redirect) assert.equal((await fetchPage(redirect.destination)).status, 200, `Legacy redirect destination: ${url}`);
+  }
+}
+console.log(`Legacy compatibility passed: ${legacyUrls.length} HTML URLs and their Markdown equivalents.`);

@@ -72,3 +72,20 @@ pages.sort((a, b) => a.slug.localeCompare(b.slug));
 await writeFile('public/llms.txt', `# Reprompt\n\nAPI documentation for place enrichment, web search, and grounded answers.\n\n## Documentation\n\n${pages.map((page) => `- [${page.title}](https://docs.repromptai.com/${page.slug})${page.description ? `: ${page.description}` : ''}`).join('\n')}\n\n## OpenAPI Specs\n\n${Object.values(specFiles).map((file) => `- [${file}](https://docs.repromptai.com/${file})`).join('\n')}\n`);
 await writeFile('public/docs-manifest.json', JSON.stringify(pages.map(({ content: _, ...page }) => page), null, 2));
 console.log(`Generated ${apiRoutes.length} API pages; ${pages.length} total public pages.`);
+
+// Preserve Mintlify's machine-readable page URLs, including API details.
+const markdownPages = [];
+for (const page of pages) {
+  const route = apiRoutes.find((entry) => `api-reference/${entry[3]}` === page.slug);
+  let content = page.content;
+  if (route) {
+    const [id, method, path] = route;
+    content = `${specs[id].paths?.[path]?.[method]?.description ?? ''}\n\n## Endpoint\n\n\`${method.toUpperCase()} ${path}\`\n\n## OpenAPI operation\n\n\`\`\`json\n${JSON.stringify(specs[id].paths?.[path]?.[method], null, 2)}\n\`\`\`\n\nFull schemas and authentication: [OpenAPI specification](/${specFiles[id]}).\n`;
+  }
+  const markdown = `# ${page.title}\n\n${page.description}\n\n${content}\n`;
+  const path = `public/${page.slug}.md`;
+  await mkdir(path.slice(0, path.lastIndexOf('/')), { recursive: true });
+  await writeFile(path, markdown);
+  markdownPages.push(markdown);
+}
+await writeFile('public/llms-full.txt', markdownPages.join('\n\n---\n\n'));
