@@ -69,3 +69,17 @@ console.log(`Legacy compatibility passed: ${legacyUrls.length} HTML URLs and the
 const legacyAssets: string[] = JSON.parse(await readFile('lib/legacy-public-assets.json', 'utf8'));
 for (const asset of legacyAssets) assert.equal((await fetchPage(encodeURI(asset))).status, 200, `Legacy asset: ${asset}`);
 console.log(`Legacy assets passed: ${legacyAssets.length} image and logo URLs.`);
+
+// Anonymous crawl from the live root, sitemap and llms.txt, captured 2026-10-20.
+const { legacyAnchorTarget } = await import('../lib/legacy-anchors');
+const crawlContract: Record<string, string[]> = JSON.parse(await readFile('lib/public-crawl-contract.json', 'utf8'));
+await Promise.all(Object.entries(crawlContract).map(async ([path, anchors]) => {
+  let response = await fetchPage(path);
+  if ([307, 308].includes(response.status)) response = await fetchPage(new URL(response.headers.get('location')!, base).pathname);
+  assert.equal(response.status, 200, `Public crawl URL: ${path}`);
+  if (!anchors.length) return;
+  const html = (await response.text()).replaceAll('&amp;', '&');
+  const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]));
+  for (const anchor of anchors) assert.ok(legacyAnchorTarget(anchor, (id) => ids.has(id)), `Unmapped public fragment: ${path}#${anchor}`);
+}));
+console.log(`Public crawl contract passed: ${Object.keys(crawlContract).length} discovered URLs and their linked fragments.`);
