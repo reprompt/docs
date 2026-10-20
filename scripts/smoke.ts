@@ -66,3 +66,6 @@ for (const path of legacyUrls) {
   }
 }
 console.log(`Legacy compatibility passed: ${legacyUrls.length} HTML URLs and their Markdown equivalents.`);
+const legacyAssets: string[] = JSON.parse(await readFile('lib/legacy-public-assets.json', 'utf8'));
+for (const asset of legacyAssets) assert.equal((await fetchPage(encodeURI(asset))).status, 200, `Legacy asset: ${asset}`);
+console.log(`Legacy assets passed: ${legacyAssets.length} image and logo URLs.`);

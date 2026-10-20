@@ -40,3 +40,5 @@ const legacyUrls: string[] = JSON.parse(await readFile('lib/legacy-public-urls.j
 for (const url of legacyUrls) {
   assert.ok(routes.has(url) || redirects.some((redirect) => redirect.source === url), `Legacy public URL lost: ${url}`);
 }
+const legacyAssets: string[] = JSON.parse(await readFile('lib/legacy-public-assets.json', 'utf8'));
+for (const asset of legacyAssets) await access(`public${asset}`);
