@@ -1,7 +1,7 @@
 .playwright-mcp/
 .github/
 /guides/
-changelog.mdx
+/changelog.mdx
 test_*.py
 *.csv
 progress.md

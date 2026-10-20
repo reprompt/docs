@@ -5,6 +5,7 @@ import { source } from '@/lib/source';
 import { openapi } from '@/lib/openapi';
 import { OpenAPIPage } from '@/components/api-page';
 import { getMDXComponents } from '@/components/mdx';
+import { LegacyAnchors } from '@/components/legacy-anchors';
 import { normalizeSlugs } from '@/lib/routes';
 
 type Props = { params: Promise<{ slug?: string[] }> };
@@ -18,7 +19,8 @@ export default async function Page({ params }: Props) {
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
-      <DocsTitle>{page.data.title}</DocsTitle>
+      <LegacyAnchors />
+      <DocsTitle id="page-title">{page.data.title}</DocsTitle>
       {!('_openapi' in page.data) && <DocsDescription>{page.data.description}</DocsDescription>}
       <DocsBody>
         <Content components={getMDXComponents({

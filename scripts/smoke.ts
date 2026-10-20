@@ -13,10 +13,15 @@ function fetchPage(path: string) {
   return fetch(`${base}${path}`, { redirect: 'manual', headers });
 }
 const pages = JSON.parse(await readFile('public/docs-manifest.json', 'utf8')) as { slug: string; title: string }[];
+const legacyAnchors: Record<string, string[]> = JSON.parse(await readFile('lib/legacy-heading-anchors.json', 'utf8'));
 for (const page of pages) {
   const response = await fetchPage(`/${page.slug}`);
   const html = await response.text();
   assert.equal(response.status, 200, page.slug);
+  const decodedHtml = html.replaceAll('&amp;', '&').replaceAll('&quot;', '"');
+  for (const anchor of legacyAnchors[`/${page.slug}`] ?? []) {
+    assert.ok(decodedHtml.includes(`id="${anchor}"`), `Legacy heading missing: ${page.slug}#${anchor}`);
+  }
   assert.ok(html.includes('<h1'), `Missing page heading: ${page.slug}`);
   assert.ok(!html.includes('data-next-error-digest'), `Rendering error: ${page.slug}`);
   assert.ok(html.includes('id="nd-page"'), `Missing documentation content: ${page.slug}`);
@@ -49,7 +54,7 @@ for (const path of ['/api/search', '/sitemap.xml', '/robots.txt', '/llms.txt', '
 }
 console.log(`HTTP smoke checks passed: ${pages.length} pages, ${redirects.length} redirects, exclusions, encoded URLs, search, and discovery endpoints.`);
 
-const legacyUrls: string[] = JSON.parse(await readFile('tests/legacy-public-urls.json', 'utf8'));
+const legacyUrls: string[] = JSON.parse(await readFile('lib/legacy-public-urls.json', 'utf8'));
 for (const path of legacyUrls) {
   for (const suffix of ['', '.md']) {
     const url = path + suffix;

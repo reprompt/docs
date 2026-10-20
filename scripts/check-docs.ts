@@ -36,7 +36,7 @@ assert.deepEqual(problems, [], 'Broken internal links or assets');
 console.log(`Checked ${pages.length} pages, ${apiRoutes.length} API operations, redirects, exclusions, and local links/assets.`);
 
 // Snapshot of the public Mintlify sitemap and public unlisted pages (2026-10-20).
-const legacyUrls: string[] = JSON.parse(await readFile('tests/legacy-public-urls.json', 'utf8'));
+const legacyUrls: string[] = JSON.parse(await readFile('lib/legacy-public-urls.json', 'utf8'));
 for (const url of legacyUrls) {
   assert.ok(routes.has(url) || redirects.some((redirect) => redirect.source === url), `Legacy public URL lost: ${url}`);
 }
