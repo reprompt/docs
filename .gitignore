@@ -8,3 +8,16 @@ __pycache__
 env/
 .DS_Store
 node_modules/
+.next/
+.source/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+content/docs/api-reference/
+public/openapi*.json
+public/llms.txt
+public/docs-manifest.json
+test-results/
+
+public/**/*.md
+public/llms-full.txt

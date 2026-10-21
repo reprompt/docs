@@ -1,0 +1,5 @@
+{
+  "title": "Guides",
+  "defaultOpen": true,
+  "pages": ["quickstart", "search-and-ask", "csv-upload", "batch-processing", "csv-export", "open-closed", "monthly-refresh", "place-job-results", "troubleshooting-40x", "agents-in-api"]
+}

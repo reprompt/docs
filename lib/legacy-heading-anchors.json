@@ -1,0 +1,223 @@
+{
+  "/api-reference/attributes/get-all-available-attributes": [
+    "page-title"
+  ],
+  "/api-reference/batches/delete-a-batch": [
+    "page-title"
+  ],
+  "/api-reference/batches/get-batch-status": [
+    "page-title"
+  ],
+  "/api-reference/batches/list-batches": [
+    "page-title"
+  ],
+  "/api-reference/batches/rename-or-update-a-batch": [
+    "page-title"
+  ],
+  "/api-reference/batches/reprocess-a-batch": [
+    "page-title"
+  ],
+  "/api-reference/batches/submit-a-batch-of-places-for-enrichment": [
+    "page-title"
+  ],
+  "/api-reference/enrich-a-single-place-synchronously": [
+    "page-title"
+  ],
+  "/api-reference/enrichments/enrich": [
+    "page-title"
+  ],
+  "/api-reference/enrichments/list-attributes": [
+    "page-title"
+  ],
+  "/api-reference/exports/create-a-csv-export": [
+    "page-title"
+  ],
+  "/api-reference/exports/download-a-completed-export": [
+    "page-title"
+  ],
+  "/api-reference/exports/get-export-status": [
+    "page-title"
+  ],
+  "/api-reference/exports/list-durable-exports": [
+    "page-title"
+  ],
+  "/api-reference/jobs/delete-a-job": [
+    "page-title"
+  ],
+  "/api-reference/jobs/get-a-single-enrichment-job": [
+    "page-title"
+  ],
+  "/api-reference/jobs/get-enrichment-jobs": [
+    "page-title"
+  ],
+  "/api-reference/jobs/reprocess-jobs": [
+    "page-title"
+  ],
+  "/api-reference/jobs/submit-a-single-enrichment-job": [
+    "page-title"
+  ],
+  "/api-reference/search-&-answers/get-a-fast-source-backed-answer": [
+    "page-title"
+  ],
+  "/api-reference/search-&-answers/search-the-web": [
+    "page-title"
+  ],
+  "/guides/agents-in-api": [
+    "page-title",
+    "overview",
+    "1-create-the-agent-in-a-workbook",
+    "2-edit-the-agent-settings",
+    "3-enable-api-usage",
+    "4-call-the-agent-from-the-api",
+    "5-edit-the-agent-and-create-a-new-version",
+    "6-manage-default-versions"
+  ],
+  "/guides/batch-processing": [
+    "page-title",
+    "endpoints",
+    "quick-start",
+    "batch-limits",
+    "batch-status-lifecycle",
+    "monitoring-progress",
+    "batch-status-response",
+    "handling-results",
+    "fetch-results",
+    "success-vs-failed-jobs",
+    "reprocessing-failed-items",
+    "listing-batches",
+    "best-practices",
+    "next-steps"
+  ],
+  "/guides/csv-export": [
+    "page-title",
+    "endpoints",
+    "quick-start",
+    "sync-exports",
+    "async-exports",
+    "idempotency-key",
+    "export-lifecycle",
+    "polling-&-downloading",
+    "status-response-fields",
+    "listing-exports",
+    "csv-columns",
+    "errors",
+    "using-the-dashboard",
+    "best-practices",
+    "next-steps"
+  ],
+  "/guides/csv-upload": [
+    "page-title",
+    "map-your-columns",
+    "essential-fields",
+    "additional-options",
+    "preview-and-import",
+    "run-enrichment",
+    "files-over-200-mb",
+    "best-practices",
+    "next-steps"
+  ],
+  "/guides/monthly-refresh": [
+    "page-title",
+    "overview",
+    "1-mark-places-for-refresh",
+    "2-check-what-changed",
+    "list-recent-batches",
+    "fetch-a-batch-to-get-its-place-ids",
+    "fetch-a-job-by-place-id",
+    "inspect-last_enriched"
+  ],
+  "/guides/open-closed": [
+    "page-title",
+    "overview",
+    "status-values",
+    "usage-example",
+    "determining-status",
+    "no-internet-presence",
+    "permanently-closed-vs-temporarily-closed-vs-open",
+    "example-cases"
+  ],
+  "/guides/place-job-results": [
+    "page-title",
+    "overview",
+    "sections",
+    "example-response",
+    "schemas",
+    "confidence-scores",
+    "attribute-statuses",
+    "next-steps",
+    "attribute-outputs"
+  ],
+  "/guides/quickstart": [
+    "page-title",
+    "1-enrich-place-data",
+    "2-live-enrichment",
+    "input-flexibility",
+    "3-understanding-the-response",
+    "4-available-attributes",
+    "5-batch-processing",
+    "6-next-steps"
+  ],
+  "/guides/search-and-ask": [
+    "page-title",
+    "overview",
+    "authentication-and-base-url",
+    "search",
+    "search-response",
+    "ask",
+    "ask-response",
+    "errors-and-retries"
+  ],
+  "/guides/troubleshooting-40x": [
+    "page-title",
+    "overview",
+    "401-unauthorized",
+    "common-causes",
+    "how-to-fix",
+    "403-forbidden",
+    "common-causes-2",
+    "how-to-fix-2",
+    "404-not-found",
+    "common-causes-3",
+    "how-to-fix-3",
+    "quick-reference-table",
+    "related-guides"
+  ],
+  "/schemas/schemas": [
+    "page-title",
+    "input-place-schema",
+    "provide-a-stable-identifier-with-place_id",
+    "field-priority",
+    "examples",
+    "minimal-name-+-coordinates",
+    "minimal-name-+-address",
+    "recommended-all-key-fields",
+    "complete-maximum-accuracy",
+    "confidence-scores",
+    "confidence-levels",
+    "best-practices",
+    "open/closed-status",
+    "status-definitions"
+  ],
+  "/guides/entrances": [
+    "page-title",
+    "overview",
+    "request",
+    "request-fields",
+    "response-example",
+    "compound-view",
+    "schema-reference",
+    "top-level-response",
+    "entrance",
+    "access-point",
+    "access-types",
+    "access-control",
+    "building",
+    "building-types",
+    "compound",
+    "compound-types",
+    "parking-zone"
+  ],
+  "/changelog": [
+    "page-title"
+  ]
+}

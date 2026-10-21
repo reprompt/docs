@@ -11,14 +11,14 @@ This guide helps you troubleshoot common authentication and request errors when 
 
 A `401` error means your API key is invalid, missing, or revoked.
 
-### Common Causes
+### Common Causes [#common-causes]
 
 1. **Missing or malformed Authorization header**
 2. **Revoked API key**
 3. **Expired API key**
 4. **Copy-paste errors** (extra spaces, truncated key)
 
-### How to Fix
+### How to Fix [#how-to-fix]
 
 <Steps>
   <Step title="Check your Authorization header">
@@ -59,12 +59,12 @@ A `401` error means your API key is invalid, missing, or revoked.
 
 A `403` error means your API key is valid, but you don't have permission to access the requested resource.
 
-### Common Causes
+### Common Causes [#common-causes-2]
 
 1. **Accessing another organization's resources** - Using an org slug that doesn't match your API key
 2. **Insufficient permissions** - Your API key doesn't have access to the specific resource or endpoint
 
-### How to Fix
+### How to Fix [#how-to-fix-2]
 
 <Steps>
   <Step title="Verify your organization slug matches your API key">
@@ -80,14 +80,14 @@ A `403` error means your API key is valid, but you don't have permission to acce
 
 A `404` error means the API endpoint doesn't exist, usually due to an incorrect URL or org slug.
 
-### Common Causes
+### Common Causes [#common-causes-3]
 
 1. **Incorrect organization slug** in the URL
 2. **Typo in the endpoint path**
 3. **Wrong API version** (using V1 endpoint format with V2 base URL or vice versa)
 4. **Invalid batch ID or resource ID** in the path
 
-### How to Fix
+### How to Fix [#how-to-fix-3]
 
 <Steps>
   <Step title="Verify your organization slug">
